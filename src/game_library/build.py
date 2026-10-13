@@ -295,6 +295,14 @@ class Builder:
         before={r[0]:r[1] for r in self.db.execute('SELECT id,content_hash FROM records')}
         before_dates={r[0]:r[1] for r in self.db.execute('SELECT id,updated_at FROM records')}
         annotated_assets=self.db.execute('SELECT * FROM record_assets WHERE record_id IN (SELECT record_id FROM annotations)').fetchall()
+        protected_sources=set()
+        retained_source_assets=[]
+        if L.has_table(self.db,'record_sources'):
+            protected_sources={r[0] for r in self.db.execute("SELECT DISTINCT record_id FROM record_sources WHERE source_name!='GachaWiki'")}
+        if L.has_table(self.db,'identity_aliases'):
+            protected_sources.update(r[0] for r in self.db.execute('SELECT alias_id FROM identity_aliases UNION SELECT canonical_id FROM identity_aliases'))
+        retained_source_assets=[row for row in self.db.execute('SELECT * FROM record_assets') if row['record_id'] in protected_sources]
+        retained_source_relationships=[row for row in self.db.execute('SELECT * FROM relationships') if row['from_id'] in protected_sources or row['to_id'] in protected_sources]
         with self.db:
             self.import_assets(manifest)
             # Rebuild source relationships safely within transaction; annotations and originals untouched.
@@ -341,13 +349,26 @@ class Builder:
                 self.link(rid,{'image':a['url']})
             # Remove obsolete generated records only; all annotated/manual records survive rebuilds.
             for rid, in self.db.execute('SELECT id FROM records WHERE id NOT IN (SELECT record_id FROM annotations)').fetchall():
-                if rid not in self.seen_records:
+                if rid not in self.seen_records and rid not in protected_sources:
                     self.db.execute('DELETE FROM relationships WHERE from_id=? OR to_id=?',(rid,rid))
                     self.db.execute('DELETE FROM record_assets WHERE record_id=?',(rid,))
                     self.db.execute('DELETE FROM records WHERE id=?',(rid,))
             for record_id,asset_id,role in annotated_assets:
                 if record_id not in self.seen_records:
                     self.db.execute('INSERT OR IGNORE INTO record_assets VALUES(?,?,?)',(record_id,asset_id,role))
+            for record_id,asset_id,role in retained_source_assets:
+                self.db.execute('INSERT OR IGNORE INTO record_assets VALUES(?,?,?)',(record_id,asset_id,role))
+            for from_id,to_id,kind in retained_source_relationships:
+                if self.db.execute('SELECT count(*) FROM records WHERE id IN (?,?)',(from_id,to_id)).fetchone()[0]==2:
+                    self.db.execute('INSERT OR IGNORE INTO relationships VALUES(?,?,?)',(from_id,to_id,kind))
+            if L.has_table(self.db,'record_sources'):
+                try:
+                    from .fandom_import import fill_missing_facts
+                except ImportError:
+                    from fandom_import import fill_missing_facts
+                for source in self.db.execute("SELECT * FROM record_sources WHERE source_name='Fandom'").fetchall():
+                    claim=dict(source);claim['metadata']=json.loads(claim['metadata'])
+                    fill_missing_facts(self.db,claim['record_id'],claim)
             # Final hashes include supplementary metadata; count records once, rather than extraction occurrences.
             for row in self.db.execute('SELECT id,metadata,display_name,game_id,category,element,rarity FROM records').fetchall():
                 digest=hashlib.sha256(json.dumps(dict(row),sort_keys=True,ensure_ascii=False).encode()).hexdigest()

@@ -40,4 +40,19 @@ with ReferenceLibrary() as refs:
 
 References contain actual IDs/names, metadata, and existing image paths. Uncertain/unidentified records are excluded from verified item references. SQLite opens read-only; the browser is unnecessary. HTTP alternatives are `/api/records`, `/api/records/{id}`, `/api/item-references` and `/api/stats`.
 
+## Fandom materials (Library 1.1)
+
+The existing database also includes materials from the [Limit Break](https://naruto-blazing.fandom.com/wiki/Limit_Break) and [Encyclopedia](https://naruto-blazing.fandom.com/wiki/Encyclopedia) pages and their associated material pages. Collection uses the public MediaWiki API and original wiki images. It does not recrawl GachaWiki or interact with the game.
+
+```powershell
+.\scripts\library.ps1 fandom-crawl
+.\scripts\library.ps1 fandom-import
+```
+
+Collection resumes from `runtime/library/data/fandom/`; import is transactional and repeatable. SQLite-aware backups are saved in `runtime/library/backups/` before schema migration. Original IDs, annotations and source relationships survive. Confirmed duplicate identities have a canonical ID and readable historical alias IDs; search and `item_references()` return one logical identity. Names, identifiers and conflicting facts remain available separately for each source in `sources` and in the browser detail pane. Unresolved source discrepancies are excluded from verified references.
+
+SHA-256 duplicates reuse existing assets. Perceptual similarity produces review suggestions, never proof of identity. Comparable card images are ranked by native pixel area and lossless encoding, with the higher-fidelity image preferred. Useful older variants remain available. Full artwork is displayed in the browser and returned in `artwork_assets`, separately from recognizer icon paths. Cached Fandom originals and imported originals share physical storage through hard links where supported.
+
+Importing references does not calibrate them. The offline compatibility check in `game_library.recognition_compat` compares the expanded library with the pre-import snapshot on saved reward images before updating the calibration database hash. Supported item IDs and recognition thresholds stay unchanged; new items remain uncalibrated. Results and remaining review cases are recorded in `runtime/library/reports/FANDOM_1_1.md` and the adjacent JSON reports.
+
 Library coverage and screenshot matching accuracy are different. The recognizer filters combat-enemy records from items and selects eligible character card/portrait references separately. See [recognition](RECOGNITION.md) and [historical validation](VALIDATION.md).

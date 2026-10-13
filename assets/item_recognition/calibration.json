@@ -1,10 +1,11 @@
 {
   "schema_version": 2,
-  "library_sha256": "e850cd6b970e857b38da723c5f24b441de02c9da7e5d8c2f1aae0def5a5c0b10",
+  "library_sha256": "a82ec954131da2200f72c398e9fc1be4ec40fc092499000aec42102855b572c5",
   "threshold": 0.75,
   "margin": 0.019265,
   "supported_item_ids": [
     "item_0f061961252195d5d64b836c",
+    "item_1b68f7a9137b7901c944ee37",
     "item_281a6b6591b85100b09105f0",
     "item_31ac7f4f725807dff03f5472",
     "item_46dff63ce93f3f02977d9910",
@@ -12,6 +13,7 @@
     "item_5ac3d49e47e4044733ff98e0",
     "item_5f1b60db10590743010e222b",
     "item_6338f644cfefd6f947135804",
+    "item_6d6a5da5c924f0df37192860",
     "item_725cded89eb0b00ec07113c1",
     "item_90a64a4261e34bad15a7f5d5",
     "item_af2586304d2b5e8f09be152b",
@@ -310,6 +312,24 @@
           "reason": "Inspected same two-star Wisdom Attack Boost Sphere of Strength; sourceunit11822 and exact title; missionandunit artworkmatch with no conflicting metadata."
         }
       ]
+    },
+    {
+      "canonical_item_id": "item_6d6a5da5c924f0df37192860",
+      "member_ids": [
+        "item_6d6a5da5c924f0df37192860",
+        "item_751c0d1807022ca9aac31ade"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "949",
+      "evidence": {
+        "basis": "Independent visual review of source identity: both records refer explicitly to card-0949, share Body element, have compatible rarity and categories, and source-linked art agrees with user-prepared Wager with Tsunade [A] rewards. No pixel-only identity inference.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/missions/card-0949.webp",
+          "https://gachawiki.net/naruto-blazing/lb/card-0949.webp"
+        ],
+        "reviewed_screenshot": "tests/fixtures/tsunade/ready_to_retry_body_crystal.png",
+        "source_reference": "runtime/library/assets/items/bbf6645b12e7c408829a6178da7bc5f96cc3f32f8c60b747ebd2297d7927bdb2.png"
+      }
     }
   ],
   "supported_character_ids": [
@@ -402,5 +422,71 @@
       "threshold": 0.7,
       "margin": 0.055
     }
-  }
+  },
+  "compatible_library_imports": [
+    {
+      "source": "Fandom Library 1.1",
+      "before_sha256": "e850cd6b970e857b38da723c5f24b441de02c9da7e5d8c2f1aae0def5a5c0b10",
+      "after_sha256": "a82ec954131da2200f72c398e9fc1be4ec40fc092499000aec42102855b572c5",
+      "validation_report": "D:\\NBR\\runtime\\library\\reports\\fandom_recognition\\compatibility.json",
+      "verified_matches_preserved": 55
+    }
+  ],
+  "expanded_labeled_evidence": [
+    {
+      "path": "assets/reference_images/starting_point_lucky_drop.png",
+      "sha256": "a562748998e83f7c283732129c40c4c017d157e563a5836bb0719903d571882e",
+      "bounding_box": [
+        219,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_1b68f7a9137b7901c944ee37",
+      "canonical_item_id": "item_1b68f7a9137b7901c944ee37",
+      "similarity": 0.86195,
+      "margin": 0.036045,
+      "label_basis": "Manual inspection of original screenshot and visually corresponding source-linked library reference; no matcher output used.",
+      "original_split": "holdout",
+      "used_for_new_identity_calibration": true,
+      "quantity": null
+    },
+    {
+      "path": "tests/fixtures/tsunade/ready_to_retry_body_crystal.png",
+      "sha256": "94a13723f56306d44cd8e5561e9f5ac1917c8e2e417692c94a35832dbddf96f6",
+      "bounding_box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_6d6a5da5c924f0df37192860",
+      "canonical_item_id": "item_6d6a5da5c924f0df37192860",
+      "similarity": 0.839291,
+      "margin": 0.145894,
+      "label_basis": "Independent visual inspection by Codex of fresh user-prepared acc1 acquired rewards and independently opened source-linked Fandom Card-0949.png. Shape, color, badge, Body mark and four-star frame agree. Library source card number 949 verified; no recognizer output used to establish labels.",
+      "original_split": "calibration",
+      "used_for_new_identity_calibration": true,
+      "quantity": null
+    },
+    {
+      "path": "tests/fixtures/tsunade/ready_to_retry_body_crystal.png",
+      "sha256": "94a13723f56306d44cd8e5561e9f5ac1917c8e2e417692c94a35832dbddf96f6",
+      "bounding_box": [
+        219,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_6d6a5da5c924f0df37192860",
+      "canonical_item_id": "item_6d6a5da5c924f0df37192860",
+      "similarity": 0.835502,
+      "margin": 0.144883,
+      "label_basis": "Independent visual inspection by Codex of fresh user-prepared acc1 acquired rewards and independently opened source-linked Fandom Card-0949.png. Shape, color, badge, Body mark and four-star frame agree. Library source card number 949 verified; no recognizer output used to establish labels.",
+      "original_split": "calibration",
+      "used_for_new_identity_calibration": true,
+      "quantity": null
+    }
+  ],
+  "expanded_labeled_positive_icon_count": 3
 }

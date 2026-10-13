@@ -60,7 +60,12 @@ def evaluate():
     dataset=json.loads((DEFAULT_TEMPLATES/'ground_truth.json').read_text('utf-8'))
     for example in dataset['examples']:
         example['path']=str(PROJECT/example['path'])
-    examples=dataset['examples']; calibration=calibrate(examples)
+    examples=dataset['examples']
+    calibration_path=DEFAULT_TEMPLATES/'calibration.json'
+    # Routine validation must preserve reviewed groups, character gates and
+    # additive calibration. Initial calibration remains available via calibrate.
+    calibration=json.loads(calibration_path.read_text('utf-8')) if calibration_path.exists() else calibrate(examples)
+    consumed={str((PROJECT/e['path']).resolve()) for e in calibration.get('expanded_labeled_evidence',[])}
     recognizer=ItemRecognizer(calibration_path=DEFAULT_TEMPLATES/'calibration.json')
     database_before=file_hash(recognizer.db_path)
     overall=Counter(); heldout=Counter(); reports=[]
@@ -101,8 +106,8 @@ def evaluate():
             counts['false_item_identities_on_negative_screens']=sum(r['identity_status'] in ('matched','candidate') for r in result['rewards'])
         if before!=file_hash(example['path']): raise AssertionError('Input image mutated')
         overall.update(counts)
-        if example['split']=='holdout': heldout.update(counts)
-        reports.append({'screenshot':example['path'],'split':example['split'],'ground_truth_screen_type':example['screen_type'],'actual_screen_type':result['screen_type'],'status':result['status'],'counts':dict(counts),'json_path':str(target.with_suffix('.json')),'debug_path':str(target.with_suffix('.debug.png'))})
+        if example['split']=='holdout' and str(Path(example['path']).resolve()) not in consumed: heldout.update(counts)
+        reports.append({'screenshot':example['path'],'split':example['split'],'used_for_additive_calibration':str(Path(example['path']).resolve()) in consumed,'ground_truth_screen_type':example['screen_type'],'actual_screen_type':result['screen_type'],'status':result['status'],'counts':dict(counts),'json_path':str(target.with_suffix('.json')),'debug_path':str(target.with_suffix('.debug.png'))})
     unchanged=database_before==file_hash(recognizer.db_path)
     if not unchanged: raise AssertionError('Library DB changed')
     quantity=json.loads((DEFAULT_TEMPLATES/'quantity/manifest.json').read_text('utf-8'))

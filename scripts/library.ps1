@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('browser','resume','update','build','export','test','validate')]
+    [ValidateSet('browser','resume','update','build','export','test','validate','fandom-crawl','fandom-import')]
     [string]$Action = 'browser',
     [int]$Port = 8765,
     [string]$PythonPath = ''
@@ -31,6 +31,8 @@ try {
             & $PythonPath build.py
         }
         'build' { & $PythonPath build.py }
+        'fandom-crawl' { & $PythonPath fandom_source.py --resume }
+        'fandom-import' { & $PythonPath fandom_import.py }
         'export' { & $PythonPath build.py --export-only }
         'test' { & $PythonPath -m unittest discover -s (Join-Path $projectRoot 'tests/game_library') -v }
         'validate' { & $PythonPath validate.py }

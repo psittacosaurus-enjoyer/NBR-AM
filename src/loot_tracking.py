@@ -14,6 +14,21 @@ import time
 import uuid
 
 
+_MISSION_STAGES = {
+    'All Scrolls [A]': 'scrolls-a',
+    'Getting Rich Quick! [B]': 'rich-b',
+    'Practice Training [Part 1]': 'practice-part-1',
+    'Night of Tragedy [A]': 'night-of-tragedy-a',
+}
+
+
+def _mission_stage(name):
+    if not isinstance(name, str):
+        return 'unknown'
+    name = name.strip()
+    return _MISSION_STAGES.get(name, name if name in _MISSION_STAGES.values() else 'unknown')
+
+
 def process_identity(pid):
     """PID plus creation time prevents PID reuse from joining unrelated sessions."""
     kernel = ctypes.windll.kernel32
@@ -171,6 +186,12 @@ def _dashboard(db, session_id=None, limit=100, offset=0):
         run = dict(row)
         run.update(account=session['account'], stage=session['stage'])
         result = json.loads(run.pop('result_json'))
+        if session['stage'] == 'universal':
+            # Universal is the automation mode, not the mission's identity. Each
+            # result owns its visual attribution so later runs cannot relabel it.
+            run['automation_stage'] = 'universal'
+            detected = result.get('stage')
+            run['stage'] = detected if isinstance(detected, str) and detected and detected != 'universal' else 'unknown'
         run['warnings'] = json.loads(run.pop('warnings_json'))
         entries = result.get('rewards', []) + result.get('unknown_rewards', [])
         run['rewards'] = entries
@@ -215,6 +236,22 @@ def _recognizer(root):
     return ItemRecognizer(library_path=Path(root) / "runtime" / "library")
 
 
+def _recognition_revision(root):
+    """Cheap invalidation token; the recognizer remains the read-only API owner."""
+    root = Path(root)
+    database = root / 'runtime' / 'library' / 'data' / 'library.sqlite3'
+    paths = [database, database.with_name(database.name + '-wal'),
+             root / 'assets' / 'item_recognition' / 'calibration.json']
+    revision = []
+    for path in paths:
+        try:
+            stat = path.stat()
+            revision.append((stat.st_mtime_ns, stat.st_ctime_ns, stat.st_size))
+        except FileNotFoundError:
+            revision.append(None)
+    return tuple(revision)
+
+
 class Collector:
     """Worker-owned collector; bounded pending recognition, durable replayable event spool.
 
@@ -235,6 +272,8 @@ class Collector:
         self.max_pending = max(1, int(max_pending))
         self.factory = recognizer_factory or (lambda: _recognizer(root))
         self.recognizer = None
+        self._reload_references = recognizer_factory is None
+        self._recognizer_revision = None
         # Explicit development opt-in: retain a bounded set of real validation
         # frames without changing normal production screenshot retention.
         self.validation_directory = None
@@ -345,7 +384,8 @@ class Collector:
             self._error(exc)
             return None
 
-    def evidence(self, run_id, frame):
+    def evidence(self, run_id, frame, mission_name=None):
+        """Save results evidence; optional title must come from verified results UI."""
         try:
             with self._lock:
                 value = self._events.get(self._completion_id(run_id))
@@ -358,6 +398,10 @@ class Collector:
                 with screenshot.open('r+b') as stream:
                     os.fsync(stream.fileno())
                 value['screenshot'] = str(screenshot.resolve())
+                if value['stage'] == 'universal' and mission_name is not None:
+                    # Store attribution with this event, never with mutable session
+                    # state or a title inherited from an earlier Start screen.
+                    value['mission_name'] = mission_name if _mission_stage(mission_name) != 'unknown' else None
                 value['state'] = 'ready' if self._ready_count < self.max_pending else 'backlog_limit'
                 if value['state'] == 'ready':
                     self._ready_count += 1
@@ -411,9 +455,33 @@ class Collector:
                 status = 'missing_screenshot'
             else:
                 try:
-                    if self.recognizer is None:
-                        self.recognizer = self.factory()
-                    result = self.recognizer.analyze_screenshot(screenshot_path=source, stage=value['stage'])
+                    revision = _recognition_revision(self.root) if self._reload_references else None
+                    if self.recognizer is None or (self._reload_references and revision != self._recognizer_revision):
+                        # Build off to the side: never mutate a reference snapshot
+                        # during matching or keep a partially loaded replacement.
+                        replacement = self.factory()
+                        if self._reload_references and _recognition_revision(self.root) != revision:
+                            raise RuntimeError('Recognition inputs changed while references loaded; retry on the next completion.')
+                        self.recognizer = replacement
+                        self._recognizer_revision = revision
+                    # An explicit stage overrides visual inference in the existing
+                    # recognizer. Universal runs must leave that inference open;
+                    # replay uses the event's mode rather than the current worker.
+                    recognition_stage = 'unknown' if value['stage'] == 'universal' else value['stage']
+                    result = self.recognizer.analyze_screenshot(screenshot_path=source, stage=recognition_stage)
+                    if value['stage'] == 'universal':
+                        title_stage = _mission_stage(value.get('mission_name'))
+                        visual_stage = result.get('stage') or 'unknown'
+                        if visual_stage == 'universal':
+                            visual_stage = 'unknown'
+                        visual_identity = _mission_stage(visual_stage)
+                        if title_stage != 'unknown' and visual_stage != 'unknown' and visual_identity != title_stage:
+                            result['stage'] = 'unknown'
+                            warnings.append('Results title and loot visual stage disagree; mission identity remains unknown.')
+                        else:
+                            title_name = next((name for name, identity in _MISSION_STAGES.items()
+                                               if identity == title_stage), 'unknown')
+                            result['stage'] = title_name if visual_stage == 'unknown' else visual_stage
                     warnings.extend(result.get('warnings', []))
                     entries = result.get('rewards', []) + result.get('unknown_rewards', [])
                     if result.get('status') == 'error':

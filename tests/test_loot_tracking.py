@@ -100,6 +100,88 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(len(fake.calls), 2)
         self.assertEqual(len({run["completion_id"] for run in data["runs"]}), 2)
 
+    def test_default_collector_refreshes_references_between_runs_without_backfill(self):
+        first = FakeRecognizer(result([reward('old-identity', quantity=2, quantity_status='verified')]))
+        expanded_reward = reward('expanded-identity', quantity=None)
+        expanded_reward['item_name'] = 'New Fandom Material'
+        expanded_reward['member_ids'] = ['expanded-identity', 'source-alias']
+        expanded = FakeRecognizer(result([expanded_reward]))
+        with patch.object(loot, '_recognizer', side_effect=[first, expanded]) as factory:
+            collector = loot.Collector(self.root, 'scrolls-a', 'fixture:refresh')
+            self.collectors.append(collector)
+            self.observe(collector, 1)
+            self.observe(collector, 2)
+            self.assertEqual(factory.call_count, 1)
+            calibration = self.root / 'assets/item_recognition/calibration.json'
+            calibration.parent.mkdir(parents=True)
+            calibration.write_text('{}', encoding='utf-8')
+            completion = self.observe(collector, 3)
+            self.assertEqual(factory.call_count, 2)
+            collector.evidence(3, self.frame)
+            self.assertTrue(collector.wait_idle(10))
+            self.assertTrue(collector.store.finalized(completion))
+            data = self.dashboard(collector)
+            self.assertEqual(data['completed_runs'], 3)
+            self.assertEqual(data['recognized_icons'], 3)
+            self.assertEqual(data['confirmed_quantities'], {'old-identity': 4})
+            item = next(i for i in data['items'] if i['item_id'] == 'expanded-identity')
+            self.assertEqual(item['item_name'], 'New Fandom Material')
+            self.assertIsNone(item['confirmed_acquired'])
+            self.assertEqual(item['unknown_quantities'], 1)
+            self.assertEqual(len(first.calls), 2)
+            self.assertEqual(len(expanded.calls), 1)
+
+    def test_library_revision_token_includes_database_and_wal(self):
+        path = self.root / 'runtime/library/data/library.sqlite3'
+        path.parent.mkdir(parents=True)
+        initial = loot._recognition_revision(self.root)
+        path.write_bytes(b'initial')
+        database = loot._recognition_revision(self.root)
+        self.assertNotEqual(initial, database)
+        wal = path.with_name(path.name + '-wal')
+        wal.write_bytes(b'new image variant')
+        self.assertNotEqual(database, loot._recognition_revision(self.root))
+
+    def test_failed_reference_refresh_is_recorded_and_next_run_retries(self):
+        original, expanded = FakeRecognizer(), FakeRecognizer()
+        with patch.object(loot, '_recognizer', side_effect=[original, ValueError('invalid revision'), expanded]):
+            collector = loot.Collector(self.root, 'scrolls-a', 'fixture:refresh-retry')
+            self.collectors.append(collector)
+            self.observe(collector, 1)
+            calibration = self.root / 'assets/item_recognition/calibration.json'
+            calibration.parent.mkdir(parents=True)
+            calibration.write_text('{}', encoding='utf-8')
+            self.observe(collector, 2)
+            self.assertIs(collector.recognizer, original)
+            self.assertEqual(len(original.calls), 1)
+            self.observe(collector, 3)
+            self.assertIs(collector.recognizer, expanded)
+            data = self.dashboard(collector)
+            self.assertEqual(data['completed_runs'], 3)
+            self.assertEqual(data['recognition_failures'], 1)
+            self.assertEqual(data['recognized_icons'], 2)
+
+    def test_changed_inputs_during_refresh_never_replace_stable_snapshot(self):
+        stable = FakeRecognizer()
+        with patch.object(loot, '_recognizer', return_value=stable):
+            collector = loot.Collector(self.root, 'scrolls-a', 'fixture:refresh-race')
+            self.collectors.append(collector)
+            self.observe(collector, 1)
+        def changing_factory(root):
+            calibration = root / 'assets/item_recognition/calibration.json'
+            calibration.write_text('{"changed":true}', encoding='utf-8')
+            return FakeRecognizer()
+        calibration = self.root / 'assets/item_recognition/calibration.json'
+        calibration.parent.mkdir(parents=True)
+        calibration.write_text('{}', encoding='utf-8')
+        with patch.object(loot, '_recognizer', side_effect=changing_factory):
+            self.observe(collector, 2)
+        self.assertIs(collector.recognizer, stable)
+        self.assertEqual(len(stable.calls), 1)
+        data = self.dashboard(collector)
+        self.assertEqual(data['recognition_failures'], 1)
+        self.assertTrue(any('inputs changed' in warning for warning in data['runs'][0]['warnings']))
+
     def test_duplicate_completion_evidence_and_collector_reopen_do_not_inflate(self):
         collector, fake = self.collector()
         completion_id = self.observe(collector)
@@ -131,6 +213,103 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(self.dashboard(first)["completed_runs"], 1)
         self.assertEqual(self.dashboard(next_process)["completed_runs"], 1)
         self.assertEqual(len(loot.LootStore(self.root).sessions()), 2)
+
+    def test_universal_visual_identity_is_saved_per_run_without_relabeling_history(self):
+        collector, fake = self.collector(stage="universal")
+        self.observe(collector, 1)
+        fake.output["stage"] = "rich-b"
+        self.observe(collector, 2)
+        fake.output["stage"] = "unknown"
+        self.observe(collector, 3)
+        data = self.dashboard(collector)
+        self.assertEqual([call[1] for call in fake.calls], ["unknown"] * 3)
+        self.assertEqual(data["session"]["stage"], "universal")
+        self.assertEqual([run["stage"] for run in data["runs"]], ["unknown", "rich-b", "scrolls-a"])
+        self.assertTrue(all(run["automation_stage"] == "universal" for run in data["runs"]))
+        self.assertEqual(data["recognized_icons"], 3)
+        collector.close()
+        self.assertEqual([run["stage"] for run in loot.LootStore(self.root).dashboard(collector.session_id)["runs"]],
+                         ["unknown", "rich-b", "scrolls-a"])
+
+    def test_legacy_session_labels_are_preserved_and_universal_missing_identity_is_unknown(self):
+        legacy, fake = self.collector(stage="rich-b")
+        self.observe(legacy)
+        self.assertEqual(fake.calls[0][1], "rich-b")
+        self.assertEqual(self.dashboard(legacy)["runs"][0]["stage"], "rich-b")
+        # Successive workers share a replay spool; retire the first test worker
+        # before introducing another recognizer with different fixture evidence.
+        legacy.close()
+        output = result([reward()])
+        output.pop("stage")
+        universal, _ = self.collector(output, stage="universal", process="fixture:universal")
+        self.observe(universal)
+        universal.completed(2)
+        universal.missing(2)
+        self.assertTrue(universal.wait_idle(10))
+        self.assertEqual([run["stage"] for run in self.dashboard(universal)["runs"]], ["unknown", "unknown"])
+        self.assertEqual(self.dashboard(legacy)["runs"][0]["stage"], "rich-b")
+
+    def test_universal_replay_uses_saved_event_mode_under_legacy_worker(self):
+        prior, _ = self.collector(stage="universal", process="fixture:prior-universal")
+        prior._stop.set()
+        prior._thread.join(3)
+        prior.completed("saved-universal")
+        self.assertTrue(prior.evidence("saved-universal", self.frame))
+        current, fake = self.collector(stage="rich-b", process="fixture:current-legacy")
+        self.assertTrue(current.wait_idle(10))
+        self.assertEqual(fake.calls[0][1], "unknown")
+        self.assertEqual(self.dashboard(prior)["runs"][0]["stage"], "scrolls-a")
+        self.assertEqual(self.dashboard(current)["completed_runs"], 0)
+
+    def test_verified_results_title_fills_unknown_visual_identity_per_event(self):
+        output = result([reward()])
+        output['stage'] = 'unknown'
+        collector, fake = self.collector(output, stage='universal')
+        for sequence, name in enumerate(('Practice Training [Part 1]', 'Night of Tragedy [A]', None), 1):
+            collector.completed(sequence)
+            self.assertTrue(collector.evidence(sequence, self.frame, mission_name=name))
+            self.assertTrue(collector.wait_idle(10))
+        self.assertEqual([run['stage'] for run in self.dashboard(collector)['runs']],
+                         ['unknown', 'Night of Tragedy [A]', 'Practice Training [Part 1]'])
+        self.assertTrue(all(stage == 'unknown' for _, stage in fake.calls))
+
+    def test_conflicting_verified_results_title_and_visual_identity_stay_unknown(self):
+        collector, _ = self.collector(stage='universal')
+        collector.completed(1)
+        self.assertTrue(collector.evidence(1, self.frame, mission_name='Getting Rich Quick! [B]'))
+        self.assertTrue(collector.wait_idle(10))
+        run = self.dashboard(collector)['runs'][0]
+        self.assertEqual(run['stage'], 'unknown')
+        self.assertIn('disagree', ' '.join(run['warnings']))
+        self.assertEqual(self.dashboard(collector)['recognized_icons'], 1)
+
+    def test_verified_results_title_survives_replay_without_new_worker_attribution(self):
+        output = result([reward()])
+        output.pop('stage')
+        prior, _ = self.collector(output, stage='universal', process='fixture:verified-prior')
+        prior._stop.set()
+        prior._thread.join(3)
+        prior.completed('saved-title')
+        self.assertTrue(prior.evidence('saved-title', self.frame, mission_name='Practice Training [Part 1]'))
+        event = next(iter(prior._events.values()))
+        self.assertEqual(json.loads(prior._path(event).read_text('utf-8'))['mission_name'],
+                         'Practice Training [Part 1]')
+        current, fake = self.collector(output, stage='rich-b', process='fixture:verified-current')
+        self.assertTrue(current.wait_idle(10))
+        self.assertEqual(fake.calls[0][1], 'unknown')
+        self.assertEqual(self.dashboard(prior)['runs'][0]['stage'], 'Practice Training [Part 1]')
+        self.assertEqual(self.dashboard(current)['completed_runs'], 0)
+
+    def test_verified_title_alias_agreement_preserves_visual_label(self):
+        output = result([reward()])
+        output['stage'] = 'All Scrolls [A]'
+        collector, _ = self.collector(output, stage='universal')
+        collector.completed(1)
+        self.assertTrue(collector.evidence(1, self.frame, mission_name='scrolls-a'))
+        self.assertTrue(collector.wait_idle(10))
+        run = self.dashboard(collector)['runs'][0]
+        self.assertEqual(run['stage'], 'All Scrolls [A]')
+        self.assertFalse(any('disagree' in warning for warning in run['warnings']))
 
     def test_confirmed_quantity_requires_verified_acquired_evidence(self):
         observations = [reward(quantity=7, quantity_status="verified"), reward(),

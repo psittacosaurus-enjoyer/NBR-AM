@@ -36,6 +36,48 @@ PACKAGE = "com.reblazing.nbrc"
 ACTIVITY = "com.reblazing.nbrc/com.blazingdreamers.nbrclient.NbrPlayerActivity"
 SIZE = (900, 1600)
 STAMINA_WAIT_SECONDS = 600
+STAMINA_MINUTES = (5, 10, 15, 20, 25)
+
+
+def stamina_wait_minutes():
+    value = read_json(RUNTIME / "manager_settings.json").get("stamina_wait_minutes", STAMINA_WAIT_SECONDS // 60)
+    return value if type(value) is int and value in STAMINA_MINUTES else 5
+
+
+def set_stamina_duration(minutes):
+    if type(minutes) is not int or minutes not in STAMINA_MINUTES:
+        raise ValueError("Stamina duration must be 5, 10, 15, 20, or 25 minutes")
+    with lock("stamina-control"):
+        settings = read_json(RUNTIME / "manager_settings.json")
+        settings["stamina_wait_minutes"] = minutes
+        write_json(RUNTIME / "manager_settings.json", settings)
+    event("stamina_duration_saved", minutes=minutes)
+    print(f"Subsequent stamina waits: {minutes} minutes")
+
+
+def stamina_status(progress):
+    if (STOP.exists() or not alive(progress.get("worker_pid"))
+            or time.time() - progress.get("heartbeat", 0) > 90
+            or progress.get("screen") in {None, "UNKNOWN", "OTHER_FOREGROUND", "GAME_CLOSED"}):
+        return "UNKNOWN"
+    if progress.get("stamina_until", 0) > time.time():
+        return "WAITING"
+    # READY means the delay is over; game observations still gate every input.
+    return "READY"
+
+
+def end_stamina_wait():
+    with lock("control"), lock("stamina-control"):
+        stage = selected_stage()
+        progress = read_json(load_stage(stage)["progress"])
+        if (stamina_status(progress) != "WAITING" or progress.get("pending")
+                or progress.get("manager_controls_version") != 1):
+            raise RuntimeError("No confirmed interruptible stamina wait is active")
+        write_json(RUNTIME / "stamina_request.json", {
+            "worker_pid": progress["worker_pid"], "stage": stage,
+            "stamina_until": progress["stamina_until"], "id": uuid.uuid4().hex})
+    event("stamina_wait_end_requested", stage=stage)
+    print("Stamina delay skip requested; fresh game checks remain required")
 ctypes.windll.kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
 ctypes.windll.kernel32.OpenProcess.restype = wintypes.HANDLE
 ctypes.windll.kernel32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
@@ -49,7 +91,7 @@ ALLOWED_ACTIONS = {
 }
 STATE_ACTIONS = {
     "READY_TO_RETRY": "retry", "READY_TO_START": "start_mission", "IN_BATTLE": None,
-    "MISSION_COMPLETE": "advance_completion", "RESULTS_NEXT": "next", "REWARD_REVEAL": "reveal_rewards",
+    "MISSION_COMPLETE": "advance_completion", "RESULTS_NEXT": "next", "TRIAL_COINS_NEXT": "next", "REWARD_REVEAL": "reveal_rewards",
     "RELEASE_SCREEN": "back", "TEAM_MENU": "back", "TITLE_START": "title_start",
     "NEWS_POPUP": "dismiss_known_popup", "INITIAL_POPUP": "dismiss_known_popup", "WELCOME_POPUP": "dismiss_known_popup",
     "RANK_UP_STAMINA_ACK": "dismiss_known_popup", "RANK_UP_RESULTS": "next",
@@ -84,7 +126,7 @@ def write_json(path, value):
             time.sleep(.05)
 
 
-STAGE_IDS = ("scrolls-a", "rich-b", "practice-part-1", "night-of-tragedy-a")
+STAGE_IDS = ("universal", "scrolls-a", "rich-b", "practice-part-1", "night-of-tragedy-a")
 
 
 def load_stage(stage="scrolls-a"):
@@ -93,6 +135,9 @@ def load_stage(stage="scrolls-a"):
     defaults = {"id": stage, "name": "All Scrolls [A]" if stage == "scrolls-a" else "Getting Rich Quick! [B]",
                 "catalog": "assets/patterns/catalog.json" if stage == "scrolls-a" else "assets/patterns/rich_b.json",
                 "progress": "runtime/farm.json" if stage == "scrolls-a" else "runtime/rich_b.json"}
+    if stage == "universal":
+        defaults.update(name="Universal — current mission", catalog="assets/patterns/catalog.json",
+                        progress="runtime/universal.json")
     if stage == "practice-part-1":
         defaults.update(name="Practice Training [Part 1]", catalog="assets/patterns/catalog.json",
                         progress="runtime/practice_part_1.json", manual_first_battle=True)
@@ -117,7 +162,7 @@ def load_stage(stage="scrolls-a"):
 
 
 def selected_stage():
-    stage = read_json(RUNTIME / "selection.json").get("stage", "scrolls-a")
+    stage = read_json(RUNTIME / "selection.json").get("stage", "universal")
     if stage not in STAGE_IDS:
         raise RuntimeError("Invalid saved stage selection")
     return stage
@@ -173,7 +218,7 @@ def recorded_pids():
     pids = set()
     for path in (RUNTIME / "supervisor.json", RUNTIME / "controller.json",
                  RUNTIME / "farm.json", RUNTIME / "rich_b.json", RUNTIME / "practice_part_1.json",
-                 RUNTIME / "night_of_tragedy_a.json"):
+                 RUNTIME / "night_of_tragedy_a.json", RUNTIME / "universal.json"):
         data = read_json(path)
         pids.update(pid for pid in (data.get("pid"), data.get("worker_pid")) if pid)
     return pids
@@ -198,11 +243,22 @@ def controller_exclusions(stage, supervisor_pid=None, launching_supervisor=False
     return own
 
 
+def verify_mode_switch(stage):
+    previous = selected_stage()
+    if previous != stage and 'universal' in {previous, stage}:
+        for previous_stage in (previous, stage):
+            if read_json(load_stage(previous_stage)['progress']).get('pending'):
+                raise RuntimeError('Resolve the existing pending input before switching automation modes')
+
+
 def select_stage(stage):
     load_stage(stage)
     with lock("control"):
+        if lock_busy("restart"):
+            raise RuntimeError("Full Restart is underway; stage selection refused")
         if lock_busy("worker") or lock_busy("supervisor") or live_controller_pids():
             raise RuntimeError("Farm controller is active; stop and verify it before selecting another stage")
+        verify_mode_switch(stage)
         if selected_stage() != stage:
             write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
         write_json(RUNTIME / "selection.json", {"stage": stage})
@@ -429,6 +485,10 @@ class Detector:
         self.catalog = self.stage["catalog"]
         self.signature = self.catalog.stat().st_mtime_ns
         self.states = read_json(self.catalog, {"states": []})["states"]
+        self.title_guards = []
+        if stage == "universal":
+            from universal import shared_states
+            self.states, self.title_guards = shared_states(ROOT)
         if self.stage["id"] == "practice-part-1":
             # Reuse shared controls with captured practice title guards. No OCR
             # subprocess is needed for routine battle/results polling.
@@ -449,6 +509,8 @@ class Detector:
                     state["anchors"][title_anchors[state["name"]]] = {
                         "region": region, "template": template, "correlation": .96, "difference": 12}
         self.templates = {}
+        for _, _, anchor in self.title_guards:
+            self.templates[anchor["template"]] = cv2.imread(str(ROOT / anchor["template"]), cv2.IMREAD_GRAYSCALE)
         for state in self.states:
             if state.get("action") and (state["action"]["id"] not in ALLOWED_ACTIONS or not state.get("verified_safe")):
                 raise RuntimeError("Unverified/unsafe action in catalog")
@@ -532,8 +594,30 @@ class Detector:
             return "UNKNOWN", None, scores
         priority = max(s.get("priority", 0) for s in matched)
         best = [s for s in matched if s.get("priority", 0) == priority]
+        # Shared layout variants may agree on exactly the same guarded action.
+        if self.stage['id'] == 'universal':
+            unique = {(s['name'], json.dumps(s.get('action'), sort_keys=True)) for s in best}
+            if len(unique) == 1:
+                best = best[:1]
         if len(best) != 1:
             return "UNKNOWN", None, scores
+        if self.stage['id'] == 'universal':
+            titles = set()
+            for state_name, mission_id, anchor in self.title_guards:
+                if state_name != best[0]['name']:
+                    continue
+                x1,y1,x2,y2 = anchor['region']
+                crop = gray[y1:y2,x1:x2]
+                template = self.templates[anchor['template']]
+                if template is not None and crop.shape == template.shape:
+                    score = float(cv2.matchTemplate(crop, template, cv2.TM_CCOEFF_NORMED)[0,0])
+                    difference = float(np.abs(crop.astype(np.int16)-template).mean())
+                    if np.isfinite(score) and score >= .96 and difference <= 12:
+                        titles.add(mission_id)
+            if len(titles) == 1:
+                mission_id = titles.pop()
+                best[0]['mission_id'] = mission_id
+                best[0]['mission_name'] = load_stage(mission_id)['name']
         return best[0]["name"], best[0], scores
 
 
@@ -547,6 +631,11 @@ class Engine:
         self.detector = Detector(stage)
         self.data = read_json(self.progress, {})
         self.data["stage"] = stage
+        # Universal waits survive switching to/from legacy modes. Keep the
+        # legacy modes' independent progress files compatible with 1.0.
+        stamina_sources = STAGE_IDS if stage == 'universal' else ('universal',)
+        self.data['stamina_until'] = max([self.data.get('stamina_until', 0)] +
+            [read_json(load_stage(s)['progress']).get('stamina_until', 0) for s in stamina_sources if s != stage])
         self.data.setdefault("counts", {"started": 0, "completed": 0, "failed": 0, "launches": 0})
         self.last_unknown = 0
         self.unknown_hash = None
@@ -555,7 +644,36 @@ class Engine:
     def save(self):
         self.data["heartbeat"] = time.time()
         self.data["worker_pid"] = os.getpid()
+        self.data["manager_controls_version"] = 1
         write_json(getattr(self, "progress", RUNTIME / "farm.json"), self.data)
+
+    def consume_stamina_request(self):
+        path = RUNTIME / "stamina_request.json"
+        with lock("stamina-control", wait_seconds=2):
+            request = read_json(path)
+            if not request:
+                return
+            path.unlink(missing_ok=True)
+            stage = getattr(self, "stage", {}).get("id", "scrolls-a")
+            if (request.get("worker_pid") != os.getpid() or request.get("stage") != stage
+                    or request.get("stamina_until") != self.data.get("stamina_until")
+                    or self.data.get("stamina_until", 0) <= time.time()
+                    or self.data.get("pending") or STOP.exists()):
+                event("stamina_wait_end_rejected", reason="Wait identity changed or input unresolved")
+                return
+            # Imported deadlines must not resurrect a cancelled account wait on reconnect.
+            for other in STAGE_IDS:
+                if other == stage:
+                    continue
+                progress_path = load_stage(other)["progress"]
+                progress = read_json(progress_path)
+                if 0 < progress.get("stamina_until", 0) <= request["stamina_until"]:
+                    progress["stamina_until"] = 0
+                    write_json(progress_path, progress)
+            self.data["stamina_until"] = 0
+            self.data["blocked"] = "Stamina delay ended; rechecking game state"
+            self.save()
+            event("stamina_wait_ended", stage=stage, request_id=request["id"])
 
     def evidence(self, frame, name):
         dest = RUNTIME / "screenshots"
@@ -583,6 +701,9 @@ class Engine:
         if name != previous:
             event("screen", previous=previous, screen=name, stage=getattr(self, "stage", {}).get("id", "scrolls-a"))
         self.data["screen"] = name
+        if getattr(self, 'stage', {}).get('id') == 'universal' and name == 'READY_TO_START':
+            self.data['mission_name'] = (spec or {}).get('mission_name')
+            self.data['mission_id'] = (spec or {}).get('mission_id', 'unknown')
         if name == "UNKNOWN":
             self.evidence(frame, name)
         pending = self.data.get("pending")
@@ -611,7 +732,7 @@ class Engine:
                   seconds=round(time.time() - pending["time"], 2))
             self.data["pending"] = None
             if pending["id"] == "dismiss_stamina":
-                self.data["stamina_until"] = max(self.data.get("stamina_until", 0), time.time() + STAMINA_WAIT_SECONDS)
+                self.data["stamina_until"] = max(self.data.get("stamina_until", 0), time.time() + pending.get("stamina_wait_seconds", stamina_wait_minutes() * 60))
             if pending["id"] == "start_mission" and name in {"IN_BATTLE", "MISSION_COMPLETE"}:
                 self.data["counts"]["started"] += 1
                 self.data["run"] = {"id": pending["run_id"], "start": pending["time"], "outcome": None}
@@ -647,9 +768,9 @@ class Engine:
         else:
             self.data["blocked"] = None
         self.save()
-        _loot_call(self, "_loot_observe", frame, name, previous_run)
+        _loot_call(self, "_loot_observe", frame, name, previous_run, spec)
 
-    def _loot_observe(self, frame, name, previous_run=None):
+    def _loot_observe(self, frame, name, previous_run=None, spec=None):
         """Reuse the existing results observation; never capture or control input."""
         collector = getattr(self, "loot_collector", None)
         if collector is None:
@@ -663,7 +784,10 @@ class Engine:
             # The collector accepts only completions durably observed this session;
             # historical farm progress cannot fabricate rewards on attachment.
             self._loot_evidence_run = run["id"]
-            _loot_call(collector, "evidence", run["id"], frame)
+            attribution = {}
+            if getattr(self, 'stage', {}).get('id') == 'universal' and (spec or {}).get('mission_name'):
+                attribution['mission_name'] = spec['mission_name']
+            _loot_call(collector, "evidence", run["id"], frame, **attribution)
 
     def halt_loss(self, frame, name, text=""):
         # Persist stop before notification or any further processing of this screen.
@@ -693,6 +817,8 @@ class Engine:
     def tick(self, act=True):
         if STOP.exists() and act:
             return 0
+        if act:
+            self.consume_stamina_request()
         catalog = getattr(self.detector, "catalog", CATALOG)
         if catalog.stat().st_mtime_ns != self.detector.signature:
             self.detector = Detector(getattr(self, "stage", {}).get("id", "scrolls-a"))
@@ -700,6 +826,10 @@ class Engine:
         foreground = self.device.foreground()
         if foreground in {"com.uncube.launcher3"}:
             self.data["screen"] = "GAME_CLOSED"
+            if getattr(self, 'stage', {}).get('id') == 'universal':
+                self.data['blocked'] = 'Restore the game manually to the current mission Start Mission screen'
+                self.save()
+                return 30
             if getattr(self, "stage", {}).get("manual_first_battle"):
                 self.data["blocked"] = f"Manually restore {self.stage['name']} and begin its first battle"
                 self.save()
@@ -743,6 +873,11 @@ class Engine:
         if act and name in {"REVIVAL_PROMPT", "MISSION_FAILED"}:
             return self.halt_loss(frame, name)
         if hasattr(self, "stage"):
+            if self.stage['id'] == 'universal' and not self.mission_verified and name != 'READY_TO_START':
+                self.update(frame, 'UNKNOWN', None)
+                self.data['blocked'] = 'Prepare any mission Start Mission screen, then Start'
+                self.save()
+                return 10
             resuming_night_stamina = (
                 self.stage['id'] == 'night-of-tragedy-a' and name == 'STAMINA_PROMPT'
                 and (self.data.get('pending') or {}).get('id') == 'retry'
@@ -814,7 +949,8 @@ class Engine:
             self.data["pending"] = {"id": action["id"], "source": name, "expected": action["expected"],
                                     "time": time.time(), "run_id": uuid.uuid4().hex}
             if action["id"] == "dismiss_stamina":
-                self.data["stamina_until"] = max(self.data.get("stamina_until", 0), time.time() + STAMINA_WAIT_SECONDS)
+                self.data["pending"]["stamina_wait_seconds"] = stamina_wait_minutes() * 60
+                self.data["stamina_until"] = max(self.data.get("stamina_until", 0), time.time() + self.data["pending"]["stamina_wait_seconds"])
             self.save()  # Persist BEFORE input so interruption cannot replay a click.
             event("action_attempt", stage=getattr(self, "stage", {}).get("id", "scrolls-a"),
                   screen=name, action=action["id"], point=action.get("point"))
@@ -863,6 +999,8 @@ def worker(stage="scrolls-a", supervisor_pid=None):
                 backoff = min(backoff * 2, 60)
             deadline = time.monotonic() + delay
             while not STOP.exists() and time.monotonic() < deadline:
+                if engine and (RUNTIME / "stamina_request.json").exists():
+                    break
                 time.sleep(.25)
         event("worker_stopped", stage=stage)
 
@@ -902,10 +1040,12 @@ def supervise(stage="scrolls-a"):
             _loot_end_process()
 
 
-def start(stage=None, *, expected_stop=None):
+def start(stage=None, *, expected_stop=None, restarting=False):
     stage = stage or selected_stage()
     load_stage(stage)
     with lock("control"):
+        if not restarting and lock_busy("restart"):
+            raise RuntimeError("Full Restart is underway; Start refused")
         if expected_stop is not None and (not STOP.exists() or STOP.read_text(encoding="utf-8") != expected_stop):
             raise InterruptedError("Stop request changed; development restart cancelled")
         state = read_json(RUNTIME / "supervisor.json")
@@ -916,6 +1056,7 @@ def start(stage=None, *, expected_stop=None):
             return
         if lock_busy("worker") or lock_busy("supervisor") or live_controller_pids():
             raise RuntimeError("Existing account controller alive; stop it before restarting")
+        verify_mode_switch(stage)
         if selected_stage() != stage or load_stage(stage)["manual_first_battle"]:
             write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
         write_json(RUNTIME / "selection.json", {"stage": stage})
@@ -961,6 +1102,51 @@ def stop():
     print("Stop persisted; process is finishing its bounded ADB operation.")
 
 
+def full_restart(stage=None, shutdown_timeout=35):
+    """One restart transaction; never discard uncertain input or launch over a live worker."""
+    with lock("restart"):
+        token = "Full Restart " + uuid.uuid4().hex
+        try:
+            with lock("control", wait_seconds=10):
+                current = read_json(RUNTIME / "supervisor.json")
+                old_pids = set(live_controller_pids())
+                running = bool(live_controller_pids()) or lock_busy("worker") or lock_busy("supervisor")
+                stage = current.get("stage", selected_stage()) if running else (stage or selected_stage())
+                load_stage(stage)
+                STOP.write_text(token, encoding="utf-8")
+            event("full_restart_stop_requested", stage=stage)
+            deadline = time.monotonic() + shutdown_timeout
+            while (any(alive(pid) for pid in old_pids) or live_controller_pids()
+                   or lock_busy("worker") or lock_busy("supervisor")):
+                if time.monotonic() >= deadline:
+                    raise RuntimeError("Full Restart shutdown failed: old controller still active; no new process launched")
+                time.sleep(.25)
+            event("full_restart_exit_confirmed", stage=stage)
+            with lock("control", wait_seconds=10):
+                if not STOP.exists() or STOP.read_text(encoding="utf-8") != token:
+                    raise InterruptedError("Stop request changed; Full Restart cancelled")
+                if (any(alive(pid) for pid in old_pids) or live_controller_pids()
+                        or lock_busy("worker") or lock_busy("supervisor")):
+                    raise RuntimeError("Controller became active during restart; no new process launched")
+                progress_path = load_stage(stage)["progress"]
+                progress = read_json(progress_path)
+                for key in ("worker_pid", "heartbeat", "blocked", "screen"):
+                    progress.pop(key, None)
+                write_json(progress_path, progress)
+                write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
+                (RUNTIME / "stamina_request.json").unlink(missing_ok=True)
+            event("full_restart_temporary_state_reset", stage=stage, pending_preserved=bool(progress.get("pending")))
+            event("full_restart_connection_check", stage=stage)
+            Device().connect()
+            event("full_restart_identity_verified", stage=stage)
+            event("full_restart_relaunch", stage=stage, safeguard="Existing worker ADB connection and device identity validation")
+            start(stage, expected_stop=token, restarting=True)
+            event("full_restart_completed", stage=stage)
+        except Exception as exc:
+            event("full_restart_failed", stage=stage, error=str(exc))
+            raise
+
+
 def status(stage=None):
     stage = stage or selected_stage()
     state = read_json(RUNTIME / "supervisor.json")
@@ -969,12 +1155,16 @@ def status(stage=None):
                       "running": bool(live_controller_pids()) or lock_busy("worker") or lock_busy("supervisor"),
                       "active_pids": live_controller_pids(), "stop_requested": STOP.exists(),
                       "supervisor": state, "farm": farm,
+                      "stamina_status": stamina_status(farm),
+                      "stamina_wait_minutes": stamina_wait_minutes(),
+                      "stamina_wait_interruptible": farm.get("manager_controls_version") == 1,
                       "stamina_seconds_remaining": max(0, round(farm.get("stamina_until", 0) - time.time()))}, indent=2))
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["select", "start", "stop", "status", "supervise", "worker", "observe", "step", "replay"])
+    parser.add_argument("command", choices=["select", "start", "stop", "status", "supervise", "worker", "observe", "step", "replay", "restart", "end-stamina-wait", "stamina-duration"])
+    parser.add_argument("--minutes", type=int, choices=STAMINA_MINUTES)
     parser.add_argument("--image")
     parser.add_argument("--brief", action="store_true")
     parser.add_argument("--stage", choices=STAGE_IDS)
@@ -984,6 +1174,9 @@ def main():
     if args.command == "select": select_stage(stage)
     elif args.command == "start": start(stage)
     elif args.command == "stop": stop()
+    elif args.command == "restart": full_restart(args.stage)
+    elif args.command == "end-stamina-wait": end_stamina_wait()
+    elif args.command == "stamina-duration": set_stamina_duration(args.minutes)
     elif args.command == "status": status(stage)
     elif args.command == "supervise": supervise(stage)
     elif args.command == "worker": worker(stage, args.supervisor_pid)

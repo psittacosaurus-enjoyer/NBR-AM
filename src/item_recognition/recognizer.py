@@ -89,6 +89,11 @@ class ItemRecognizer:
         self._records={r['id']:r for r in self.references+self.character_references}
         self.identity_map,self.canonical_groups=canonical_groups(list(self._records.values()),
             (self.calibration or {}).get('canonical_groups',[]) if (self.calibration or {}).get('schema_version',1)>=2 else [],self.supported)
+        self.reference_snapshot={'library_sha256':file_hash(self.db_path),
+            'calibration_sha256':hashlib.sha256(json.dumps(self.calibration,sort_keys=True).encode()).hexdigest() if self.calibration else None,
+            'item_reference_records':len(self.references),'character_reference_records':len(self.character_references),
+            'item_reference_images':sum(r['record_type']=='item' for r in self._images),
+            'character_reference_images':sum(r['record_type']=='character' for r in self._images)}
         if self._images:
             self._pixels=np.stack([r['pixels'] for r in self._images])
             self._mask=np.stack([r['mask'] for r in self._images])[:,:,:,None]
@@ -125,8 +130,15 @@ class ItemRecognizer:
 
     def reference_report(self):
         hashes={file_hash(r['path']) for r in self._images}
+        item_images=[r for r in self._images if r['record_type']=='item']
+        asset_sources={a['local_image_path']:a for record in self.references for a in record['assets'] if a.get('local_image_path')}
+        fandom_paths={str((self.library_root/path).resolve()) for path,a in asset_sources.items()
+                      if any(s.get('source_name')=='Fandom' for s in a.get('source_urls',[]))}
         return {'library_api_verified_records_with_images':self.library_reference_count,'verified_item_records':len(self.references),'verified_character_records':len(self.character_references),
                 'loaded_item_reference_images':sum(r['record_type']=='item' for r in self._images),'loaded_character_reference_images':sum(r['record_type']=='character' for r in self._images),
+                'loaded_fandom_item_images':sum(r['path'] in fandom_paths for r in item_images),
+                'item_identities_with_multiple_images':sum(len(r['reference_paths'])>1 for r in self.references),
+                'item_reference_max_dimensions':[max((r['width'] for r in item_images),default=0),max((r['height'] for r in item_images),default=0)],
                 'library_apis':['ReferenceLibrary.item_references()','ReferenceLibrary.search(record_type=character, status=source_verified/manually_verified, page=..., limit=120)','ReferenceLibrary.get(record_id)'],
                 'canonical_groups':[g for g in self.canonical_groups.values() if len(g['member_ids'])>1],
                 'excluded_non_item_records':len(self.excluded_references),'excluded_references':self.excluded_references,'loaded_reference_images':len(self._images),
@@ -178,8 +190,11 @@ class ItemRecognizer:
         ranked=sorted(best_by_item.values(),key=lambda r:(-r['match_score'],r['item_id']))
         best=ranked[0]; gap=best['match_score']-ranked[1]['match_score'] if len(ranked)>1 else 1.0
         result.update(match_score=best['match_score'],candidates=ranked[:5],score_margin=round(gap,6))
-        limits=self.identity_thresholds.get(best['item_id'],{})
-        threshold=float(limits.get('threshold',self.threshold)); margin=float(limits.get('margin',self.margin))
+        # Calibrated source aliases may no longer be exposed as separate records.
+        # Keep their gates, taking the stricter value when member limits disagree.
+        limits=[self.identity_thresholds[mid] for mid in best['member_ids'] if mid in self.identity_thresholds]
+        threshold=max((float(value.get('threshold',self.threshold)) for value in limits),default=self.threshold)
+        margin=max((float(value.get('margin',self.margin)) for value in limits),default=self.margin)
         result['confidence'].update(threshold=threshold,required_margin=margin)
         if best['match_score']<threshold: result['reason']='Similarity below acceptance threshold'; return result
         if gap<margin:
@@ -259,7 +274,8 @@ class ItemRecognizer:
         path=Path(screenshot_path)
         result={'schema_version':1,'screenshot':str(path.resolve()),'screenshot_sha256':None,'stage':stage,'status':'error',
                 'screen_type':'unknown','reward_region':None,'rewards':[],'unknown_rewards':[],'warnings':[],
-                'totals':{},'summary_fields':[],'diagnostics':{'quantity_defaults_used':False,'input_controls_used':False}}
+                'totals':{},'summary_fields':[],'diagnostics':{'quantity_defaults_used':False,'input_controls_used':False,
+                    'reference_snapshot':dict(self.reference_snapshot)}}
         try:
             raw=path.read_bytes(); result['screenshot_sha256']=hashlib.sha256(raw).hexdigest()
             with Image.open(io.BytesIO(raw)) as im: rgb=np.asarray(im.convert('RGB'))

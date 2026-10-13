@@ -170,6 +170,36 @@ class LiveUpgradeTests(unittest.TestCase):
         self.assertEqual(conflict['identity_status'], 'ambiguous')
         self.assertIsNone(conflict['item_id'])
 
+    def test_hidden_library_alias_retains_its_calibrated_acceptance_gates(self):
+        canonical = self.reference('canonical')
+        alias = self.reference('hidden-alias')
+        self.db.execute('INSERT INTO identity_aliases VALUES(?,?,?)',
+            (alias, canonical, 'Reviewed explicit source identity'))
+        recognizer = self.recognizer(supported=[alias],
+            identity_limits={alias: {'threshold': .99, 'margin': .12}})
+        result = recognizer.match_icon(reference_icon())
+        self.assertEqual(result['identity_status'], 'matched')
+        self.assertEqual(result['item_id'], canonical)
+        self.assertEqual(len(recognizer.references), 1)
+        self.assertEqual(result['confidence']['threshold'], .99)
+        self.assertEqual(result['confidence']['required_margin'], .12)
+        degraded = recognizer.match_icon(ImageEnhance.Brightness(reference_icon()).enhance(.85))
+        self.assertEqual(degraded['identity_status'], 'unknown')
+        self.assertLess(degraded['match_score'], .99)
+
+    def test_canonical_member_gate_conflicts_use_each_stricter_limit(self):
+        canonical = self.reference('canonical')
+        alias = self.reference('hidden-alias')
+        self.db.execute('INSERT INTO identity_aliases VALUES(?,?,?)',
+            (alias, canonical, 'Reviewed explicit source identity'))
+        recognizer = self.recognizer(supported=[canonical], identity_limits={
+            canonical: {'threshold': .90, 'margin': .15},
+            alias: {'threshold': .99, 'margin': .06}})
+        result = recognizer.match_icon(reference_icon())
+        self.assertEqual(result['identity_status'], 'matched')
+        self.assertEqual(result['confidence']['threshold'], .99)
+        self.assertEqual(result['confidence']['required_margin'], .15)
+
     def test_character_lookup_can_be_explicitly_disabled_without_hiding_items(self):
         item = self.reference('item')
         self.reference('character', record_type='character', role='card',

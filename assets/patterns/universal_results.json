@@ -1,0 +1,82 @@
+{
+  "states": [
+    {
+      "name": "TRIAL_COINS_NEXT",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/universal_results/header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            72,
+            289,
+            829,
+            337
+          ],
+          "template": "assets/patterns/universal_results/rare_map_header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            174,
+            668,
+            729,
+            724
+          ],
+          "template": "assets/patterns/universal_results/coins_header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            310,
+            1195,
+            623,
+            1248
+          ],
+          "template": "assets/patterns/universal_results/final_header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            324,
+            1486,
+            591,
+            1567
+          ],
+          "template": "assets/patterns/universal_results/next.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 5,
+      "verified_safe": true,
+      "recovery": true,
+      "notes": "Inspected trial coin-summary results layout; static headers and orange Next only. No mission title, totals, or reward values authorize input.",
+      "action": {
+        "id": "next",
+        "kind": "tap",
+        "point": [
+          457,
+          1526
+        ],
+        "point_anchor": 4,
+        "expected": [
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ]
+      }
+    }
+  ]
+}

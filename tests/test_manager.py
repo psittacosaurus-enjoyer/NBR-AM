@@ -27,7 +27,7 @@ from PySide6.QtWidgets import QApplication
 from manager_gui import ManagerWindow
 
 
-def stopped_snapshot(stage="scrolls-a"):
+def stopped_snapshot(stage="universal"):
     return {"running": False, "active_pids": [], "stop_requested": False,
             "selected_stage": stage, "stage": stage, "supervisor": {}, "farm": {},
             "started_at": None, "worker_running": False, "supervisor_running": False}
@@ -53,6 +53,7 @@ class BackendTests(unittest.TestCase):
 
     def test_stage_catalog_matches_existing_controller(self):
         self.assertEqual(self.backend.stages(), [
+            {"id": "universal", "name": "Universal — current mission"},
             {"id": "scrolls-a", "name": "All Scrolls [A]"},
             {"id": "rich-b", "name": "Getting Rich Quick! [B]"},
             {"id": "practice-part-1", "name": "Practice Training [Part 1]"},
@@ -76,7 +77,7 @@ class BackendTests(unittest.TestCase):
     def test_invalid_controls_never_create_a_process(self):
         with patch.object(manager_backend.subprocess, "run") as run:
             for action, stage in (("kill", None), ("worker", "rich-b"),
-                                  ("start", None), ("select", None),
+                                  ("select", None),
                                   ("start", "unrecognized"), ("stop", "unrecognized")):
                 with self.subTest(action=action, stage=stage), self.assertRaises(ValueError):
                     self.backend.command(action, stage)
@@ -92,6 +93,22 @@ class BackendTests(unittest.TestCase):
             with patch.object(manager_backend.subprocess, "run", side_effect=error):
                 with self.assertRaisesRegex(ControllerError, message):
                     self.backend.command("stop")
+
+    def test_start_without_a_predefined_stage_uses_universal_mode(self):
+        with patch.object(self.backend, "_invoke", return_value="Started") as invoke:
+            self.assertEqual(self.backend.command("start"), "Started")
+        invoke.assert_called_once_with("start", "universal")
+
+    def test_universal_snapshot_preserves_optional_mission_and_run_identity(self):
+        state = running_snapshot("universal")
+        state["farm"]["mission_name"] = "Previously unconfigured mission"
+        with patch.object(self.backend, "_invoke", return_value=json.dumps(state)), \
+             patch.object(manager_backend.farm, "alive", return_value=True), \
+             patch.object(manager_backend, "_process_started", return_value=100):
+            result = self.backend.snapshot()
+        self.assertEqual(result["farm"]["mission_name"], "Previously unconfigured mission")
+        self.assertEqual(result["stage"], "universal")
+        self.assertEqual(result["started_at"], 100)
 
     def test_snapshot_recovers_existing_worker_and_process_elapsed_time(self):
         state = running_snapshot()
@@ -194,7 +211,8 @@ class FakeBackend:
 
     def stages(self):
         self.record("stages")
-        return [{"id": "scrolls-a", "name": "All Scrolls [A]"},
+        return [{"id": "universal", "name": "Universal — current mission"},
+                {"id": "scrolls-a", "name": "All Scrolls [A]"},
                 {"id": "rich-b", "name": "Getting Rich Quick! [B]"},
                 {"id": "practice-part-1", "name": "Practice Training [Part 1]"},
                 {"id": "night-of-tragedy-a", "name": "Night of Tragedy [A]"}]
@@ -271,18 +289,18 @@ class GuiTests(unittest.TestCase):
         window = ManagerWindow(backend=backend, auto_poll=False)
         self.windows.append(window)
         window.show()
-        self.wait_until(lambda: window.stage_combo.count() == 4, "Stages did not load")
+        self.wait_until(lambda: window.stage_combo.count() == 5, "Stages did not load")
         window.refresh()
         window.refresh_connection()
         self.wait_until(lambda: window._snapshot_known and bool(window._connection), "Initial monitoring did not finish")
         return window, backend
 
-    def test_real_window_launches_with_four_friendly_stages_and_stopped_controls(self):
+    def test_real_window_launches_with_universal_default_and_optional_legacy_stages(self):
         window, backend = self.window()
         self.assertTrue(window.isVisible())
         self.assertEqual(window.windowTitle(), "NBR Automation Manager")
-        self.assertEqual([window.stage_combo.itemText(i) for i in range(4)],
-                         ["All Scrolls [A]", "Getting Rich Quick! [B]", "Practice Training [Part 1]",
+        self.assertEqual([window.stage_combo.itemText(i) for i in range(5)],
+                         ["Universal — current mission", "All Scrolls [A]", "Getting Rich Quick! [B]", "Practice Training [Part 1]",
                           "Night of Tragedy [A]"])
         self.assertEqual(window.status_text, "STOPPED")
         self.assertTrue(window.start_button.isEnabled())
@@ -296,6 +314,31 @@ class GuiTests(unittest.TestCase):
 
     def test_night_selection_start_stop_uses_existing_controller_and_locks_dropdown(self):
         self.check_manual_stage_selection_start_stop("night-of-tragedy-a", "Night of Tragedy [A]")
+
+    def test_universal_start_without_selection_and_reopen_preserves_detected_mission(self):
+        first, backend = self.window()
+        self.assertEqual(first.stage_combo.currentData(), "universal")
+        self.assertEqual(backend.commands, [])
+        QTest.mouseClick(first.start_button, Qt.MouseButton.LeftButton)
+        self.wait_until(lambda: first.status_text == "RUNNING")
+        self.assertEqual(backend.commands, [("start", "universal")])
+        backend.state["farm"]["mission_name"] = "Unconfigured mission <A>"
+        first.close()
+        reopened, _ = self.window(backend)
+        self.assertEqual(reopened.stage_combo.currentData(), "universal")
+        self.assertIn("Unconfigured mission <A>", reopened.current_stage_label.text())
+        self.assertFalse(reopened.stage_combo.isEnabled())
+        self.assertEqual(backend.commands, [("start", "universal")])
+        QTest.mouseClick(reopened.stop_button, Qt.MouseButton.LeftButton)
+        self.wait_until(lambda: reopened.status_text == "STOPPED")
+        self.assertEqual(backend.commands[-1], ("stop", None))
+        self.assertNotIn("Unconfigured mission", reopened.current_stage_label.text())
+
+    def test_universal_unidentified_mission_has_no_legacy_attribution(self):
+        window, backend = self.window(FakeBackend(running_snapshot("universal")))
+        self.assertIn("not identified", window.current_stage_label.text())
+        self.assertNotIn("Scrolls", window.current_stage_label.text())
+        self.assertEqual(backend.commands, [])
 
     def check_manual_stage_selection_start_stop(self, stage, name):
         window, backend = self.window()
@@ -328,22 +371,38 @@ class GuiTests(unittest.TestCase):
         self.assertEqual(second.stage_combo.currentData(), "rich-b")
         self.assertEqual(backend.commands, [])
 
-    def test_stage_change_persists_through_existing_select_command_and_reopen(self):
+    def test_legacy_selection_persists_in_cli_but_stopped_reopen_defaults_universal(self):
         window, backend = self.window()
         window.stage_combo.setCurrentIndex(window.stage_combo.findData("rich-b"))
         self.wait_until(lambda: backend.commands == [("select", "rich-b")] and
                         window.stage_combo.isEnabled())
         self.assertEqual(window.stage_combo.currentData(), "rich-b")
+        window.refresh()
+        self.wait_until(lambda: not window._poll_busy)
+        self.assertEqual(window.stage_combo.currentData(), "rich-b")
         window.close()
         reopened, _ = self.window(backend)
-        self.assertEqual(reopened.stage_combo.currentData(), "rich-b")
+        self.assertEqual(reopened.stage_combo.currentData(), "universal")
+        self.assertEqual(backend.state["selected_stage"], "rich-b")
         self.assertEqual(backend.commands, [("select", "rich-b")])
+
+    def test_stopped_saved_night_defaults_universal_without_writing_selection(self):
+        window, backend = self.window(FakeBackend(stopped_snapshot("night-of-tragedy-a")))
+        self.assertEqual(window.stage_combo.currentData(), "universal")
+        self.assertEqual(backend.commands, [])
+        self.assertEqual(backend.state["selected_stage"], "night-of-tragedy-a")
+        window.refresh()
+        self.wait_until(lambda: not window._poll_busy)
+        self.assertEqual(window.stage_combo.currentData(), "universal")
+        QTest.mouseClick(window.start_button, Qt.MouseButton.LeftButton)
+        self.wait_until(lambda: window.status_text == "RUNNING")
+        self.assertEqual(backend.commands, [("start", "universal")])
 
     def test_start_stop_requests_are_async_and_duplicate_clicks_are_blocked(self):
         window, backend = self.window(FakeBackend(stopped_snapshot("rich-b")))
         backend.command_gate = threading.Event()
         QTest.mouseClick(window.start_button, Qt.MouseButton.LeftButton)
-        self.wait_until(lambda: backend.commands == [("start", "rich-b")])
+        self.wait_until(lambda: backend.commands == [("start", "universal")])
         window.start_automation()
         window.start_automation()
         self.assertEqual(window.status_text, "STOPPED", "A click must not invent a running process")
@@ -358,14 +417,14 @@ class GuiTests(unittest.TestCase):
         QTest.qWait(100)
         timer.stop()
         self.assertGreaterEqual(len(ticks), 3, "GUI event loop blocked during controller command")
-        self.assertEqual(backend.commands, [("start", "rich-b")])
+        self.assertEqual(backend.commands, [("start", "universal")])
         backend.command_gate.set()
         self.wait_until(lambda: window.status_text == "RUNNING" and window.stop_button.isEnabled())
         backend.command_gate = threading.Event()
         QTest.mouseClick(window.stop_button, Qt.MouseButton.LeftButton)
         self.wait_until(lambda: len(backend.commands) == 2)
         window.stop_automation()
-        self.assertEqual(backend.commands, [("start", "rich-b"), ("stop", None)])
+        self.assertEqual(backend.commands, [("start", "universal"), ("stop", None)])
         self.assertFalse(window.start_button.isEnabled())
         self.assertFalse(window.stop_button.isEnabled())
         backend.command_gate.set()
@@ -491,7 +550,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("Fixture duplicate controller refusal", window.error_label.text())
         self.assertIn("Fixture duplicate controller refusal", window.log_view.toPlainText())
         self.assertFalse(window.stop_button.isEnabled())
-        self.assertEqual(backend.commands, [("start", "scrolls-a")])
+        self.assertEqual(backend.commands, [("start", "universal")])
 
     def test_disconnection_allows_explicit_guarded_start_and_existing_run_stop(self):
         window, backend = self.window()
@@ -503,7 +562,7 @@ class GuiTests(unittest.TestCase):
         self.assertIn("BlueStacks unavailable", window.error_label.text())
         QTest.mouseClick(window.start_button, Qt.MouseButton.LeftButton)
         self.wait_until(lambda: window.status_text == "RUNNING")
-        self.assertEqual(backend.commands, [("start", "scrolls-a")])
+        self.assertEqual(backend.commands, [("start", "universal")])
         self.assertTrue(window.stop_button.isEnabled())
         self.assertFalse(window.start_button.isEnabled())
 

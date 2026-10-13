@@ -113,6 +113,28 @@ function renderValue(value, depth = 0) {
   }
   return node('span', '', String(value));
 }
+function renderProvenance(record) {
+  const sources = Array.isArray(record.sources) ? record.sources : [];
+  $('provenance-section').hidden = sources.length === 0;
+  $('provenance').replaceChildren(...sources.map((source, index) => {
+    const group = node('div', 'source-entry');
+    const url = sourceURL(source.source_url);
+    const heading = node(url ? 'a' : 'strong', 'source-link', source.source_name || `Source ${index + 1}`);
+    if (url) { heading.href = url; heading.target = '_blank'; heading.rel = 'noopener noreferrer'; }
+    group.append(heading);
+    const facts = node('dl');
+    for (const [label, value] of [['Original name', source.display_name], ['Game identifier', source.game_id], ['Source key', source.source_key], ['Category', source.category], ['Element', source.element], ['Rarity', source.rarity], ['Verification', statusLabel(source.verification_status)]]) {
+      if (value !== null && value !== undefined && value !== '') facts.append(node('dt', '', label), node('dd', '', String(value)));
+    }
+    group.append(facts);
+    let metadata = source.metadata;
+    if (typeof metadata === 'string') { try { metadata = JSON.parse(metadata); } catch {} }
+    if (metadata !== null && metadata !== undefined && metadata !== '' && (typeof metadata !== 'object' || Object.keys(metadata).length)) {
+      const details = node('details', 'source-metadata'); details.append(node('summary', '', 'Original source metadata'), renderValue(metadata)); group.append(details);
+    }
+    return group;
+  }));
+}
 function renderPreview(asset, index) {
   const record = state.active, image = $('preview'), path = asset.local_image_path || asset.local_path || asset.path || record.local_image_path;
   const url = localAsset(path); image.hidden = !url; $('preview-missing').hidden = Boolean(url); image.alt = record.display_name || 'Reference image';
@@ -123,8 +145,17 @@ function renderPreview(asset, index) {
   if (asset.role) info.append(node('p', '', `Image role: ${humanize(asset.role)}`));
   const hash = asset.sha256 || asset.content_hash; if (hash) info.append(node('p', '', `SHA-256: ${hash}`));
   if (url) { const link = node('a', '', 'Open original local image ↗'); link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer'; info.append(link); }
-  const originalURL = sourceURL(asset.source_image_url || record.source_image_url);
-  if (originalURL) { const line = node('p'); const link = node('a', '', 'View source image ↗'); link.href = originalURL; link.target = '_blank'; link.rel = 'noopener noreferrer'; line.append(link); info.append(line); }
+  const originals = Array.isArray(asset.source_urls) ? asset.source_urls : [];
+  const imageSources = [...originals, asset.source_image_url || record.source_image_url].filter(Boolean);
+  const seenURLs = new Set();
+  for (const source of imageSources) {
+    const originalURL = sourceURL(typeof source === 'string' ? source : source.source_image_url || source.source_url || source.url);
+    if (!originalURL || seenURLs.has(originalURL)) continue;
+    seenURLs.add(originalURL);
+    const line = node('p'); const name = typeof source === 'object' && source.source_name;
+    const link = node('a', '', name ? `View ${name} source image ↗` : `View source image ${seenURLs.size} ↗`);
+    link.href = originalURL; link.target = '_blank'; link.rel = 'noopener noreferrer'; line.append(link); info.append(line);
+  }
   for (const [i, button] of [...$('asset-strip').children].entries()) { button.classList.toggle('active', i === index); button.setAttribute('aria-pressed', String(i === index)); }
 }
 function renderDetails(record) {
@@ -132,18 +163,21 @@ function renderDetails(record) {
   $('detail-title').textContent = record.display_name || 'Unnamed reference'; $('detail-badges').replaceChildren(badge(record.verification_status));
   if (record.category) $('detail-badges').append(node('span', 'badge', record.category));
   $('record-facts').replaceChildren(); addFact('Game identifier', record.game_id); addFact('Element', record.element); addFact('Rarity', record.rarity); addFact('Library ID', record.id);
+  if (record.canonical_id) addFact('Canonical ID', record.canonical_id);
+  if (record.aliases?.length) addFact('Alias IDs', record.aliases.map(alias => typeof alias === 'string' ? alias : alias.alias_id || alias.id).filter(Boolean).join(', '));
   if (record.source_key) addFact('Source key', record.source_key);
   if (record.collected_at || record.collection_timestamp) addFact('Collected', record.collected_at || record.collection_timestamp);
   if (record.updated_at) addFact('Updated', record.updated_at);
   if (record.tags?.length) addFact('Tags', record.tags.join(', '));
   const url = sourceURL(record.source_url); $('source-link').hidden = !url; if (url) $('source-link').href = url; else $('source-link').removeAttribute('href');
+  renderProvenance(record);
   let metadata = record.metadata || {}; if (typeof metadata === 'string') { try { metadata = JSON.parse(metadata); } catch {} }
   $('metadata').replaceChildren(renderValue(metadata)); if (typeof metadata === 'object' && !Object.keys(metadata).length) $('metadata').replaceChildren(node('p', 'muted', 'No additional metadata was provided by the source.'));
   const assets = record.assets?.length ? record.assets : [{ local_image_path: record.local_image_path, thumbnail_path: record.thumbnail_path, content_hash: record.content_hash }];
   $('asset-strip').replaceChildren(...assets.map((asset, index) => {
     const button = node('button', 'asset-option'); button.type = 'button'; button.setAttribute('aria-label', `Preview image ${index + 1}`); addImage(button, asset.thumbnail_path || asset.local_image_path || asset.local_path || asset.path, `${record.display_name || 'Reference'}, image ${index + 1}`); button.addEventListener('click', () => renderPreview(asset, index)); return button;
   })); $('asset-strip').hidden = assets.length <= 1;
-  const primaryIndex = Math.max(0, assets.findIndex(asset => asset.local_image_path === record.local_image_path && record.local_image_path));
+  const primaryIndex = record.canonical_id ? 0 : Math.max(0, assets.findIndex(asset => asset.local_image_path === record.local_image_path && record.local_image_path));
   renderPreview(assets[primaryIndex], primaryIndex);
   const related = record.related || []; $('related-section').hidden = related.length === 0; $('related').replaceChildren(...related.map(item => {
     const relation = item.record || item; const button = node('button', '', relation.display_name || relation.name || relation.id || item.related_id || 'Related reference'); button.type = 'button'; const id = relation.id || item.related_id;

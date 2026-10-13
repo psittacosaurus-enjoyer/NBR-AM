@@ -55,6 +55,20 @@ def initialize(db):
     CREATE INDEX IF NOT EXISTS records_type ON records(record_type);
     CREATE INDEX IF NOT EXISTS records_category ON records(category);
     CREATE INDEX IF NOT EXISTS asset_hash ON assets(sha256);
+    CREATE TABLE IF NOT EXISTS record_sources (
+      source_name TEXT NOT NULL, source_key TEXT NOT NULL, record_id TEXT REFERENCES records(id),
+      source_url TEXT NOT NULL, display_name TEXT, game_id TEXT, category TEXT, element TEXT,
+      rarity TEXT, metadata TEXT NOT NULL, verification_status TEXT NOT NULL, content_hash TEXT,
+      PRIMARY KEY(source_name,source_key));
+    CREATE TABLE IF NOT EXISTS asset_sources (
+      source_image_url TEXT PRIMARY KEY, asset_id TEXT REFERENCES assets(id), source_name TEXT,
+      source_page_url TEXT, metadata TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS identity_aliases (
+      alias_id TEXT PRIMARY KEY REFERENCES records(id), canonical_id TEXT NOT NULL REFERENCES records(id),
+      evidence TEXT NOT NULL, CHECK(alias_id!=canonical_id));
+    CREATE TABLE IF NOT EXISTS asset_preferences (
+      record_id TEXT REFERENCES records(id), asset_id TEXT REFERENCES assets(id), fidelity_score REAL,
+      basis TEXT NOT NULL, PRIMARY KEY(record_id,asset_id));
     CREATE VIRTUAL TABLE IF NOT EXISTS record_search USING fts5(record_id UNINDEXED, search_text, tokenize='unicode61');
     ''')
     db.commit()
@@ -112,11 +126,15 @@ def index(db):
         r = effective(row)
         filenames = [x[0] for x in db.execute('SELECT original_filename FROM assets JOIN record_assets ON assets.id=asset_id WHERE record_id=?', (r['id'],))]
         terms = [r['display_name'], r['game_id'], r['category'], r['element'], r['rarity'], r['notes'], *r['tags'], *filenames, r['source_key'], json.dumps(r['metadata'], ensure_ascii=False)]
+        if has_table(db,'record_sources'):
+            terms.extend(str(x) for row in db.execute('SELECT display_name,game_id,metadata FROM record_sources WHERE record_id=?',(r['id'],)) for x in row if x)
         db.execute('INSERT INTO record_search VALUES(?,?)', (r['id'], ' '.join(str(x) for x in terms if x is not None)))
 
 def search(db, q='', record_type='', category='', element='', rarity='', status='', page=1, limit=60):
     page, limit = max(1,int(page)), min(120,max(1,int(limit)))
     clauses, params = [], []
+    if has_table(db,'identity_aliases'):
+        clauses.append('r.id NOT IN (SELECT alias_id FROM identity_aliases)')
     if q.strip():
         # Literal token prefix queries, never accept raw FTS syntax from the user.
         query = ' AND '.join('"' + token.replace('"','""') + '"*' for token in q.split())
@@ -130,14 +148,45 @@ def search(db, q='', record_type='', category='', element='', rarity='', status=
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
     total = db.execute('SELECT count(*) FROM records r LEFT JOIN annotations a ON a.record_id=r.id' + where, params).fetchone()[0]
     rows = db.execute(SELECT + where + ' ORDER BY COALESCE(a.display_name,r.display_name) COLLATE NOCASE,r.id LIMIT ? OFFSET ?', params+[limit,(page-1)*limit]).fetchall()
-    return dict(records=[effective(r) for r in rows], total=total, page=page, limit=limit)
+    records=[effective(r) for r in rows]
+    if has_table(db,'asset_preferences'):
+        for r in records:
+            preferred=db.execute('SELECT x.local_image_path,x.thumbnail_path FROM asset_preferences p JOIN assets x ON x.id=p.asset_id WHERE p.record_id=? AND x.status="ok" ORDER BY p.fidelity_score DESC,x.id LIMIT 1',(r['id'],)).fetchone()
+            if preferred: r['local_image_path'],r['thumbnail_path']=preferred
+    return dict(records=records, total=total, page=page, limit=limit)
 
 def get_record(db, rid):
     row = db.execute(SELECT+' WHERE r.id=?', (rid,)).fetchone()
     if row is None:
         return None
     r = effective(row)
-    r['assets'] = [dict(x) for x in db.execute('SELECT x.*,ra.role FROM assets x JOIN record_assets ra ON ra.asset_id=x.id WHERE ra.record_id=? ORDER BY ra.role,x.id',(rid,))]
+    canonical=rid
+    if has_table(db,'identity_aliases'):
+        alias=db.execute('SELECT canonical_id FROM identity_aliases WHERE alias_id=?',(rid,)).fetchone()
+        if alias: canonical=alias[0]
+    r['canonical_id']=canonical
+    members=[canonical]
+    if has_table(db,'identity_aliases'):
+        members.extend(x[0] for x in db.execute('SELECT alias_id FROM identity_aliases WHERE canonical_id=? ORDER BY alias_id',(canonical,)))
+    r['aliases']=[mid for mid in members if mid!=canonical]
+    slots=','.join('?' for _ in members)
+    r['assets']=[dict(x) for x in db.execute('SELECT x.*,ra.role FROM assets x JOIN record_assets ra ON ra.asset_id=x.id WHERE ra.record_id IN ('+slots+') ORDER BY ra.role,x.id',members)]
+    seen=set();r['assets']=[a for a in r['assets'] if not (a['id'] in seen or seen.add(a['id']))]
+    priorities={}
+    if has_table(db,'asset_preferences'):
+        priorities={x[0]:x[1] for x in db.execute('SELECT asset_id,fidelity_score FROM asset_preferences WHERE record_id=?',(canonical,))}
+    r['assets'].sort(key=lambda a:(-priorities.get(a['id'],0),a['role'],a['id']))
+    for a in r['assets']:
+        a['source_urls']=[{'source_name':'GachaWiki' if 'gachawiki.net' in a['source_image_url'] else 'Fandom','source_url':a['source_image_url']}]
+        if has_table(db,'asset_sources'):
+            a['source_urls'].extend(dict(s) for s in db.execute('SELECT source_name,source_image_url source_url,source_page_url,metadata FROM asset_sources WHERE asset_id=?',(a['id'],)))
+    downloaded=next((a for a in r['assets'] if a['status']=='ok' and a['local_image_path']),None)
+    if downloaded and priorities:
+        r['local_image_path']=downloaded['local_image_path'];r['thumbnail_path']=downloaded['thumbnail_path']
+    r['sources']=[]
+    if has_table(db,'record_sources'):
+        for s in db.execute('SELECT * FROM record_sources WHERE record_id IN ('+slots+') ORDER BY source_name,source_key',members):
+            value=dict(s);value['metadata']=json.loads(value['metadata']);r['sources'].append(value)
     r['related'] = [dict(x) for x in db.execute('''SELECT r.id,r.record_type,COALESCE(a.display_name,r.display_name) display_name,l.kind
        FROM relationships l JOIN records r ON r.id=CASE WHEN l.from_id=? THEN l.to_id ELSE l.from_id END
        LEFT JOIN annotations a ON a.record_id=r.id WHERE l.from_id=? OR l.to_id=? ORDER BY r.display_name LIMIT 200''',(rid,rid,rid))]
@@ -166,7 +215,8 @@ def annotate(db, rid, changes):
     return get_record(db,rid)
 
 def stats(db):
-    by_type = dict(db.execute('SELECT record_type,count(*) FROM records GROUP BY record_type'))
+    canonical_filter=' WHERE id NOT IN (SELECT alias_id FROM identity_aliases)' if has_table(db,'identity_aliases') else ''
+    by_type = dict(db.execute('SELECT record_type,count(*) FROM records'+canonical_filter+' GROUP BY record_type'))
     facets = {}
     for name,expr in [('categories','COALESCE(a.category,r.category)'),('elements','r.element'),('rarities','r.rarity'),('statuses','COALESCE(a.verification_status,r.verification_status)')]:
         facets[name] = [x[0] for x in db.execute('SELECT DISTINCT '+expr+' FROM records r LEFT JOIN annotations a ON a.record_id=r.id WHERE '+expr+' IS NOT NULL ORDER BY 1')]
@@ -176,7 +226,8 @@ def export(db, directory=ROOT/'catalogs'):
     directory = Path(directory)
     directory.mkdir(parents=True,exist_ok=True)
     for kind,filename in [('character','characters'),('item','items'),('stage','stages'),('interface','interface'),('miscellaneous','miscellaneous')]:
-        records=[get_record(db,row[0]) for row in db.execute('SELECT id FROM records WHERE record_type=? ORDER BY id',(kind,)).fetchall()]
+        extra=' AND id NOT IN (SELECT alias_id FROM identity_aliases)' if has_table(db,'identity_aliases') else ''
+        records=[get_record(db,row[0]) for row in db.execute('SELECT id FROM records WHERE record_type=?'+extra+' ORDER BY id',(kind,)).fetchall()]
         atomic_json(directory/(filename+'.json'),records)
     atomic_json(directory/'assets.json',[dict(r) for r in db.execute('SELECT * FROM assets ORDER BY id')])
 
@@ -196,11 +247,17 @@ class ReferenceLibrary:
     def item_references(self,manually_verified_only=False):
         statuses=('manually_verified',) if manually_verified_only else ('source_verified','manually_verified')
         for status in statuses:
-            rows=self.db.execute(SELECT+" WHERE r.record_type='item' AND COALESCE(a.verification_status,r.verification_status)=?",(status,)).fetchall()
+            extra=' AND r.id NOT IN (SELECT alias_id FROM identity_aliases)' if has_table(self.db,'identity_aliases') else ''
+            rows=self.db.execute(SELECT+" WHERE r.record_type='item' AND COALESCE(a.verification_status,r.verification_status)=?"+extra,(status,)).fetchall()
             for row in rows:
                 r=get_record(self.db,row['id'])
+                r['artwork_assets']=[a for a in r['assets'] if a.get('role')=='artwork']
+                r['assets']=[a for a in r['assets'] if a.get('role')!='artwork']
                 r['reference_paths']=list(dict.fromkeys(str((ROOT/x['local_image_path']).resolve()) for x in r['assets'] if x['status']=='ok' and x['local_image_path']))
                 if r['reference_paths']: yield r
     def close(self): self.db.close()
     def __enter__(self): return self
     def __exit__(self,*args): self.close()
+
+def has_table(db,name):
+    return db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",(name,)).fetchone() is not None

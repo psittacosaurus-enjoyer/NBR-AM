@@ -62,7 +62,7 @@ class ControllerBackend:
     def _invoke(self, action, stage=None, timeout=45):
         args = [str(self.python), str(self.root / "src" / "farm.py"), action]
         if stage is not None:
-            args.extend(["--stage", stage])
+            args.extend(["--minutes" if action == "stamina-duration" else "--stage", str(stage)])
         try:
             result = subprocess.run(args, cwd=self.root, capture_output=True, text=True,
                                     encoding="utf-8", errors="replace", timeout=timeout,
@@ -79,14 +79,22 @@ class ControllerBackend:
         return result.stdout.strip()
 
     def command(self, action, stage=None):
-        if action not in {"start", "stop", "select"}:
-            raise ValueError("Only start, stop, and select commands are supported")
+        if action not in {"start", "stop", "select", "restart", "end-stamina-wait", "stamina-duration"}:
+            raise ValueError("Unsupported manager command")
+        if action == "stamina-duration":
+            if type(stage) is not int or stage not in (5, 10, 15, 20, 25):
+                raise ValueError("Stamina duration must be 5, 10, 15, 20, or 25 minutes")
+            return self._invoke(action, stage)
+        if action == "start" and stage is None:
+            stage = "universal"
         if stage is not None and stage not in farm.STAGE_IDS:
             raise ValueError("Unknown farming stage")
-        if action in {"start", "select"} and stage is None:
+        if action == "select" and stage is None:
             raise ValueError("Select a farming stage first")
-        if action == "stop":
+        if action in {"stop", "end-stamina-wait"}:
             stage = None  # Existing stop is account-wide, regardless of selection.
+        if action == "restart":
+            return self._invoke(action, stage, timeout=150)
         return self._invoke(action, stage)
 
     def snapshot(self):

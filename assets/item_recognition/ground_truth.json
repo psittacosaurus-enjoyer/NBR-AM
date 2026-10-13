@@ -1140,6 +1140,57 @@
       "rewards": [],
       "sealed_regions": [],
       "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    },
+    {
+      "path": "tests/fixtures/tsunade/ready_to_retry_body_crystal.png",
+      "sha256": "94a13723f56306d44cd8e5561e9f5ac1917c8e2e417692c94a35832dbddf96f6",
+      "stage": "Wager with Tsunade [A]",
+      "split": "calibration",
+      "screen_type": "acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_6d6a5da5c924f0df37192860",
+          "item_name": "Limit Break Crystal \"Body Crystal\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "element": "Body",
+          "identity_status": "manually_labeled",
+          "reference_path": "runtime/library/assets/items/bbf6645b12e7c408829a6178da7bc5f96cc3f32f8c60b747ebd2297d7927bdb2.png",
+          "visual_description": "Blue faceted crystal with white Body mark, blue Body badge and four-star rarity frame."
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_6d6a5da5c924f0df37192860",
+          "item_name": "Limit Break Crystal \"Body Crystal\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "element": "Body",
+          "identity_status": "manually_labeled",
+          "reference_path": "runtime/library/assets/items/bbf6645b12e7c408829a6178da7bc5f96cc3f32f8c60b747ebd2297d7927bdb2.png",
+          "visual_description": "Blue faceted crystal with white Body mark, blue Body badge and four-star rarity frame."
+        }
+      ],
+      "validation": "Independent visual inspection by Codex of fresh user-prepared acc1 acquired rewards and independently opened source-linked Fandom Card-0949.png. Shape, color, badge, Body mark and four-star frame agree. Library source card number 949 verified; no recognizer output used to establish labels.",
+      "excluded_region": "Completion Reward Conditions below y1180, including the same crystal, chest and 13.4% field, are not acquired drops."
     }
   ],
   "quantities": "No acquired icon has an explicit quantity label in these five positives. Star numerals are rarity. Do not substitute quantity1.",

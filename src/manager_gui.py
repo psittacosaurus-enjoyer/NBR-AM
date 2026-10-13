@@ -1,8 +1,9 @@
-"""NBR Automation Manager 1.1: farming controls and passive session loot history."""
+"""NBR Automation Manager 1.2: universal farming and passive session loot history."""
 
 from __future__ import annotations
 
 import sys
+import math
 import threading
 import time
 from datetime import datetime
@@ -52,6 +53,7 @@ class ManagerWindow(QMainWindow):
         self._poll_error = ""
         self._exit_error = ""
         self._stage_error = ""
+        self._desired_stage = "universal"
         self._started_at = None
         self._elapsed_seconds = 0
         self._state = "STOPPED"
@@ -138,7 +140,7 @@ class ManagerWindow(QMainWindow):
         title = QLabel("NBR Automation Manager")
         title.setObjectName("title")
         header.addWidget(title)
-        version = QLabel("v1.1")
+        version = QLabel("v1.2")
         version.setObjectName("muted")
         header.addStretch()
         header.addWidget(version)
@@ -179,18 +181,19 @@ class ManagerWindow(QMainWindow):
         status_line.addLayout(runtime_group)
         layout.addLayout(status_line)
 
-        stage_caption = QLabel("FARMING STAGE")
+        stage_caption = QLabel("FARMING MODE  ·  LEGACY STAGES OPTIONAL")
         stage_caption.setObjectName("section")
         layout.addWidget(stage_caption)
         self.stage_combo = QComboBox()
-        self.stage_combo.setAccessibleName("Farming stage")
+        self.stage_combo.setAccessibleName("Farming mode or optional legacy stage")
         self.stage_combo.setToolTip("Stage selection is locked while acc1 automation is active.")
         self.stage_combo.currentIndexChanged.connect(self._stage_changed)
         layout.addWidget(self.stage_combo)
         self.current_stage_label = QLabel("Current stage: checking…")
+        self.current_stage_label.setTextFormat(Qt.TextFormat.PlainText)
         self.current_stage_label.setObjectName("muted")
         layout.addWidget(self.current_stage_label)
-        stage_help = QLabel("Practice Training [Part 1] and Night of Tragedy [A]: manually begin the first battle, then press Start. For other stages, prepare the selected stage’s Start Mission screen in acc1.")
+        stage_help = QLabel("Universal: open any mission’s Start Mission screen in acc1, then press Start. The game handles combat automatically. Optional legacy Practice Training and Night of Tragedy modes still require manually beginning the first battle.")
         stage_help.setObjectName("muted")
         stage_help.setWordWrap(True)
         layout.addWidget(stage_help)
@@ -206,9 +209,44 @@ class ManagerWindow(QMainWindow):
         self.stop_button.setObjectName("stop")
         self.stop_button.setMinimumHeight(51)
         self.stop_button.clicked.connect(self.stop_automation)
+        self.restart_button = QPushButton("Full Restart")
+        self.restart_button.setMinimumHeight(51)
+        self.restart_button.setToolTip("Safely stop and confirm all old farming processes have exited, then relaunch with device identity checks.")
+        self.restart_button.clicked.connect(self.restart_automation)
         controls.addWidget(self.start_button)
         controls.addWidget(self.stop_button)
+        controls.addWidget(self.restart_button)
         layout.addLayout(controls)
+
+        stamina_card = QFrame()
+        stamina_card.setObjectName("card")
+        stamina_layout = QVBoxLayout(stamina_card)
+        stamina_layout.setContentsMargins(16, 13, 16, 13)
+        stamina_line = QHBoxLayout()
+        stamina_caption = QLabel("STAMINA")
+        stamina_caption.setObjectName("section")
+        self.stamina_status_label = QLabel("UNKNOWN")
+        self.stamina_status_label.setToolTip("READY means the controller's wait has elapsed; fresh game and stamina checks still gate farming.")
+        self.stamina_remaining_label = QLabel("Remaining: —")
+        stamina_line.addWidget(stamina_caption)
+        stamina_line.addWidget(self.stamina_status_label)
+        stamina_line.addStretch()
+        stamina_line.addWidget(self.stamina_remaining_label)
+        stamina_layout.addLayout(stamina_line)
+        stamina_controls = QHBoxLayout()
+        self.stamina_duration_combo = QComboBox()
+        self.stamina_duration_combo.setAccessibleName("Stamina wait duration")
+        self.stamina_duration_combo.setToolTip("Saved by the controller; applies to subsequent stamina waits.")
+        for minutes in (5, 10, 15, 20, 25):
+            self.stamina_duration_combo.addItem(f"{minutes} minutes", minutes)
+        self.stamina_duration_combo.currentIndexChanged.connect(self._stamina_duration_changed)
+        self.end_stamina_wait_button = QPushButton("End Stamina Wait")
+        self.end_stamina_wait_button.setToolTip("Interrupt the controller's wait and recheck game state and stamina. Insufficient stamina starts another wait.")
+        self.end_stamina_wait_button.clicked.connect(self.end_stamina_wait)
+        stamina_controls.addWidget(self.stamina_duration_combo)
+        stamina_controls.addWidget(self.end_stamina_wait_button)
+        stamina_layout.addLayout(stamina_controls)
+        layout.addWidget(stamina_card)
         self.detail_label = QLabel("Reading existing automation state…")
         self.detail_label.setObjectName("muted")
         self.detail_label.setTextFormat(Qt.TextFormat.PlainText)
@@ -455,7 +493,7 @@ class ManagerWindow(QMainWindow):
         self._active = bool(snapshot.get("running") or snapshot.get("active_pids")
                             or snapshot.get("worker_running") or snapshot.get("supervisor_running"))
         if was_active and not self._active:
-            if not (previously_stopping or snapshot.get("stop_requested") or self._pending_action == "stop"):
+            if not (previously_stopping or snapshot.get("stop_requested") or self._pending_action in {"stop", "restart"}):
                 self._exit_error = "Automation exited unexpectedly. Review the activity log before restarting."
                 self._append_log(self._exit_error)
             self._update_runtime()
@@ -466,6 +504,12 @@ class ManagerWindow(QMainWindow):
                 self._started_at = started
             self._exit_error = ""
         self._sync_stage()
+        duration = snapshot.get("stamina_wait_minutes", 5)
+        if self._pending_action != "stamina-duration":
+            index = self.stamina_duration_combo.findData(duration)
+            self.stamina_duration_combo.blockSignals(True)
+            self.stamina_duration_combo.setCurrentIndex(max(0, index))
+            self.stamina_duration_combo.blockSignals(False)
         self._render_state()
         self._update_runtime()
         self.refresh_loot()
@@ -647,16 +691,21 @@ class ManagerWindow(QMainWindow):
         self._render_state()
 
     def _sync_stage(self):
-        stage_id = self._snapshot.get("selected_stage")
+        stage_id = self._desired_stage
         if self._active:
-            stage_id = self._snapshot.get("supervisor", {}).get("stage") or stage_id
+            stage_id = (self._snapshot.get("supervisor", {}).get("stage")
+                        or self._snapshot.get("stage") or self._snapshot.get("selected_stage"))
         index = self.stage_combo.findData(stage_id)
         if index >= 0 and self._pending_action != "select":
             self.stage_combo.blockSignals(True)
             self.stage_combo.setCurrentIndex(index)
             self.stage_combo.blockSignals(False)
         name = self.stage_combo.itemText(index) if index >= 0 else "checking…"
-        self.current_stage_label.setText(f"Current stage: {name}")
+        if stage_id == "universal":
+            mission = self._snapshot.get("farm", {}).get("mission_name") if self._active else None
+            self.current_stage_label.setText(f"Current mission: {mission or 'not identified'} · Universal")
+        else:
+            self.current_stage_label.setText(f"Current stage: {name}")
 
     def _render_state(self):
         snapshot = self._snapshot
@@ -694,6 +743,9 @@ class ManagerWindow(QMainWindow):
                 "start": "Start requested; waiting for the controller and verifying processes…",
                 "stop": "Stop requested; waiting for the controller to finish safely…",
                 "select": "Saving the selected stage…",
+                "restart": "Full Restart: safely stopping old processes, then revalidating and relaunching…",
+                "end-stamina-wait": "Interrupting stamina wait; the controller will recheck stamina before farming…",
+                "stamina-duration": "Saving the duration for subsequent stamina waits…",
             }[self._pending_action]
         elif self._awaiting_verification:
             details = "Command completed; verifying current processes and selected stage…"
@@ -710,6 +762,7 @@ class ManagerWindow(QMainWindow):
             if self._connection and not self._connection.get("available"):
                 details += " Start will let the controller retry the BlueStacks connection safely."
         self.detail_label.setText(details)
+        self._update_stamina()
         self._update_controls()
 
     def _update_controls(self):
@@ -718,6 +771,53 @@ class ManagerWindow(QMainWindow):
         self.start_button.setEnabled(bool(ready and self.stage_combo.currentData() and not self._stage_error))
         self.stop_button.setEnabled(bool(self._active and idle and not self._snapshot.get("stop_requested")))
         self.stage_combo.setEnabled(bool(ready and self.stage_combo.count()))
+        self.restart_button.setEnabled(bool(idle and not self._closed and not self._stage_error))
+        self.stamina_duration_combo.setEnabled(bool(idle and self._snapshot_known))
+        self.end_stamina_wait_button.setEnabled(bool(idle and self._stamina_status() == "WAITING"
+                                                   and self._snapshot.get("stamina_wait_interruptible")
+                                                   and not self._snapshot.get("farm", {}).get("pending")
+                                                   and not self._snapshot.get("stop_requested")))
+        self.end_stamina_wait_button.setToolTip(
+            "Interrupt the controller's wait and recheck game state and stamina. Insufficient stamina starts another wait."
+            if self._snapshot.get("stamina_wait_interruptible") else
+            "This worker predates interruptible waits. Use Full Restart to load the updated controller before ending a wait.")
+
+    def _stamina_status(self):
+        if (not self._snapshot_known or self._poll_error or not self._active
+                or not self._snapshot.get("worker_running")):
+            return "UNKNOWN"
+        status = self._snapshot.get("stamina_status", "UNKNOWN")
+        return status if status in {"WAITING", "READY", "UNKNOWN"} else "UNKNOWN"
+
+    def _update_stamina(self):
+        status = self._stamina_status()
+        self.stamina_status_label.setText(status)
+        deadline = self._snapshot.get("farm", {}).get("stamina_until")
+        if (status == "WAITING" and isinstance(deadline, (int, float))
+                and not isinstance(deadline, bool) and math.isfinite(deadline)):
+            remaining = max(0, math.ceil(deadline - time.time()))
+            minutes, seconds = divmod(remaining, 60)
+            self.stamina_remaining_label.setText(f"Remaining: {minutes:02d}:{seconds:02d}")
+        else:
+            self.stamina_remaining_label.setText("Remaining: —")
+
+    @Slot()
+    def restart_automation(self):
+        if self.restart_button.isEnabled():
+            # An active or unavailable snapshot leaves stage recovery to the
+            # controller's persisted selection instead of a guessed UI value.
+            stage = self.stage_combo.currentData() if self._snapshot_known and not self._active else None
+            self._command("restart", stage)
+
+    @Slot()
+    def end_stamina_wait(self):
+        if self.end_stamina_wait_button.isEnabled():
+            self._command("end-stamina-wait")
+
+    @Slot(int)
+    def _stamina_duration_changed(self, index):
+        if index >= 0 and self.stamina_duration_combo.isEnabled():
+            self._command("stamina-duration", self.stamina_duration_combo.itemData(index))
 
     @Slot()
     def start_automation(self):
@@ -734,8 +834,11 @@ class ManagerWindow(QMainWindow):
         if index < 0 or not self.stage_combo.isEnabled():
             return
         stage = self.stage_combo.itemData(index)
+        self._desired_stage = stage
         if stage != self._snapshot.get("selected_stage"):
             self._command("select", stage)
+        else:
+            self._sync_stage()
 
     def _command(self, action, stage=None):
         if self._pending_action or self._closed:
@@ -744,12 +847,14 @@ class ManagerWindow(QMainWindow):
         self._revision += 1
         self._command_error = ""
         self._exit_error = ""
-        self._append_log(f"Requested {action}" + (f": {self.stage_combo.currentText()}" if stage else "."))
+        selection = f"{stage} minutes" if action == "stamina-duration" else self.stage_combo.currentText()
+        self._append_log(f"Requested {action}" + (f": {selection}" if stage else "."))
         self._render_state()
         self._run("command", lambda: self.backend.command(action, stage))
 
     @Slot()
     def _update_runtime(self):
+        self._update_stamina()
         if self._started_at:
             self._elapsed_seconds = max(0, int(time.time() - self._started_at))
         if self._active and not self._started_at:

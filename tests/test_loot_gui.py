@@ -198,6 +198,22 @@ class LootGuiTests(unittest.TestCase):
             self.assertEqual(window.loot_item_table.item(0, 0).text(), "Offline scroll fixture")
             self.assertEqual(window.loot_item_table.item(0, 1).text(), "1")
             self.assertEqual(window.loot_item_table.item(0, 2).text(), "Unknown")
+            expanded_event = {**event, 'completion_id': 'offline-completion:2', 'run_id': 'offline-run:2'}
+            expanded_result = {'rewards': [{'item_id': 'fandom-material', 'item_name': 'Fandom material fixture',
+                'identity_status': 'matched', 'member_ids': ['fandom-material', 'source-alias'],
+                'reference_item_id': 'source-alias', 'record_type': 'item', 'reward_scope': 'acquired',
+                'quantity': 3, 'quantity_status': 'verified'}]}
+            store.finish(expanded_event, 'recognized', expanded_result, None, [])
+            store.finish(expanded_event, 'recognized', expanded_result, None, [])
+            window.refresh()
+            self.wait_until(lambda: window._loot_data.get('completed_runs') == 2)
+            self.assertEqual(window._loot_data['recognized_icons'], 2)
+            self.assertEqual(window._loot_data['confirmed_quantities'], {'fandom-material': 3})
+            self.assertEqual(window.loot_item_table.item(0, 0).text(), 'Fandom material fixture')
+            self.assertEqual(window.loot_item_table.item(0, 1).text(), '1')
+            self.assertEqual(window.loot_item_table.item(0, 2).text(), '3')
+            self.assertEqual(window.loot_item_table.item(1, 0).text(), 'Offline scroll fixture')
+            self.assertEqual(window.loot_item_table.item(1, 2).text(), 'Unknown')
             store.end_session(sid)
             window.refresh()
             self.wait_until(lambda: window.loot_status_label.text() == "Session Ended")
