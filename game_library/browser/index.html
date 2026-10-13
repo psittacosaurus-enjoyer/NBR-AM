@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>NB:R Reference Library</title>
+  <link rel="stylesheet" href="/browser/style.css">
+  <script src="/browser/app.js" defer></script>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="NB:R Reference Library home"><span class="brand-mark">NB:R</span><span>REFERENCE<br><strong>LIBRARY</strong></span></a>
+      <p class="eyebrow nav-heading">Browse collection</p>
+      <nav id="type-nav" aria-label="Record types"></nav>
+      <div class="collection-info"><p class="eyebrow">Local collection</p><p>Source-linked references for Naruto Blazing: Revival.</p><a href="https://gachawiki.net/naruto-blazing" target="_blank" rel="noopener noreferrer">View GachaWiki ↗</a><p class="small">Source information and manual verification are labeled separately.</p></div>
+    </aside>
+    <main>
+      <header class="page-heading"><div><p class="eyebrow">Naruto Blazing: Revival</p><h1 id="collection-title">All references</h1><p class="muted">Explore images, inspect metadata, and keep your own verified labels.</p></div><div class="index-state"><span class="status-dot"></span><span id="index-state">Loading library…</span></div></header>
+      <section class="toolbar" aria-label="Search and filters">
+        <label class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="Search names, IDs, filenames, or tags" aria-label="Search library" autocomplete="off"><kbd>/</kbd></label>
+        <div class="filters">
+          <label>Category<select id="category"><option value="">All categories</option></select></label>
+          <label>Element<select id="element"><option value="">All elements</option></select></label>
+          <label>Rarity<select id="rarity"><option value="">All rarities</option></select></label>
+          <label>Verification<select id="status"><option value="">All statuses</option></select></label>
+          <button class="text-button" id="reset" type="button">Reset filters</button>
+        </div>
+      </section>
+      <div class="results-bar"><p id="results-summary" role="status" aria-live="polite">Loading references…</p><label class="page-size">Per page<select id="limit"><option value="48">48</option><option value="96">96</option><option value="120">120</option></select></label></div>
+      <div id="error" class="error-banner" role="alert" hidden></div>
+      <section id="grid" class="asset-grid" aria-label="Reference results" aria-busy="true"></section>
+      <div id="empty" class="empty-state" hidden><span aria-hidden="true">⌕</span><h2>No references found</h2><p>Try a different name or clear your filters. Undocumented source categories may have no records.</p></div>
+      <nav class="pagination" aria-label="Results pages"><button id="previous" type="button">← Previous</button><span id="page-label">Page 1</span><button id="next" type="button">Next →</button></nav>
+      <footer>Original images are preserved locally. Manual labels survive future collection updates.</footer>
+    </main>
+  </div>
+  <dialog id="details" aria-labelledby="detail-title">
+    <div class="dialog-heading"><p class="eyebrow" id="detail-kind">Reference details</p><button class="icon-button" id="close-details" type="button" aria-label="Close reference details">×</button></div>
+    <div id="detail-loading" class="detail-loading" role="status">Loading reference…</div>
+    <div id="detail-body" hidden>
+      <div class="detail-layout">
+        <div class="image-column"><div class="preview-wrap"><img id="preview" alt=""><div id="preview-missing" class="missing-image" hidden>No image available</div></div><div id="asset-strip" class="asset-strip" aria-label="Available images"></div><div id="image-info" class="image-info"></div></div>
+        <div class="record-column"><div id="detail-badges" class="badges"></div><h2 id="detail-title"></h2><dl id="record-facts" class="record-facts"></dl><a id="source-link" class="source-link" target="_blank" rel="noopener noreferrer">Open source page ↗</a><section id="metadata-section"><h3>Source metadata</h3><div id="metadata" class="metadata"></div></section><section id="related-section" hidden><h3>Related references</h3><div id="related" class="related"></div></section></div>
+      </div>
+      <form id="edit-form" class="edit-form"><div class="edit-heading"><div><h3>Your labels & notes</h3><p class="muted small">Saved separately from source data and retained during future crawls.</p></div><span id="save-message" role="status" aria-live="polite"></span></div>
+        <div class="edit-fields"><label>Display name<input id="edit-name" required maxlength="500"></label><label>Category<input id="edit-category" list="category-options" maxlength="200"><datalist id="category-options"></datalist></label><label>Tags<span class="field-hint">Separate with commas</span><input id="edit-tags" maxlength="2000" placeholder="awakening, material"></label><label>Verification status<select id="edit-status"></select></label><label class="notes-field">Notes<textarea id="edit-notes" rows="3" maxlength="20000" placeholder="Record identification notes or visual differences."></textarea></label></div>
+        <div class="form-actions"><p class="small muted">Mark as manually verified only after checking the identification.</p><button class="primary-button" id="save" type="submit">Save labels</button></div>
+      </form>
+    </div>
+  </dialog>
+</body>
+</html>

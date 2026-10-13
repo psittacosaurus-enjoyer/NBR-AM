@@ -1,0 +1,1147 @@
+{
+  "schema_version": 1,
+  "annotation_basis": "Human visual inspection, source-linked references; library DB unchanged",
+  "bbox_format": "x,y,width,height",
+  "image_size": [
+    900,
+    1600
+  ],
+  "examples": [
+    {
+      "path": "D:\\NBR\\reference_images\\starting_point.png",
+      "sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "stage": "All Scrolls [A]",
+      "split": "calibration",
+      "screen_type": "acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_46dff63ce93f3f02977d9910",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\3e6b0fa43488fd6221c1619026bb5c1f43f1052e66d6cb58f535b890d5b54536.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_46f07896c4055b81d1ff91ab",
+          "item_name": "Awakening Scroll \"Heart Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Heart Book\"",
+          "element": "Heart",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\31beda6adbdd2107d636df57f6bb524dbc9019c092b44ffc2cc4530c3f64dc5c.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_5ac3d49e47e4044733ff98e0",
+          "item_name": "Awakening Scroll \"Bravery Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Bravery Book\"",
+          "element": "Bravery",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\a9f9b18d86b60a831dd2fe34beda192d94dd785c4c93e1b43e467f6c2f091f44.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_6338f644cfefd6f947135804",
+          "item_name": "Awakening Scroll \"Bravery Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Bravery Book\"",
+          "element": "Bravery",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\fdddddd13cc8900fd3c89b701a976b20d800a0a40c8277068cf85425107a84f3.webp"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_0f061961252195d5d64b836c",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\27ed33c4c3488cb431ddc747a3d1030c87bca6144801b568e1b8cf98c49cda08.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_46dff63ce93f3f02977d9910",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\3e6b0fa43488fd6221c1619026bb5c1f43f1052e66d6cb58f535b890d5b54536.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_c72d0f541d5f82b5a7830ea0",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\cda8a4fbd00f205bd457699be168fbf7ae124e57bef9eb47293550acff28e170.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_af2586304d2b5e8f09be152b",
+          "item_name": "Awakening Scroll \"Heart Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Heart Book\"",
+          "element": "Heart",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\e98aad7bf1e878945ce2563d3fd9a57b924b47bba6eab63bc4ccf58d677e3c12.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_5f1b60db10590743010e222b",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\2b8cf42b652f61d71ce43df8a5d809b24ebce347d2f41ff9b63ee97084200c4f.webp"
+        },
+        {
+          "bounding_box": [
+            705,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_281a6b6591b85100b09105f0",
+          "item_name": "Awakening Scroll \"Skill Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Skill Book\"",
+          "element": "Skill",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\2ac29866b68c2896e860796b46a07724d8ec9315d44552d08bf377c5c471f8aa.webp"
+        }
+      ],
+      "validation": "Manual inspection of original screenshot and visually corresponding source-linked library reference; no matcher output used.",
+      "excluded_region": "Completion Reward Conditions below y1180 are not acquired drops."
+    },
+    {
+      "path": "D:\\NBR\\reference_images\\starting_point_lucky_drop.png",
+      "sha256": "a562748998e83f7c283732129c40c4c017d157e563a5836bb0719903d571882e",
+      "stage": "All Scrolls [A]",
+      "split": "holdout",
+      "screen_type": "acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_46dff63ce93f3f02977d9910",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\3e6b0fa43488fd6221c1619026bb5c1f43f1052e66d6cb58f535b890d5b54536.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_1b68f7a9137b7901c944ee37",
+          "item_name": "Awakening Scroll \"Skill Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Skill Book\"",
+          "element": "Skill",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\78ca049207d8d512b43512775304d24bf8536c739e31b91c723038999a2adbf0.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_5ac3d49e47e4044733ff98e0",
+          "item_name": "Awakening Scroll \"Bravery Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Bravery Book\"",
+          "element": "Bravery",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\a9f9b18d86b60a831dd2fe34beda192d94dd785c4c93e1b43e467f6c2f091f44.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_6338f644cfefd6f947135804",
+          "item_name": "Awakening Scroll \"Bravery Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Bravery Book\"",
+          "element": "Bravery",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\fdddddd13cc8900fd3c89b701a976b20d800a0a40c8277068cf85425107a84f3.webp"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_0f061961252195d5d64b836c",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\27ed33c4c3488cb431ddc747a3d1030c87bca6144801b568e1b8cf98c49cda08.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_0f061961252195d5d64b836c",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\27ed33c4c3488cb431ddc747a3d1030c87bca6144801b568e1b8cf98c49cda08.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_c72d0f541d5f82b5a7830ea0",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\cda8a4fbd00f205bd457699be168fbf7ae124e57bef9eb47293550acff28e170.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_af2586304d2b5e8f09be152b",
+          "item_name": "Awakening Scroll \"Heart Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Heart Book\"",
+          "element": "Heart",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\e98aad7bf1e878945ce2563d3fd9a57b924b47bba6eab63bc4ccf58d677e3c12.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_5f1b60db10590743010e222b",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\2b8cf42b652f61d71ce43df8a5d809b24ebce347d2f41ff9b63ee97084200c4f.webp"
+        },
+        {
+          "bounding_box": [
+            705,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_281a6b6591b85100b09105f0",
+          "item_name": "Awakening Scroll \"Skill Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Skill Book\"",
+          "element": "Skill",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\2ac29866b68c2896e860796b46a07724d8ec9315d44552d08bf377c5c471f8aa.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            735,
+            145,
+            145
+          ],
+          "item_id": "item_af2586304d2b5e8f09be152b",
+          "item_name": "Awakening Scroll \"Heart Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Heart Book\"",
+          "element": "Heart",
+          "overlay": "Lucky Drop",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\e98aad7bf1e878945ce2563d3fd9a57b924b47bba6eab63bc4ccf58d677e3c12.webp"
+        }
+      ],
+      "validation": "Manual inspection of original screenshot and visually corresponding source-linked library reference; no matcher output used.",
+      "excluded_region": "Completion Reward Conditions below y1180 are not acquired drops."
+    },
+    {
+      "path": "D:\\NBR\\development\\retry_live.png",
+      "sha256": "ff4dd15b077488081bacd26740afeb158e6aada820702b16deb83fd33080f5ee",
+      "stage": "All Scrolls [A]",
+      "split": "holdout",
+      "screen_type": "acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_46dff63ce93f3f02977d9910",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\3e6b0fa43488fd6221c1619026bb5c1f43f1052e66d6cb58f535b890d5b54536.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_46dff63ce93f3f02977d9910",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\3e6b0fa43488fd6221c1619026bb5c1f43f1052e66d6cb58f535b890d5b54536.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_5ac3d49e47e4044733ff98e0",
+          "item_name": "Awakening Scroll \"Bravery Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Bravery Book\"",
+          "element": "Bravery",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\a9f9b18d86b60a831dd2fe34beda192d94dd785c4c93e1b43e467f6c2f091f44.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_6338f644cfefd6f947135804",
+          "item_name": "Awakening Scroll \"Bravery Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Bravery Book\"",
+          "element": "Bravery",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\fdddddd13cc8900fd3c89b701a976b20d800a0a40c8277068cf85425107a84f3.webp"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_0f061961252195d5d64b836c",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\27ed33c4c3488cb431ddc747a3d1030c87bca6144801b568e1b8cf98c49cda08.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_46dff63ce93f3f02977d9910",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\3e6b0fa43488fd6221c1619026bb5c1f43f1052e66d6cb58f535b890d5b54536.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_c72d0f541d5f82b5a7830ea0",
+          "item_name": "Awakening Scroll \"Wisdom Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Wisdom Book\"",
+          "element": "Wisdom",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\cda8a4fbd00f205bd457699be168fbf7ae124e57bef9eb47293550acff28e170.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_af2586304d2b5e8f09be152b",
+          "item_name": "Awakening Scroll \"Heart Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Heart Book\"",
+          "element": "Heart",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\e98aad7bf1e878945ce2563d3fd9a57b924b47bba6eab63bc4ccf58d677e3c12.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_5f1b60db10590743010e222b",
+          "item_name": "Awakening Scroll \"Body Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Body Book\"",
+          "element": "Body",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\2b8cf42b652f61d71ce43df8a5d809b24ebce347d2f41ff9b63ee97084200c4f.webp"
+        },
+        {
+          "bounding_box": [
+            705,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_281a6b6591b85100b09105f0",
+          "item_name": "Awakening Scroll \"Skill Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Skill Book\"",
+          "element": "Skill",
+          "reference_path": "D:\\NBR\\game_library\\assets\\items\\2ac29866b68c2896e860796b46a07724d8ec9315d44552d08bf377c5c471f8aa.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            735,
+            145,
+            145
+          ],
+          "item_id": "item_af2586304d2b5e8f09be152b",
+          "item_name": "Awakening Scroll \"Heart Book\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "manually_labeled",
+          "visual_description": "Awakening Scroll \"Heart Book\"",
+          "element": "Heart",
+          "overlay": "Lucky Drop",
+          "reference_path": "D:\\NBR\\game_library\\assets\\miscellaneous\\e98aad7bf1e878945ce2563d3fd9a57b924b47bba6eab63bc4ccf58d677e3c12.webp"
+        }
+      ],
+      "validation": "Manual inspection of original screenshot and visually corresponding source-linked library reference; no matcher output used.",
+      "excluded_region": "Completion Reward Conditions below y1180 are not acquired drops."
+    },
+    {
+      "path": "D:\\NBR\\development\\rich_b\\after_stamina_no.png",
+      "sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "stage": "Getting Rich Quick [B]",
+      "split": "calibration",
+      "screen_type": "acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5",
+          "item_name": "Gama-chan \"Full to the Brim\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 2,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Full to the Brim\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5",
+          "item_name": "Gama-chan \"Full to the Brim\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 2,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Full to the Brim\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5",
+          "item_name": "Gama-chan \"Full to the Brim\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 2,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Full to the Brim\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            145,
+            145
+          ],
+          "item_id": null,
+          "item_name": null,
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "unknown",
+          "visual_description": "4-star frog with gold bars"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010",
+          "item_name": "Gama-chan \"Big Spender\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Big Spender\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010",
+          "item_name": "Gama-chan \"Big Spender\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Big Spender\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            145,
+            145
+          ],
+          "item_id": null,
+          "item_name": null,
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "unknown",
+          "visual_description": "4-star frog with gold bars"
+        }
+      ],
+      "validation": "Manual inspection of original screenshot and visually corresponding source-linked library reference; no matcher output used.",
+      "excluded_region": "Completion Reward Conditions below y1180 are not acquired drops."
+    },
+    {
+      "path": "D:\\NBR\\development\\rich_b\\ready_to_retry.png",
+      "sha256": "c9e33763346a34d4aa2b2622404cdc32e1f2bf92f017a4646add6f323930fbc5",
+      "stage": "Getting Rich Quick [B]",
+      "split": "holdout",
+      "screen_type": "acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5",
+          "item_name": "Gama-chan \"Full to the Brim\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 2,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Full to the Brim\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5",
+          "item_name": "Gama-chan \"Full to the Brim\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 2,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Full to the Brim\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5",
+          "item_name": "Gama-chan \"Full to the Brim\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 2,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Full to the Brim\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            145,
+            145
+          ],
+          "item_id": null,
+          "item_name": null,
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "unknown",
+          "visual_description": "4-star frog with gold bars"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            145,
+            145
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010",
+          "item_name": "Gama-chan \"Big Spender\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Big Spender\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6.webp"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010",
+          "item_name": "Gama-chan \"Big Spender\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Big Spender\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6.webp"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            145,
+            145
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010",
+          "item_name": "Gama-chan \"Big Spender\"",
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 3,
+          "identity_status": "manually_labeled",
+          "visual_description": "Gama-chan \"Big Spender\"",
+          "reference_path": "D:\\NBR\\game_library\\assets\\stages\\9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6.webp"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            145,
+            145
+          ],
+          "item_id": null,
+          "item_name": null,
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "unknown",
+          "visual_description": "4-star frog with gold bars"
+        },
+        {
+          "bounding_box": [
+            543,
+            573,
+            145,
+            145
+          ],
+          "item_id": null,
+          "item_name": null,
+          "quantity": null,
+          "quantity_status": "not_displayed",
+          "rarity": 4,
+          "identity_status": "unknown",
+          "visual_description": "4-star frog with gold bars"
+        }
+      ],
+      "validation": "Manual inspection of original screenshot and visually corresponding source-linked library reference; no matcher output used.",
+      "excluded_region": "Completion Reward Conditions below y1180 are not acquired drops."
+    },
+    {
+      "path": "D:\\NBR\\development\\results_next.png",
+      "sha256": "c3036083e3aad855ad7ecceb0090e75c0f2a1a6c55fcffba3f017af798d8217a",
+      "stage": "All Scrolls [A]",
+      "split": "negative",
+      "screen_type": "summary",
+      "reward_region": null,
+      "rewards": [],
+      "sealed_regions": [],
+      "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    },
+    {
+      "path": "D:\\NBR\\development\\rich_b\\results_next.png",
+      "sha256": "5f004a4c0c42776d500b1bbae0e939f269d890939084597c82fee2f93fb0e582",
+      "stage": "Getting Rich Quick [B]",
+      "split": "negative",
+      "screen_type": "summary",
+      "reward_region": null,
+      "rewards": [],
+      "sealed_regions": [],
+      "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    },
+    {
+      "path": "D:\\NBR\\development\\reward_reveal.png",
+      "sha256": "436c58208591cb7b14fe8d93e27ba7d984b4ac173cf6d50f006848381a98d40c",
+      "stage": "All Scrolls [A]",
+      "split": "negative",
+      "screen_type": "sealed_acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [],
+      "sealed_regions": [
+        [
+          57,
+          411,
+          145,
+          145
+        ],
+        [
+          219,
+          411,
+          145,
+          145
+        ],
+        [
+          381,
+          411,
+          145,
+          145
+        ],
+        [
+          543,
+          411,
+          145,
+          145
+        ],
+        [
+          705,
+          411,
+          145,
+          145
+        ],
+        [
+          57,
+          573,
+          145,
+          145
+        ],
+        [
+          219,
+          573,
+          145,
+          145
+        ],
+        [
+          381,
+          573,
+          145,
+          145
+        ],
+        [
+          543,
+          573,
+          145,
+          145
+        ],
+        [
+          705,
+          573,
+          145,
+          145
+        ],
+        [
+          57,
+          735,
+          145,
+          145
+        ]
+      ],
+      "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    },
+    {
+      "path": "D:\\NBR\\development\\rich_b\\reward_reveal.png",
+      "sha256": "02ab87da67b14f58f74308d14c4bf00f7382b5b1ba0658221f0873f64999d72b",
+      "stage": "Getting Rich Quick [B]",
+      "split": "negative",
+      "screen_type": "sealed_acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [],
+      "sealed_regions": [
+        [
+          57,
+          411,
+          145,
+          145
+        ],
+        [
+          219,
+          411,
+          145,
+          145
+        ],
+        [
+          381,
+          411,
+          145,
+          145
+        ],
+        [
+          543,
+          411,
+          145,
+          145
+        ],
+        [
+          705,
+          411,
+          145,
+          145
+        ],
+        [
+          57,
+          573,
+          145,
+          145
+        ],
+        [
+          219,
+          573,
+          145,
+          145
+        ],
+        [
+          381,
+          573,
+          145,
+          145
+        ],
+        [
+          543,
+          573,
+          145,
+          145
+        ]
+      ],
+      "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    },
+    {
+      "path": "D:\\NBR\\development\\rich_b\\reward_reveal_variant.png",
+      "sha256": "fea4d136a3879218a701abaab390285fa295d9523ad099db8771d95c88aff52e",
+      "stage": "Getting Rich Quick [B]",
+      "split": "negative",
+      "screen_type": "sealed_acquired",
+      "reward_region": [
+        50,
+        405,
+        795,
+        740
+      ],
+      "rewards": [],
+      "sealed_regions": [
+        [
+          57,
+          411,
+          145,
+          145
+        ],
+        [
+          219,
+          411,
+          145,
+          145
+        ],
+        [
+          381,
+          411,
+          145,
+          145
+        ],
+        [
+          543,
+          411,
+          145,
+          145
+        ],
+        [
+          705,
+          411,
+          145,
+          145
+        ],
+        [
+          57,
+          573,
+          145,
+          145
+        ],
+        [
+          219,
+          573,
+          145,
+          145
+        ],
+        [
+          381,
+          573,
+          145,
+          145
+        ]
+      ],
+      "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    },
+    {
+      "path": "D:\\NBR\\development\\battle.png",
+      "sha256": "52668a7a198344445f713224ba5806557f9a6cd769002b9cd535e3c8ead1d227",
+      "stage": "unknown",
+      "split": "negative",
+      "screen_type": "not_results",
+      "reward_region": null,
+      "rewards": [],
+      "sealed_regions": [],
+      "validation": "Original screenshot manually inspected. Summary condition icons must not be counted as acquired rewards; sealed packages do not establish identity or quantity."
+    }
+  ],
+  "quantities": "No acquired icon has an explicit quantity label in these five positives. Star numerals are rarity. Do not substitute quantity1.",
+  "missing_reference": "4-star frog holding gold bars has no named item reference in current catalog; five positive slots intentionally have null identity."
+}

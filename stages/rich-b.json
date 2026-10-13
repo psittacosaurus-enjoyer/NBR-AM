@@ -1,0 +1,10 @@
+{
+  "name": "Getting Rich Quick! [B]",
+  "catalog": "patterns/rich_b.json",
+  "progress": "runtime/rich_b.json",
+  "state_actions": {
+    "RICH_BANNER": "select_rich",
+    "RANK_SELECTION": "select_rank_b",
+    "SCROLLS_LIST_POSITION": "scroll_missions"
+  }
+}

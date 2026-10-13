@@ -1,0 +1,6 @@
+{
+  "name": "Night of Tragedy [A]",
+  "catalog": "patterns/night_of_tragedy_a.json",
+  "progress": "runtime/night_of_tragedy_a.json",
+  "manual_first_battle": true
+}
