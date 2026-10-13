@@ -1,5 +1,7 @@
 # Normalize repository text without rewriting the current working tree.
 * text=auto
+.gitignore text eol=lf
+.gitattributes text eol=lf
 *.py text eol=lf
 *.md text eol=lf
 *.json text eol=lf

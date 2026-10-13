@@ -1,4 +1,4 @@
-# Python environments and generated caches (at any depth)
+# Environments, Python caches and build output
 .venv/
 venv/
 env/
@@ -13,7 +13,7 @@ htmlcov/
 build/
 dist/
 
-# Active account state, evidence, process records and local databases
+# Unique local state, histories, captures, downloaded references and generated reports
 /runtime/
 *.log
 *.pid
@@ -23,39 +23,7 @@ dist/
 *.db-wal
 *.db-shm
 
-# Independent existing Git repository; preserve its history locally
-/NBR-AM/
-
-# Downloaded library resources, crawl state and exports; regenerate on a new install
-# library.sqlite3 also contains persistent user annotations, so keep data local.
-/game_library/data/
-/game_library/assets/
-/game_library/catalogs/
-/game_library/source_probe.html
-/game_library/reports/*
-!/game_library/reports/COMPLETION.md
-
-# Recognition output and generated reports; retain labeled validation input
-/item_recognition/outputs/
-/item_recognition/reports/*
-!/item_recognition/reports/ground_truth.json
-!/item_recognition/reports/COMPLETION.md
-
-# Local live-control evidence and capture settings, never portable configuration
-/development/live_recognition/*.json
-/development/live_recognition/*.jsonl
-/development/live_recognition/*.png
-/development/live_recognition/live_runs/
-/development/loot_library_audit/*.json
-/development/loot_library_audit/*.png
-/development/backup_second_stage/
-/development/*.before_stages.*
-/development/current.png
-/development/manager*preview.png
-/development/probe_*.png
-# Other development PNGs are regression fixtures: do not ignore them wholesale.
-
-# Temporary files, secrets and machine-specific overrides
+# Temporary files, credentials and machine-specific overrides
 *.tmp
 *.temp
 *.bak

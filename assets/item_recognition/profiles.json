@@ -1,0 +1,341 @@
+{
+  "version": 1,
+  "width": 900,
+  "height": 1600,
+  "anchor_threshold": 0.94,
+  "header": {
+    "path": "mission-results.png",
+    "box": [
+      22,
+      27,
+      520,
+      78
+    ]
+  },
+  "phases": {
+    "acquired": {
+      "path": "acquired-header.png",
+      "box": [
+        240,
+        287,
+        420,
+        53
+      ]
+    },
+    "summary": {
+      "path": "summary-header.png",
+      "box": [
+        228,
+        300,
+        452,
+        55
+      ]
+    }
+  },
+  "stages": {
+    "All Scrolls [A]": {
+      "path": "stage-0.png",
+      "box": [
+        200,
+        170,
+        650,
+        72
+      ]
+    },
+    "Getting Rich Quick! [B]": {
+      "path": "stage-1.png",
+      "box": [
+        200,
+        170,
+        650,
+        72
+      ]
+    }
+  },
+  "reward_region": [
+    48,
+    402,
+    800,
+    735
+  ],
+  "grid_boxes": [
+    [
+      57,
+      411,
+      134,
+      139
+    ],
+    [
+      219,
+      411,
+      134,
+      139
+    ],
+    [
+      381,
+      411,
+      134,
+      139
+    ],
+    [
+      543,
+      411,
+      134,
+      139
+    ],
+    [
+      705,
+      411,
+      134,
+      139
+    ],
+    [
+      57,
+      573,
+      134,
+      139
+    ],
+    [
+      219,
+      573,
+      134,
+      139
+    ],
+    [
+      381,
+      573,
+      134,
+      139
+    ],
+    [
+      543,
+      573,
+      134,
+      139
+    ],
+    [
+      705,
+      573,
+      134,
+      139
+    ],
+    [
+      57,
+      735,
+      134,
+      139
+    ],
+    [
+      219,
+      735,
+      134,
+      139
+    ],
+    [
+      381,
+      735,
+      134,
+      139
+    ],
+    [
+      543,
+      735,
+      134,
+      139
+    ],
+    [
+      705,
+      735,
+      134,
+      139
+    ]
+  ],
+  "proposal_threshold": 0.78,
+  "placeholders": [
+    {
+      "path": "placeholder-0.png",
+      "box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "label": "green sealed package"
+    },
+    {
+      "path": "placeholder-3.png",
+      "box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "label": "silver sealed package"
+    },
+    {
+      "path": "placeholder-4.png",
+      "box": [
+        705,
+        411,
+        134,
+        139
+      ],
+      "label": "brown sealed package"
+    },
+    {
+      "path": "placeholder-8.png",
+      "box": [
+        543,
+        573,
+        134,
+        139
+      ],
+      "label": "Lucky Drop unopened chest"
+    }
+  ],
+  "placeholder_threshold": 0.92,
+  "summary_fields": [
+    {
+      "name": "first_special_reward_amount",
+      "scope": "condition_display",
+      "box": [
+        786,
+        489,
+        86,
+        25
+      ]
+    },
+    {
+      "name": "second_special_reward_amount",
+      "scope": "condition_display",
+      "box": [
+        786,
+        617,
+        86,
+        26
+      ]
+    },
+    {
+      "name": "ryo_earned",
+      "scope": "run_summary_currency",
+      "box": [
+        561,
+        923,
+        161,
+        36
+      ]
+    }
+  ],
+  "geometry_basis": "Upper acquired-reward grid inspected in existing 900x1600 All Scrolls A and Getting Rich Quick B screenshots; lower completion conditions excluded.",
+  "quantity_policy": "No quantity text shown beside acquired icons. Never treat rarity stars or repeated slots as a numerical total.",
+  "evidence": [
+    {
+      "source": "assets/reference_images/starting_point.png",
+      "sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "box": [
+        22,
+        27,
+        520,
+        78
+      ],
+      "template": "mission-results.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "assets/reference_images/starting_point.png",
+      "sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "box": [
+        240,
+        287,
+        420,
+        53
+      ],
+      "template": "acquired-header.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/results_next.png",
+      "sha256": "c3036083e3aad855ad7ecceb0090e75c0f2a1a6c55fcffba3f017af798d8217a",
+      "box": [
+        228,
+        300,
+        452,
+        55
+      ],
+      "template": "summary-header.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "assets/reference_images/starting_point.png",
+      "sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "box": [
+        200,
+        170,
+        650,
+        72
+      ],
+      "template": "stage-0.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/rich_b/ready_to_retry.png",
+      "sha256": "c9e33763346a34d4aa2b2622404cdc32e1f2bf92f017a4646add6f323930fbc5",
+      "box": [
+        200,
+        170,
+        650,
+        72
+      ],
+      "template": "stage-1.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/rich_b/reward_reveal.png",
+      "sha256": "02ab87da67b14f58f74308d14c4bf00f7382b5b1ba0658221f0873f64999d72b",
+      "box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "template": "placeholder-0.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/rich_b/reward_reveal.png",
+      "sha256": "02ab87da67b14f58f74308d14c4bf00f7382b5b1ba0658221f0873f64999d72b",
+      "box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "template": "placeholder-3.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/rich_b/reward_reveal.png",
+      "sha256": "02ab87da67b14f58f74308d14c4bf00f7382b5b1ba0658221f0873f64999d72b",
+      "box": [
+        705,
+        411,
+        134,
+        139
+      ],
+      "template": "placeholder-4.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/rich_b/reward_reveal.png",
+      "sha256": "02ab87da67b14f58f74308d14c4bf00f7382b5b1ba0658221f0873f64999d72b",
+      "box": [
+        543,
+        573,
+        134,
+        139
+      ],
+      "template": "placeholder-8.png",
+      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+[
+  {
+    "evidence_id": "scroll_reward_1",
+    "expected": 20000,
+    "result": {
+      "quantity": 20000,
+      "quantity_status": "verified",
+      "score": 1.0,
+      "method": "localized_screenshot_glyph_templates_v1",
+      "reason": "Every visible glyph matches the inspected local reward_small profile; this verifies numerals, not item identity."
+    }
+  },
+  {
+    "evidence_id": "scroll_reward_2",
+    "expected": 25000,
+    "result": {
+      "quantity": 25000,
+      "quantity_status": "verified",
+      "score": 1.0,
+      "method": "localized_screenshot_glyph_templates_v1",
+      "reason": "Every visible glyph matches the inspected local reward_small profile; this verifies numerals, not item identity."
+    }
+  },
+  {
+    "evidence_id": "scroll_ryo",
+    "expected": 6000,
+    "result": {
+      "quantity": 6000,
+      "quantity_status": "verified",
+      "score": 1.0,
+      "method": "localized_screenshot_glyph_templates_v1",
+      "reason": "Every visible glyph matches the inspected local earned profile; this verifies numerals, not item identity."
+    }
+  },
+  {
+    "evidence_id": "rich_reward_1",
+    "expected": 30000,
+    "result": {
+      "quantity": 30000,
+      "quantity_status": "verified",
+      "score": 1.0,
+      "method": "localized_screenshot_glyph_templates_v1",
+      "reason": "Every visible glyph matches the inspected local reward_small profile; this verifies numerals, not item identity."
+    }
+  },
+  {
+    "evidence_id": "rich_reward_2",
+    "expected": 500,
+    "result": {
+      "quantity": 500,
+      "quantity_status": "verified",
+      "score": 1.0,
+      "method": "localized_screenshot_glyph_templates_v1",
+      "reason": "Every visible glyph matches the inspected local reward_small profile; this verifies numerals, not item identity."
+    }
+  },
+  {
+    "evidence_id": "rich_ryo",
+    "expected": 100000,
+    "result": {
+      "quantity": 100000,
+      "quantity_status": "verified",
+      "score": 1.0,
+      "method": "localized_screenshot_glyph_templates_v1",
+      "reason": "Every visible glyph matches the inspected local earned profile; this verifies numerals, not item identity."
+    }
+  }
+]

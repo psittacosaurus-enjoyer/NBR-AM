@@ -1,0 +1,1091 @@
+{
+  "states": [
+    {
+      "name": "READY_TO_RETRY",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/ready_to_retry/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            300,
+            182,
+            649,
+            247
+          ],
+          "template": "assets/patterns/ready_to_retry/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            337,
+            1501,
+            556,
+            1549
+          ],
+          "template": "assets/patterns/ready_to_retry/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "All Scrolls [A] results only; orange Retry. Reward contents excluded.",
+      "action": {
+        "id": "retry",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_START",
+          "STAMINA_PROMPT",
+          "HELPER_SELECTION"
+        ],
+        "point": [
+          450,
+          1524
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "RELEASE_SCREEN",
+      "anchors": [
+        {
+          "region": [
+            177,
+            237,
+            451,
+            311
+          ],
+          "template": "assets/patterns/release_screen/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            375,
+            348,
+            579,
+            431
+          ],
+          "template": "assets/patterns/release_screen/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            469,
+            1287,
+            863,
+            1365
+          ],
+          "template": "assets/patterns/release_screen/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Only Back; never select or release inventory.",
+      "action": {
+        "id": "back",
+        "kind": "tap",
+        "expected": [
+          "TEAM_MENU",
+          "HOME_MENU"
+        ],
+        "point": [
+          89,
+          278
+        ]
+      }
+    },
+    {
+      "name": "IN_BATTLE",
+      "anchors": [
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 0,
+      "verified_safe": false,
+      "notes": "Observe only. Auto and menu labels; no battle input."
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "notes": "Two independent text crops tested across glowing animation frames. Center advances only verified completion.",
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "RESULTS_NEXT",
+          "READY_TO_RETRY",
+          "REWARD_REVEAL"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "RESULTS_NEXT",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/results_next/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            300,
+            182,
+            649,
+            247
+          ],
+          "template": "assets/patterns/results_next/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            246,
+            310,
+            665,
+            346
+          ],
+          "template": "assets/patterns/results_next/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            348,
+            1500,
+            565,
+            1549
+          ],
+          "template": "assets/patterns/results_next/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "All Scrolls [A] results summary; safe orange Next.",
+      "action": {
+        "id": "next",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_RETRY",
+          "REWARD_REVEAL"
+        ],
+        "point": [
+          455,
+          1525
+        ]
+      }
+    },
+    {
+      "name": "REWARD_REVEAL",
+      "anchors": [
+        {
+          "region": [
+            300,
+            182,
+            649,
+            247
+          ],
+          "template": "assets/patterns/reward_reveal/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            243,
+            286,
+            660,
+            328
+          ],
+          "template": "assets/patterns/reward_reveal/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            310,
+            1200,
+            624,
+            1239
+          ],
+          "template": "assets/patterns/reward_reveal/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            324,
+            1491,
+            577,
+            1548
+          ],
+          "template": "assets/patterns/reward_reveal/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            396,
+            780,
+            500,
+            826
+          ],
+          "template": "assets/patterns/reward_reveal/4.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Verified target acquired-reward page, Retry absent, no dialogs. Center reveals reward cards.",
+      "action": {
+        "id": "reveal_rewards",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_RETRY",
+          "LUCKY_REWARD"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "TITLE_START",
+      "anchors": [
+        {
+          "region": [
+            33,
+            42,
+            238,
+            76
+          ],
+          "template": "assets/patterns/title_start/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            285,
+            42,
+            479,
+            76
+          ],
+          "template": "assets/patterns/title_start/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            149,
+            136,
+            451,
+            182
+          ],
+          "template": "assets/patterns/title_start/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            396,
+            586,
+            514,
+            741
+          ],
+          "template": "assets/patterns/title_start/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Static title anchors; ignore pulsing Tap To Start. Only tap lower center.",
+      "action": {
+        "id": "title_start",
+        "kind": "tap",
+        "expected": [
+          "INITIAL_POPUP",
+          "HOME_MENU",
+          "NEWS_POPUP",
+          "WELCOME_POPUP"
+        ],
+        "point": [
+          450,
+          1008
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "NEWS_POPUP",
+      "anchors": [
+        {
+          "region": [
+            180,
+            121,
+            359,
+            181
+          ],
+          "template": "assets/patterns/news_popup/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            163,
+            292,
+            355,
+            362
+          ],
+          "template": "assets/patterns/news_popup/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            348,
+            1294,
+            553,
+            1336
+          ],
+          "template": "assets/patterns/news_popup/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 20,
+      "verified_safe": true,
+      "notes": "Verified News panel Close. Never taps bottom navigation.",
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "expected": [
+          "HOME_MENU",
+          "WELCOME_POPUP"
+        ],
+        "point": [
+          450,
+          1318
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "HOME_MENU",
+      "anchors": [
+        {
+          "region": [
+            190,
+            1252,
+            515,
+            1307
+          ],
+          "template": "assets/patterns/home_menu/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            390,
+            1341,
+            684,
+            1391
+          ],
+          "template": "assets/patterns/home_menu/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            743,
+            280,
+            873,
+            315
+          ],
+          "template": "assets/patterns/home_menu/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Story & Gaiden carousel only; right arrow once to Emergency Missions.",
+      "action": {
+        "id": "nav_right",
+        "kind": "tap",
+        "expected": [
+          "HOME_EMERGENCY"
+        ],
+        "point": [
+          812,
+          1247
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "HOME_EMERGENCY",
+      "anchors": [
+        {
+          "region": [
+            226,
+            1240,
+            677,
+            1295
+          ],
+          "template": "assets/patterns/home_emergency/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            327,
+            1310,
+            592,
+            1359
+          ],
+          "template": "assets/patterns/home_emergency/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            743,
+            280,
+            873,
+            315
+          ],
+          "template": "assets/patterns/home_emergency/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Emergency Mission carousel banner only.",
+      "action": {
+        "id": "emergency",
+        "kind": "tap",
+        "expected": [
+          "EMERGENCY_LIST",
+          "SCROLLS_BANNER"
+        ],
+        "point": [
+          450,
+          1255
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "COMMUNICATION_ERROR",
+      "anchors": [
+        {
+          "region": [
+            121,
+            614,
+            777,
+            671
+          ],
+          "template": "assets/patterns/communication_error/0.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        },
+        {
+          "region": [
+            151,
+            731,
+            750,
+            853
+          ],
+          "template": "assets/patterns/communication_error/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        },
+        {
+          "region": [
+            374,
+            906,
+            523,
+            946
+          ],
+          "template": "assets/patterns/communication_error/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        }
+      ],
+      "priority": 30,
+      "verified_safe": true,
+      "notes": "Verified communication error; single safe OK, no currency option.",
+      "recovery": true,
+      "action": {
+        "id": "retry_connection",
+        "kind": "tap",
+        "expected": [
+          "TITLE_START",
+          "HOME_MENU",
+          "HOME_EMERGENCY",
+          "EMERGENCY_LIST",
+          "SCROLLS_BANNER",
+          "LOADING",
+          "NEWS_POPUP"
+        ],
+        "point": [
+          448,
+          925
+        ],
+        "point_anchor": 2
+      }
+    },
+    {
+      "name": "EMERGENCY_LIST",
+      "anchors": [
+        {
+          "region": [
+            174,
+            244,
+            733,
+            312
+          ],
+          "template": "assets/patterns/emergency_list/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            221,
+            537,
+            481,
+            575
+          ],
+          "template": "assets/patterns/emergency_list/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            340,
+            813,
+            1380
+          ]
+        },
+        {
+          "region": [
+            217,
+            818,
+            482,
+            856
+          ],
+          "template": "assets/patterns/emergency_list/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            340,
+            813,
+            1380
+          ]
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Verified Emergency Mission list at top. Scroll within list only, never tap other banners.",
+      "recovery": true,
+      "action": {
+        "id": "scroll_missions",
+        "kind": "swipe",
+        "expected": [
+          "SCROLLS_BANNER",
+          "EMERGENCY_LIST_2"
+        ],
+        "points": [
+          450,
+          1260,
+          450,
+          570
+        ]
+      }
+    },
+    {
+      "name": "SCROLLS_BANNER",
+      "anchors": [
+        {
+          "region": [
+            174,
+            244,
+            733,
+            312
+          ],
+          "template": "assets/patterns/scrolls_banner/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            304,
+            739,
+            599,
+            804
+          ],
+          "template": "assets/patterns/scrolls_banner/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            340,
+            813,
+            1380
+          ]
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "notes": "Emergency Mission header plus unique colored All Scrolls title; dynamic and stationary. Generic repeated Searching word excluded.",
+      "recovery": true,
+      "action": {
+        "id": "select_scrolls",
+        "kind": "tap",
+        "expected": [
+          "RANK_SELECTION"
+        ],
+        "point": [
+          450,
+          770
+        ],
+        "point_anchor": 1,
+        "point_offset": [
+          0,
+          0
+        ],
+        "input_mode": "hardware_touch"
+      }
+    },
+    {
+      "name": "EMERGENCY_LIST_2",
+      "anchors": [
+        {
+          "region": [
+            174,
+            244,
+            733,
+            312
+          ],
+          "template": "assets/patterns/emergency_list_2/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            229,
+            722,
+            586,
+            773
+          ],
+          "template": "assets/patterns/emergency_list_2/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            70,
+            330,
+            812,
+            1380
+          ]
+        },
+        {
+          "region": [
+            275,
+            455,
+            438,
+            494
+          ],
+          "template": "assets/patterns/emergency_list_2/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            70,
+            330,
+            812,
+            1380
+          ]
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Ramen All Cups and Heart Scrolls visible; safe list-only scroll, supports partial Skill banner.",
+      "recovery": true,
+      "action": {
+        "id": "scroll_missions",
+        "kind": "swipe",
+        "expected": [
+          "SCROLLS_BANNER",
+          "EMERGENCY_LIST_3"
+        ],
+        "points": [
+          450,
+          1260,
+          450,
+          570
+        ]
+      }
+    },
+    {
+      "name": "EMERGENCY_LIST_3",
+      "anchors": [
+        {
+          "region": [
+            174,
+            244,
+            733,
+            312
+          ],
+          "template": "assets/patterns/emergency_list_3/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            274,
+            496,
+            587,
+            554
+          ],
+          "template": "assets/patterns/emergency_list_3/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            70,
+            330,
+            812,
+            1380
+          ]
+        },
+        {
+          "region": [
+            213,
+            1060,
+            590,
+            1127
+          ],
+          "template": "assets/patterns/emergency_list_3/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            70,
+            330,
+            812,
+            1380
+          ]
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Verified Body and Wisdom scrolls; All Scrolls below visible area. Scroll within list only.",
+      "recovery": true,
+      "action": {
+        "id": "scroll_missions",
+        "kind": "swipe",
+        "expected": [
+          "SCROLLS_BANNER"
+        ],
+        "points": [
+          450,
+          1260,
+          450,
+          970
+        ],
+        "duration": 1000
+      }
+    },
+    {
+      "name": "EMERGENCY_LIST_OVERSHOT",
+      "anchors": [
+        {
+          "region": [
+            174,
+            244,
+            733,
+            312
+          ],
+          "template": "assets/patterns/emergency_list_overshot/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            230,
+            501,
+            551,
+            560
+          ],
+          "template": "assets/patterns/emergency_list_overshot/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            70,
+            330,
+            812,
+            1380
+          ]
+        },
+        {
+          "region": [
+            106,
+            745,
+            595,
+            824
+          ],
+          "template": "assets/patterns/emergency_list_overshot/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            70,
+            330,
+            812,
+            1380
+          ]
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "Known Getting Rich/Rookie list position below target; one short reverse scroll only.",
+      "recovery": true,
+      "action": {
+        "id": "scroll_missions",
+        "kind": "swipe",
+        "expected": [
+          "SCROLLS_BANNER",
+          "EMERGENCY_LIST_3"
+        ],
+        "points": [
+          450,
+          570,
+          450,
+          860
+        ],
+        "duration": 1000
+      }
+    },
+    {
+      "name": "READY_TO_START",
+      "anchors": [
+        {
+          "region": [
+            176,
+            239,
+            561,
+            308
+          ],
+          "template": "assets/patterns/ready_to_start/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            308,
+            395,
+            636,
+            461
+          ],
+          "template": "assets/patterns/ready_to_start/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            278,
+            1250,
+            614,
+            1301
+          ],
+          "template": "assets/patterns/ready_to_start/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            307,
+            1311,
+            419,
+            1361
+          ],
+          "template": "assets/patterns/ready_to_start/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            498,
+            1324,
+            524,
+            1354
+          ],
+          "template": "assets/patterns/ready_to_start/4.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "notes": "All Scrolls [A] and natural Stamina Required label/icon. Variable cost and team contents excluded; no settings changes.",
+      "recovery": true,
+      "action": {
+        "id": "start_mission",
+        "kind": "tap",
+        "expected": [
+          "IN_BATTLE",
+          "MISSION_COMPLETE",
+          "REVIVAL_PROMPT",
+          "STAMINA_PROMPT"
+        ],
+        "point": [
+          450,
+          1305
+        ]
+      }
+    },
+    {
+      "name": "RANK_UP_STAMINA_ACK",
+      "anchors": [
+        {
+          "region": [
+            182,
+            695,
+            722,
+            779
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            343,
+            856,
+            548,
+            935
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            300,
+            182,
+            649,
+            247
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 40,
+      "verified_safe": true,
+      "notes": "Live inspected free rank-up stamina-restored acknowledgement over All Scrolls [A] results; only OK. No purchase or restoration selection.",
+      "recovery": true,
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "expected": [
+          "RANK_UP_RESULTS",
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ],
+        "point": [
+          446,
+          896
+        ]
+      }
+    }
+  ]
+}

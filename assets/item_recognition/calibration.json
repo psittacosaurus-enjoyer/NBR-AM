@@ -1,0 +1,406 @@
+{
+  "schema_version": 2,
+  "library_sha256": "e850cd6b970e857b38da723c5f24b441de02c9da7e5d8c2f1aae0def5a5c0b10",
+  "threshold": 0.75,
+  "margin": 0.019265,
+  "supported_item_ids": [
+    "item_0f061961252195d5d64b836c",
+    "item_281a6b6591b85100b09105f0",
+    "item_31ac7f4f725807dff03f5472",
+    "item_46dff63ce93f3f02977d9910",
+    "item_46f07896c4055b81d1ff91ab",
+    "item_5ac3d49e47e4044733ff98e0",
+    "item_5f1b60db10590743010e222b",
+    "item_6338f644cfefd6f947135804",
+    "item_725cded89eb0b00ec07113c1",
+    "item_90a64a4261e34bad15a7f5d5",
+    "item_af2586304d2b5e8f09be152b",
+    "item_c72d0f541d5f82b5a7830ea0",
+    "item_cf15ca9f80280592d7c29010",
+    "item_f2616312e0532b2751841d9a",
+    "item_fa8e7d7bde0ad4e897d1ab78"
+  ],
+  "score_kind": "Masked color and structural similarity; not a calibrated probability",
+  "scope": "Original11validated items plus4reviewed boost groups and acquired characters Kushina231/Sakura379; quantities remainunknown; allother identities stayuncalibrated.",
+  "calibration_screenshots": [
+    "assets/reference_images/starting_point.png",
+    "tests/fixtures/rich_b/after_stamina_no.png"
+  ],
+  "positive_icon_count": 15,
+  "negative_icon_count": 2,
+  "minimum_positive_similarity": 0.826319,
+  "maximum_negative_similarity": 0.58235,
+  "minimum_correct_margin": 0.024081,
+  "evidence": [
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_46dff63ce93f3f02977d9910",
+      "top_candidate_id": "item_46dff63ce93f3f02977d9910",
+      "similarity": 0.846914,
+      "margin": 0.066203
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        219,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_46f07896c4055b81d1ff91ab",
+      "top_candidate_id": "item_46f07896c4055b81d1ff91ab",
+      "similarity": 0.867681,
+      "margin": 0.02735
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        381,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_5ac3d49e47e4044733ff98e0",
+      "top_candidate_id": "item_5ac3d49e47e4044733ff98e0",
+      "similarity": 0.845454,
+      "margin": 0.025067
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_6338f644cfefd6f947135804",
+      "top_candidate_id": "item_6338f644cfefd6f947135804",
+      "similarity": 0.863928,
+      "margin": 0.024081
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        705,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_0f061961252195d5d64b836c",
+      "top_candidate_id": "item_0f061961252195d5d64b836c",
+      "similarity": 0.835814,
+      "margin": 0.044947
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        57,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": "item_46dff63ce93f3f02977d9910",
+      "top_candidate_id": "item_46dff63ce93f3f02977d9910",
+      "similarity": 0.845931,
+      "margin": 0.065808
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        219,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": "item_c72d0f541d5f82b5a7830ea0",
+      "top_candidate_id": "item_c72d0f541d5f82b5a7830ea0",
+      "similarity": 0.829202,
+      "margin": 0.038945
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        381,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": "item_af2586304d2b5e8f09be152b",
+      "top_candidate_id": "item_af2586304d2b5e8f09be152b",
+      "similarity": 0.848511,
+      "margin": 0.030952
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        543,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": "item_5f1b60db10590743010e222b",
+      "top_candidate_id": "item_5f1b60db10590743010e222b",
+      "similarity": 0.826319,
+      "margin": 0.093207
+    },
+    {
+      "screenshot_sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
+      "bounding_box": [
+        705,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": "item_281a6b6591b85100b09105f0",
+      "top_candidate_id": "item_281a6b6591b85100b09105f0",
+      "similarity": 0.842507,
+      "margin": 0.033788
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_90a64a4261e34bad15a7f5d5",
+      "top_candidate_id": "item_90a64a4261e34bad15a7f5d5",
+      "similarity": 0.89302,
+      "margin": 0.219548
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        219,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_90a64a4261e34bad15a7f5d5",
+      "top_candidate_id": "item_90a64a4261e34bad15a7f5d5",
+      "similarity": 0.891705,
+      "margin": 0.219189
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        381,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_90a64a4261e34bad15a7f5d5",
+      "top_candidate_id": "item_90a64a4261e34bad15a7f5d5",
+      "similarity": 0.890434,
+      "margin": 0.218735
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": null,
+      "top_candidate_id": "item_54879165d0dce43645aa6677",
+      "similarity": 0.581793,
+      "margin": 0.011407
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        705,
+        411,
+        134,
+        139
+      ],
+      "expected_item_id": "item_cf15ca9f80280592d7c29010",
+      "top_candidate_id": "item_cf15ca9f80280592d7c29010",
+      "similarity": 0.844474,
+      "margin": 0.206222
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        57,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": "item_cf15ca9f80280592d7c29010",
+      "top_candidate_id": "item_cf15ca9f80280592d7c29010",
+      "similarity": 0.851605,
+      "margin": 0.209157
+    },
+    {
+      "screenshot_sha256": "fc0db1915e2a9403b1e54faac90b2a1c57dbfeb8c808d9f70b59f85eb162f599",
+      "bounding_box": [
+        219,
+        573,
+        134,
+        139
+      ],
+      "expected_item_id": null,
+      "top_candidate_id": "item_54879165d0dce43645aa6677",
+      "similarity": 0.58235,
+      "margin": 0.01123
+    }
+  ],
+  "canonical_groups": [
+    {
+      "canonical_item_id": "item_f2616312e0532b2751841d9a",
+      "member_ids": [
+        "item_f2616312e0532b2751841d9a",
+        "item_05a14bf65d718f395a1ba9b3",
+        "item_cdfc7d04af581f2c4523368e"
+      ],
+      "evidence": [
+        {
+          "screenshot_sha256": "c32347de28d2812b0c1dfe23a52375ee933c49132e868e18ab4e69e1335586e7",
+          "reason": "Visually inspected same three-star green-element Health Boost card; shared exact title; road/story unit11813; mission card0931 artwork agrees; no conflicting known identity metadata."
+        }
+      ]
+    },
+    {
+      "canonical_item_id": "item_31ac7f4f725807dff03f5472",
+      "member_ids": [
+        "item_31ac7f4f725807dff03f5472",
+        "item_8fc490fd1449b75acbd8d475",
+        "item_04df2a7d248028326f275d5d"
+      ],
+      "evidence": [
+        {
+          "screenshot_sha256": "c32347de28d2812b0c1dfe23a52375ee933c49132e868e18ab4e69e1335586e7",
+          "reason": "Visually inspected same three-star purple-element Attack Boost card; shared exact title; road/story unit11823; mission card0933 artwork agrees; no conflicting known identity metadata."
+        }
+      ]
+    },
+    {
+      "canonical_item_id": "item_725cded89eb0b00ec07113c1",
+      "member_ids": [
+        "item_725cded89eb0b00ec07113c1",
+        "item_2fe513792b516fa05b67582e",
+        "item_7f8b1b8b9fd7aa1f1793cbd9"
+      ],
+      "evidence": [
+        {
+          "screenshot_sha256": "a2e165bda1f0b261a6f4b6ef68cc6c2d53682db45878e2a6706a10ec70ac712a",
+          "reason": "Inspected same two-star Bravery Health Boost Health and Endurance; sourceunit11812 and exact title; missionandunit artworkmatch with no conflicting metadata."
+        }
+      ]
+    },
+    {
+      "canonical_item_id": "item_fa8e7d7bde0ad4e897d1ab78",
+      "member_ids": [
+        "item_fa8e7d7bde0ad4e897d1ab78",
+        "item_485e45d483552d942c933c5a",
+        "item_819bb9bdea8ff6fb7f887055"
+      ],
+      "evidence": [
+        {
+          "screenshot_sha256": "a2e165bda1f0b261a6f4b6ef68cc6c2d53682db45878e2a6706a10ec70ac712a",
+          "reason": "Inspected same two-star Wisdom Attack Boost Sphere of Strength; sourceunit11822 and exact title; missionandunit artworkmatch with no conflicting metadata."
+        }
+      ]
+    }
+  ],
+  "supported_character_ids": [
+    "character_2c6e2c21ff0640de0776e944",
+    "character_e9111c9d9093bb54efd3eb2e"
+  ],
+  "live_reward_evidence": {
+    "training_screenshots": [
+      {
+        "path": "runtime/loot/diagnostics/20261013_022720_acc1_night-of-tragedy-a_session_a0e93489156c31069c2f8ee1_4a1603afce2a5011abd8cb27_uncertain.png",
+        "sha256": "8920248d97191069d9bf1379ca9f3df87f29bbee6a769756176982af8ce7b2f7",
+        "run_sequence": 1,
+        "inspected_acquired_character_id": "character_2c6e2c21ff0640de0776e944",
+        "character_forms": [
+          "clean",
+          "Lucky Drop overlay"
+        ],
+        "character_boxes": [
+          [
+            57,
+            411,
+            134,
+            139
+          ],
+          [
+            219,
+            573,
+            134,
+            139
+          ]
+        ]
+      },
+      {
+        "path": "runtime/validation/initial_acc1_results.png",
+        "sha256": "c32347de28d2812b0c1dfe23a52375ee933c49132e868e18ab4e69e1335586e7",
+        "inspected_acquired_boost_ids": [
+          "item_f2616312e0532b2751841d9a",
+          "item_31ac7f4f725807dff03f5472"
+        ]
+      }
+    ],
+    "training_basis": "Independent library artwork/name/cardNo/rarity/element and live screenshot visual review. Completion conditions excluded. No acquired quantities inferred.",
+    "holdout_run_sequences": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10
+    ],
+    "practice_training": {
+      "source": "runtime/loot/diagnostics/20261013_030903_acc1_practice-part-1_session_94c68fea9ee71e3d2da0cb4a_144a575378403eb8bee3229b_uncertain.png",
+      "sha256": "a2e165bda1f0b261a6f4b6ef68cc6c2d53682db45878e2a6706a10ec70ac712a",
+      "character_id": "character_e9111c9d9093bb54efd3eb2e",
+      "character_card_no": 379,
+      "rarity": 4,
+      "element": "Body",
+      "clean_box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "lucky_drop_box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "training_positive_scores": [
+        0.823053,
+        0.727922
+      ],
+      "training_runner_up_scores": [
+        0.75416,
+        0.664262
+      ],
+      "reason": "Full-image per-form calibration retains frame, stars and element. Only verified card379 is supported; same-name card380 remains separate and uncalibrated."
+    }
+  },
+  "per_identity_thresholds": {
+    "character_2c6e2c21ff0640de0776e944": {
+      "threshold": 0.78,
+      "margin": 0.04
+    },
+    "character_e9111c9d9093bb54efd3eb2e": {
+      "threshold": 0.7,
+      "margin": 0.055
+    }
+  }
+}
