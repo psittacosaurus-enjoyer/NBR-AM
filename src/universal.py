@@ -10,12 +10,18 @@ import json
 TITLE_INDEX = {'READY_TO_START': 1, 'READY_TO_RETRY': 1, 'RESULTS_NEXT': 1,
                'REWARD_REVEAL': 0, 'RANK_UP_STAMINA_ACK': 2, 'STAMINA_PROMPT': 3}
 SHARED = {*TITLE_INDEX, 'IN_BATTLE', 'MISSION_COMPLETE', 'COMMUNICATION_ERROR'}
+SHARED_CATALOGS = (('catalog.json', 'scrolls-a'), ('rich_b.json', 'rich-b'),
+                   ('night_of_tragedy_a.json', 'night-of-tragedy-a'))
+
+
+def catalog_paths(root):
+    return [root / 'assets/patterns' / name
+            for name in [*(name for name, _ in SHARED_CATALOGS), 'universal_results.json']]
 
 
 def shared_states(root):
     states, titles, seen = [], [], set()
-    for catalog, mission in (('catalog.json', 'scrolls-a'), ('rich_b.json', 'rich-b'),
-                             ('night_of_tragedy_a.json', 'night-of-tragedy-a')):
+    for catalog, mission in SHARED_CATALOGS:
         source = json.loads((root / 'assets/patterns' / catalog).read_text(encoding='utf-8'))
         for original in source['states']:
             if original['name'] not in SHARED:

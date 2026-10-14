@@ -44,6 +44,7 @@ class ManagerWindow(QMainWindow):
         self._active = False
         self._connection = {}
         self._pending_action = None
+        self._stop_pending = False
         self._awaiting_verification = False
         self._revision = 0
         self._poll_busy = False
@@ -372,7 +373,8 @@ class ManagerWindow(QMainWindow):
                 pass  # A closed window need not receive the completed result.
 
         # A command finishes normally even if the user closes the window mid-command.
-        threading.Thread(target=work, name=f"nbr-manager-{kind}", daemon=kind != "command").start()
+        threading.Thread(target=work, name=f"nbr-manager-{kind}",
+                         daemon=kind not in {"command", "stop-command"}).start()
 
     @Slot()
     def refresh(self):
@@ -453,9 +455,13 @@ class ManagerWindow(QMainWindow):
             if self._poll_again:
                 self._poll_again = False
                 self.refresh()
-        elif kind == "command":
-            action = self._pending_action
-            self._pending_action = None
+        elif kind in {"command", "stop-command"}:
+            if kind == "stop-command":
+                action = "stop"
+                self._stop_pending = False
+            else:
+                action = self._pending_action or "command"
+                self._pending_action = None
             self._awaiting_verification = True
             self._revision += 1
             if error:
@@ -493,7 +499,8 @@ class ManagerWindow(QMainWindow):
         self._active = bool(snapshot.get("running") or snapshot.get("active_pids")
                             or snapshot.get("worker_running") or snapshot.get("supervisor_running"))
         if was_active and not self._active:
-            if not (previously_stopping or snapshot.get("stop_requested") or self._pending_action in {"stop", "restart"}):
+            if not (previously_stopping or snapshot.get("stop_requested") or self._stop_pending
+                    or self._pending_action in {"stop", "restart"}):
                 self._exit_error = "Automation exited unexpectedly. Review the activity log before restarting."
                 self._append_log(self._exit_error)
             self._update_runtime()
@@ -713,7 +720,7 @@ class ManagerWindow(QMainWindow):
             state = "ERROR"
         elif not self._snapshot_known:
             state = "STOPPED"
-        elif self._active and snapshot.get("stop_requested"):
+        elif self._stop_pending or (self._active and snapshot.get("stop_requested")):
             state = "STOPPING"
         elif self._active and snapshot.get("worker_running"):
             state = "RUNNING"
@@ -738,7 +745,9 @@ class ManagerWindow(QMainWindow):
         self.error_label.setText("\n".join(error for error in errors if error))
         self.error_label.setVisible(any(errors))
 
-        if self._pending_action:
+        if self._stop_pending:
+            details = "Stop requested; cancelling any queued launch and waiting for the controller to finish safely…"
+        elif self._pending_action:
             details = {
                 "start": "Start requested; waiting for the controller and verifying processes…",
                 "stop": "Stop requested; waiting for the controller to finish safely…",
@@ -766,10 +775,13 @@ class ManagerWindow(QMainWindow):
         self._update_controls()
 
     def _update_controls(self):
-        idle = self._pending_action is None and not self._awaiting_verification
+        idle = self._pending_action is None and not self._stop_pending and not self._awaiting_verification
         ready = self._snapshot_known and not self._active and idle
         self.start_button.setEnabled(bool(ready and self.stage_combo.currentData() and not self._stage_error))
-        self.stop_button.setEnabled(bool(self._active and idle and not self._snapshot.get("stop_requested")))
+        launch_pending = self._pending_action in {"start", "restart"}
+        self.stop_button.setEnabled(bool(not self._closed and not self._stop_pending
+                                         and (launch_pending or (self._active
+                                              and not self._snapshot.get("stop_requested")))))
         self.stage_combo.setEnabled(bool(ready and self.stage_combo.count()))
         self.restart_button.setEnabled(bool(idle and not self._closed and not self._stage_error))
         self.stamina_duration_combo.setEnabled(bool(idle and self._snapshot_known))
@@ -841,16 +853,27 @@ class ManagerWindow(QMainWindow):
             self._sync_stage()
 
     def _command(self, action, stage=None):
-        if self._pending_action or self._closed:
+        if self._closed or self._stop_pending or (self._pending_action and action != "stop"):
             return
-        self._pending_action = action
+        try:
+            prepare = getattr(self.backend, "prepare_command", None)
+            operation = prepare(action, stage) if prepare else lambda: self.backend.command(action, stage)
+        except Exception as exc:
+            self._command_error = f"Could not prepare {action}: {exc}"
+            self._append_log(self._command_error)
+            self._render_state()
+            return
+        if action == "stop":
+            self._stop_pending = True
+        else:
+            self._pending_action = action
         self._revision += 1
         self._command_error = ""
         self._exit_error = ""
         selection = f"{stage} minutes" if action == "stamina-duration" else self.stage_combo.currentText()
         self._append_log(f"Requested {action}" + (f": {selection}" if stage else "."))
         self._render_state()
-        self._run("command", lambda: self.backend.command(action, stage))
+        self._run("stop-command" if action == "stop" else "command", operation)
 
     @Slot()
     def _update_runtime(self):
