@@ -6,12 +6,16 @@ from contextlib import contextmanager, closing
 from ctypes import wintypes
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
+import re
 import sqlite3
 import threading
 import time
 import uuid
+
+from process_state import process_identity
 
 
 _MISSION_STAGES = {
@@ -27,26 +31,6 @@ def _mission_stage(name):
         return 'unknown'
     name = name.strip()
     return _MISSION_STAGES.get(name, name if name in _MISSION_STAGES.values() else 'unknown')
-
-
-def process_identity(pid):
-    """PID plus creation time prevents PID reuse from joining unrelated sessions."""
-    kernel = ctypes.windll.kernel32
-    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
-    kernel.OpenProcess.restype = wintypes.HANDLE
-    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
-    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
-    handle = kernel.OpenProcess(0x1000, False, int(pid))
-    if not handle:
-        raise OSError("Cannot establish farming process creation identity")
-    try:
-        values = [wintypes.FILETIME() for _ in range(4)]
-        if not kernel.GetProcessTimes(handle, *(ctypes.byref(v) for v in values)):
-            raise OSError("Cannot read farming process creation time")
-        ticks = (values[0].dwHighDateTime << 32) | values[0].dwLowDateTime
-        return f"{pid}:{ticks}", ticks / 10_000_000 - 11_644_473_600
-    finally:
-        kernel.CloseHandle(handle)
 
 
 def _atomic_json(path, value):
@@ -307,10 +291,12 @@ class Collector:
                                         (self.session_id,)).fetchone()[0]
         for path in self.spool.glob('*.json'):
             try:
-                value = json.loads(path.read_text('utf-8'))
+                value = self._read_spool(path)
+                if value is None:
+                    continue
                 self._ready_count += int(value['state'] == 'ready')
                 if value['session_id'] == self.session_id:
-                    self._sequence = max(self._sequence, value.get('run_sequence', 0))
+                    self._sequence = max(self._sequence, value.get('run_sequence') or 0)
                 if len(self._events) >= self.max_pending + 2:
                     continue
                 if self.store.finalized(value['completion_id']):
@@ -327,6 +313,59 @@ class Collector:
 
     def _path(self, value):
         return self.spool / (value['completion_id'] + '.json')
+
+    def _read_spool(self, path):
+        """Isolate damaged records so one file cannot starve the durable queue."""
+        try:
+            value = json.loads(path.read_text('utf-8'))
+            if not isinstance(value, dict):
+                raise ValueError('Spool record must be an object')
+            for field in ('completion_id', 'session_id', 'account', 'stage'):
+                if not isinstance(value.get(field), str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,200}', value[field]):
+                    raise ValueError(f'Invalid spool {field}')
+            if path.name != value['completion_id'] + '.json':
+                raise ValueError('Spool filename does not match completion ID')
+            if value.get('state') not in {'awaiting_evidence', 'ready', 'missing_screenshot', 'backlog_limit'}:
+                raise ValueError('Invalid spool state')
+            if type(value.get('run_id')) not in (str, int):
+                raise ValueError('Invalid spool run ID')
+            sequence = value.get('run_sequence')
+            if sequence is not None and (type(sequence) is not int or sequence < 1):
+                raise ValueError('Invalid spool run sequence')
+            completed = value.get('completed_at')
+            if type(completed) not in (int, float) or not math.isfinite(completed) or completed <= 0:
+                raise ValueError('Invalid spool completion time')
+            attempts = value.get('persistence_attempts', 0)
+            if type(attempts) is not int or attempts < 0:
+                raise ValueError('Invalid spool retry count')
+            screenshot = value.get('screenshot')
+            if screenshot is not None:
+                expected_screenshot = self.spool.resolve() / (value['completion_id'] + '.png')
+                if (not isinstance(screenshot, str)
+                        or Path(screenshot).resolve() != expected_screenshot):
+                    raise ValueError('Spool screenshot must belong to this completion')
+            return value
+        except FileNotFoundError:
+            return None  # A completed event may have just been removed.
+        except (ValueError, TypeError, UnicodeError, OverflowError, RecursionError) as exc:
+            try:
+                quarantine = self.directory / 'quarantine'
+                quarantine.mkdir(exist_ok=True)
+                target = quarantine / f'{path.stem}_{uuid.uuid4().hex}.json'
+                path.replace(target)
+                _atomic_json(target.with_suffix('.error.json'), {
+                    'source': path.name, 'time': time.time(), 'error': str(exc)})
+                cached = self._events.pop(path.stem, None)
+                if cached and cached.get('state') == 'ready':
+                    self._ready_count = max(0, self._ready_count - 1)
+                self._attempts.pop(path.stem, None)
+                self._error(ValueError(f'Quarantined {path.name}: {exc}'))
+            except OSError as quarantine_error:
+                self._error(quarantine_error)
+            return None
+        except OSError as exc:
+            self._error(exc)  # Transient access errors remain eligible for retry.
+            return None
 
     def _completion_id(self, run_id):
         return self.session_id + '_' + hashlib.sha256(str(run_id).encode()).hexdigest()[:24]
@@ -351,9 +390,9 @@ class Collector:
                 except sqlite3.Error as exc:
                     self._error(exc)  # Preserve the event/evidence even when SQLite is unavailable.
                 saved = self.spool / (cid + '.json')
-                if saved.exists():
+                value = self._read_spool(saved) if saved.exists() else None
+                if value is not None:
                     # A replayed completion keeps its original durable time and sequence.
-                    value = json.loads(saved.read_text('utf-8'))
                     while len(self._events) >= self.max_pending + 2:
                         removable = next((key for key, v in self._events.items()
                                           if key not in self._inflight and v['state'] != 'awaiting_evidence'), None)
@@ -547,7 +586,9 @@ class Collector:
                     for path in self.spool.glob('*.json'):
                         if len(self._events) >= self.max_pending + 2:
                             break
-                        value = json.loads(path.read_text('utf-8'))
+                        value = self._read_spool(path)
+                        if value is None:
+                            continue
                         cid = value['completion_id']
                         if (cid not in self._events and not
                             (value.get('retry_generation') == self._generation and value.get('persistence_attempts', 0) >= 3)):
@@ -598,7 +639,10 @@ class Collector:
         # Also finalize waiting events evicted from RAM during persistence outages.
         for path in self.spool.glob('*.json'):
             try:
-                value = json.loads(path.read_text('utf-8'))
+                with self._lock:
+                    value = self._read_spool(path)
+                if value is None:
+                    continue
                 if value['session_id'] == self.session_id and value['state'] == 'awaiting_evidence':
                     with self._lock:
                         value['state'] = 'missing_screenshot'

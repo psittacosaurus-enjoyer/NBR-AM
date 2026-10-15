@@ -59,10 +59,12 @@ class ControllerBackend:
         from loot_tracking import read_dashboard
         return read_dashboard(self.root, snapshot, session_id=session_id, limit=limit, offset=offset)
 
-    def _invoke(self, action, stage=None, timeout=45):
+    def _invoke(self, action, stage=None, timeout=45, requested_generation=None):
         args = [str(self.python), str(self.root / "src" / "farm.py"), action]
         if stage is not None:
             args.extend(["--minutes" if action == "stamina-duration" else "--stage", str(stage)])
+        if requested_generation is not None:
+            args.extend(["--stop-generation", requested_generation])
         try:
             result = subprocess.run(args, cwd=self.root, capture_output=True, text=True,
                                     encoding="utf-8", errors="replace", timeout=timeout,
@@ -78,7 +80,13 @@ class ControllerBackend:
             raise ControllerError(f"Controller {action} failed: {detail[-2000:]}")
         return result.stdout.strip()
 
-    def command(self, action, stage=None):
+    def prepare_command(self, action, stage=None):
+        # Capture at the user's click, before a background thread or CLI starts.
+        generation = (farm.read_json(self.root / "runtime/stop_generation.json").get("id", "")
+                      if action in {"start", "restart"} else None)
+        return lambda: self.command(action, stage, requested_generation=generation)
+
+    def command(self, action, stage=None, *, requested_generation=None):
         if action not in {"start", "stop", "select", "restart", "end-stamina-wait", "stamina-duration"}:
             raise ValueError("Unsupported manager command")
         if action == "stamina-duration":
@@ -94,7 +102,11 @@ class ControllerBackend:
         if action in {"stop", "end-stamina-wait"}:
             stage = None  # Existing stop is account-wide, regardless of selection.
         if action == "restart":
-            return self._invoke(action, stage, timeout=150)
+            return self._invoke(action, stage, timeout=150, requested_generation=requested_generation)
+        if action == "start" and requested_generation is not None:
+            return self._invoke(action, stage, requested_generation=requested_generation)
+        if action == "stop":
+            return self._invoke(action, timeout=75)
         return self._invoke(action, stage)
 
     def snapshot(self):
@@ -122,12 +134,13 @@ class ControllerBackend:
         for pid in (supervisor_pid, *worker_pids):
             if pid is not None and not self._valid_pid(pid):
                 raise ControllerError("Controller returned an invalid process ID")
-        state["supervisor_running"] = bool(farm.alive(supervisor_pid))
-        state["worker_running"] = any(farm.alive(pid) for pid in worker_pids if pid)
+        state["supervisor_running"] = farm.record_alive(supervisor)
+        worker_records = (supervisor, progress)
+        state["worker_running"] = any(farm.record_alive(record, "worker_pid") for record in worker_records)
         started = _process_started(supervisor_pid) if state["supervisor_running"] else None
         if started is None and state["worker_running"]:
-            started = next((_process_started(pid) for pid in reversed(worker_pids)
-                            if pid and farm.alive(pid)), None)
+            started = next((_process_started(record["worker_pid"]) for record in reversed(worker_records)
+                            if farm.record_alive(record, "worker_pid")), None)
         if started is None:
             started = supervisor.get("started")
         state["started_at"] = started if isinstance(started, (int, float)) and started > 0 else None
