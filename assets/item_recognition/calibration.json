@@ -4,9 +4,11 @@
   "threshold": 0.75,
   "margin": 0.019265,
   "supported_item_ids": [
+    "item_0196d2d789faf1bd23719d48",
     "item_0f061961252195d5d64b836c",
     "item_1b68f7a9137b7901c944ee37",
     "item_281a6b6591b85100b09105f0",
+    "item_2f23f5a4588977b62c07167f",
     "item_31ac7f4f725807dff03f5472",
     "item_46dff63ce93f3f02977d9910",
     "item_46f07896c4055b81d1ff91ab",
@@ -15,15 +17,24 @@
     "item_6338f644cfefd6f947135804",
     "item_6d6a5da5c924f0df37192860",
     "item_725cded89eb0b00ec07113c1",
+    "item_8564fb55369c9789b4a03023",
+    "item_8743978673b0ccdee6b9ca07",
     "item_90a64a4261e34bad15a7f5d5",
     "item_af2586304d2b5e8f09be152b",
+    "item_b4178c2f0e22eb691b458c96",
     "item_c72d0f541d5f82b5a7830ea0",
     "item_cf15ca9f80280592d7c29010",
     "item_f2616312e0532b2751841d9a",
-    "item_fa8e7d7bde0ad4e897d1ab78"
+    "item_fa8e7d7bde0ad4e897d1ab78",
+    "item_3be4ceccb4ed8b0c5f9696d0",
+    "item_54167d4cce6d7ce537f4cdac",
+    "item_8f4e03640198460d720b04f9",
+    "item_58d3f0fbc779edee3b80538c",
+    "item_f07e75e2a57c1fd2f2c6c056",
+    "item_948ed64af6d887bff7cece0f"
   ],
   "score_kind": "Masked color and structural similarity; not a calibrated probability",
-  "scope": "Original11validated items plus4reviewed boost groups and acquired characters Kushina231/Sakura379; quantities remainunknown; allother identities stayuncalibrated.",
+  "scope": "Original11validated items plus4reviewed boost groups and acquired characters Kushina231/Sakura379; quantities remainunknown; allother identities stayuncalibrated. Reviewed four-star XXL ramen in all five elements; only Wisdom uses its measured family separation margin.",
   "calibration_screenshots": [
     "assets/reference_images/starting_point.png",
     "tests/fixtures/rich_b/after_stamina_no.png"
@@ -421,6 +432,50 @@
     "character_e9111c9d9093bb54efd3eb2e": {
       "threshold": 0.7,
       "margin": 0.055
+    },
+    "item_2f23f5a4588977b62c07167f": {
+      "threshold": 0.8,
+      "margin": 0.019265
+    },
+    "item_8743978673b0ccdee6b9ca07": {
+      "threshold": 0.8,
+      "margin": 0.019265
+    },
+    "item_b4178c2f0e22eb691b458c96": {
+      "threshold": 0.8,
+      "margin": 0.014315
+    },
+    "item_0196d2d789faf1bd23719d48": {
+      "threshold": 0.8,
+      "margin": 0.019265
+    },
+    "item_8564fb55369c9789b4a03023": {
+      "threshold": 0.8,
+      "margin": 0.019265
+    },
+    "item_3be4ceccb4ed8b0c5f9696d0": {
+      "threshold": 0.82,
+      "margin": 0.025
+    },
+    "item_54167d4cce6d7ce537f4cdac": {
+      "threshold": 0.82,
+      "margin": 0.025
+    },
+    "item_8f4e03640198460d720b04f9": {
+      "threshold": 0.82,
+      "margin": 0.025
+    },
+    "item_58d3f0fbc779edee3b80538c": {
+      "threshold": 0.82,
+      "margin": 0.025
+    },
+    "item_f07e75e2a57c1fd2f2c6c056": {
+      "threshold": 0.82,
+      "margin": 0.025
+    },
+    "item_948ed64af6d887bff7cece0f": {
+      "threshold": 0.64,
+      "margin": 0.06
     }
   },
   "compatible_library_imports": [
@@ -488,5 +543,508 @@
       "quantity": null
     }
   ],
-  "expanded_labeled_positive_icon_count": 3
+  "expanded_labeled_positive_icon_count": 3,
+  "ramen_reward_evidence": {
+    "screenshot": "tests/fixtures/item_recognition/all_cups_ramen_results.png",
+    "screenshot_sha256": "288723d9360658bf4f32583ffeb63facb5027a5c531be9523b06f2fb1a835b54",
+    "basis": "Visual review of all five four-star XXL ramen cards against source-verified library artwork; element and rarity remain distinct. Quantity is not displayed.",
+    "rewards": [
+      {
+        "expected_item_id": "item_2f23f5a4588977b62c07167f",
+        "item_name": "Bravery \"Ichiraku Ramen, XXL\"",
+        "element": "Bravery",
+        "rarity": "4",
+        "bounding_box": [
+          57,
+          411,
+          134,
+          139
+        ],
+        "similarity": 0.842125,
+        "margin": 0.028046,
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/missions/card-0970.webp",
+          "https://gachawiki.net/naruto-blazing/story/units/12704.webp",
+          "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/4/40/Card-0970.png/revision/latest?cb=20161215044903"
+        ]
+      },
+      {
+        "expected_item_id": "item_8743978673b0ccdee6b9ca07",
+        "item_name": "Heart \"Ichiraku Ramen, XXL\"",
+        "element": "Heart",
+        "rarity": "4",
+        "bounding_box": [
+          219,
+          411,
+          134,
+          139
+        ],
+        "similarity": 0.842706,
+        "margin": 0.033636,
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/missions/card-0967.webp",
+          "https://gachawiki.net/naruto-blazing/story/units/12674.webp",
+          "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/a/a8/Card-0967.png/revision/latest?cb=20161215044854"
+        ]
+      },
+      {
+        "expected_item_id": "item_b4178c2f0e22eb691b458c96",
+        "item_name": "Wisdom \"Ichiraku Ramen, XXL\"",
+        "element": "Wisdom",
+        "rarity": "4",
+        "bounding_box": [
+          381,
+          411,
+          134,
+          139
+        ],
+        "similarity": 0.825075,
+        "margin": 0.017894,
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/missions/card-0971.webp",
+          "https://gachawiki.net/naruto-blazing/story/units/12714.webp",
+          "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/b/b0/Card-0971.png/revision/latest?cb=20161215044905"
+        ]
+      },
+      {
+        "expected_item_id": "item_0196d2d789faf1bd23719d48",
+        "item_name": "Body \"Ichiraku Ramen, XXL\"",
+        "element": "Body",
+        "rarity": "4",
+        "bounding_box": [
+          543,
+          411,
+          134,
+          139
+        ],
+        "similarity": 0.82285,
+        "margin": 0.027285,
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/missions/card-0969.webp",
+          "https://gachawiki.net/naruto-blazing/story/units/12694.webp",
+          "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/6/69/Card-0969.png/revision/latest?cb=20161215044900"
+        ]
+      },
+      {
+        "expected_item_id": "item_8564fb55369c9789b4a03023",
+        "item_name": "Skill \"Ichiraku Ramen, XXL\"",
+        "element": "Skill",
+        "rarity": "4",
+        "bounding_box": [
+          705,
+          411,
+          134,
+          139
+        ],
+        "similarity": 0.835897,
+        "margin": 0.024144,
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/missions/card-0968.webp",
+          "https://gachawiki.net/naruto-blazing/story/units/12684.webp",
+          "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/9/92/Card-0968.png/revision/latest?cb=20161215044857"
+        ]
+      }
+    ],
+    "holdout": "tests/fixtures/universal/unconfigured_results.png",
+    "holdout_sha256": "629ea711f2c8079521e17701d2919c0705c5c4d490019a074858174bdc841bd2",
+    "quantity": null
+  },
+  "xl_ramen_reward_evidence": {
+    "basis": "Independent visual comparison of retained acc1 acquired cards with local source-verified library card artwork: bowl, element badge, bronze three-star frame, and rarity agree. XL and XXL are separate identities. One acquired icon is one drop; condition cards are excluded.",
+    "item_ids": {
+      "Heart": "item_3be4ceccb4ed8b0c5f9696d0",
+      "Skill": "item_54167d4cce6d7ce537f4cdac",
+      "Body": "item_8f4e03640198460d720b04f9",
+      "Bravery": "item_58d3f0fbc779edee3b80538c",
+      "Wisdom": "item_f07e75e2a57c1fd2f2c6c056"
+    },
+    "examples": [
+      {
+        "file": "all_cups_body_xl_results.png",
+        "sha256": "04ba7011beb5b5a46bf783ac6d5a56c0d629518dccf0970cf75dff4d72e9629b",
+        "expected_rewards": [
+          {
+            "bounding_box": [
+              57,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_2f23f5a4588977b62c07167f"
+          },
+          {
+            "bounding_box": [
+              219,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_8f4e03640198460d720b04f9"
+          },
+          {
+            "bounding_box": [
+              381,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_b4178c2f0e22eb691b458c96"
+          },
+          {
+            "bounding_box": [
+              543,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_0196d2d789faf1bd23719d48"
+          },
+          {
+            "bounding_box": [
+              705,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_8564fb55369c9789b4a03023"
+          }
+        ]
+      },
+      {
+        "file": "all_cups_skill_xl_results.png",
+        "sha256": "249f93c4b7e616387c86184e177485623412569487dddd5cf65d427e5dab7b3d",
+        "expected_rewards": [
+          {
+            "bounding_box": [
+              57,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_2f23f5a4588977b62c07167f"
+          },
+          {
+            "bounding_box": [
+              219,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_54167d4cce6d7ce537f4cdac"
+          },
+          {
+            "bounding_box": [
+              381,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_b4178c2f0e22eb691b458c96"
+          },
+          {
+            "bounding_box": [
+              543,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_0196d2d789faf1bd23719d48"
+          },
+          {
+            "bounding_box": [
+              705,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_8564fb55369c9789b4a03023"
+          }
+        ]
+      },
+      {
+        "file": "all_cups_xl_results.png",
+        "sha256": "bce893c616a3ecfe7fbec9d4cf9e95d5523354cb90e0d1be7e7eae4fbd695107",
+        "expected_rewards": [
+          {
+            "bounding_box": [
+              57,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_3be4ceccb4ed8b0c5f9696d0"
+          },
+          {
+            "bounding_box": [
+              219,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_54167d4cce6d7ce537f4cdac"
+          },
+          {
+            "bounding_box": [
+              381,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_8f4e03640198460d720b04f9"
+          },
+          {
+            "bounding_box": [
+              543,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_f07e75e2a57c1fd2f2c6c056"
+          },
+          {
+            "bounding_box": [
+              705,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_58d3f0fbc779edee3b80538c"
+          },
+          {
+            "bounding_box": [
+              57,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_8f4e03640198460d720b04f9"
+          },
+          {
+            "bounding_box": [
+              219,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_f07e75e2a57c1fd2f2c6c056"
+          },
+          {
+            "bounding_box": [
+              381,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_f07e75e2a57c1fd2f2c6c056"
+          },
+          {
+            "bounding_box": [
+              543,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_8f4e03640198460d720b04f9"
+          },
+          {
+            "bounding_box": [
+              705,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_58d3f0fbc779edee3b80538c"
+          }
+        ]
+      }
+    ],
+    "threshold": 0.82,
+    "margin": 0.025
+  },
+  "reviewed_gama_millionaire": {
+    "item_id": "item_948ed64af6d887bff7cece0f",
+    "basis": "Independent visual comparison with the source-linked Card-1161.png: Bravery badge, four-star silver frame, frog holding gold ingots. Includes animated glow and an independent current-run capture. Each acquired icon is one drop.",
+    "source_reference_sha256": "888b3ea1b16d017d4225954c2d35f87461a8404292825b2c2faad3fb9a593399",
+    "minimum_reviewed_similarity": 0.649029,
+    "minimum_reviewed_margin": 0.060572,
+    "threshold": 0.64,
+    "margin": 0.06,
+    "fixtures": [
+      {
+        "file": "gama_millionaire_animated.png",
+        "sha256": "3a178c6f41285a23289a84393cafa0d5fa03ae6ed0f945ef80bd0cc4dd573362",
+        "expected_rewards": [
+          {
+            "bounding_box": [
+              57,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_90a64a4261e34bad15a7f5d5"
+          },
+          {
+            "bounding_box": [
+              219,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_90a64a4261e34bad15a7f5d5"
+          },
+          {
+            "bounding_box": [
+              381,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_90a64a4261e34bad15a7f5d5"
+          },
+          {
+            "bounding_box": [
+              543,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_948ed64af6d887bff7cece0f"
+          },
+          {
+            "bounding_box": [
+              705,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_cf15ca9f80280592d7c29010"
+          },
+          {
+            "bounding_box": [
+              57,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_948ed64af6d887bff7cece0f"
+          },
+          {
+            "bounding_box": [
+              219,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_cf15ca9f80280592d7c29010"
+          },
+          {
+            "bounding_box": [
+              381,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_948ed64af6d887bff7cece0f"
+          }
+        ]
+      },
+      {
+        "file": "gama_millionaire_holdout.png",
+        "sha256": "5dc26c1c5008e8aa74cce54405b41e507fbc501a6820883fe290524d83c1705c",
+        "expected_rewards": [
+          {
+            "bounding_box": [
+              57,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_90a64a4261e34bad15a7f5d5"
+          },
+          {
+            "bounding_box": [
+              219,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_90a64a4261e34bad15a7f5d5"
+          },
+          {
+            "bounding_box": [
+              381,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_90a64a4261e34bad15a7f5d5"
+          },
+          {
+            "bounding_box": [
+              543,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_948ed64af6d887bff7cece0f"
+          },
+          {
+            "bounding_box": [
+              705,
+              411,
+              134,
+              139
+            ],
+            "item_id": "item_cf15ca9f80280592d7c29010"
+          },
+          {
+            "bounding_box": [
+              57,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_cf15ca9f80280592d7c29010"
+          },
+          {
+            "bounding_box": [
+              219,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_cf15ca9f80280592d7c29010"
+          },
+          {
+            "bounding_box": [
+              381,
+              573,
+              134,
+              139
+            ],
+            "item_id": "item_948ed64af6d887bff7cece0f"
+          }
+        ]
+      }
+    ],
+    "source_alignment": {
+      "basis": "Opaque edge artifacts in the 145px source PNG shift alpha-only bounds. Reviewed card bounds preserve the badge, frame and stars and align the actual artwork, including the Lucky Drop text overlay. Existing score and separation gates are unchanged.",
+      "bounds": [
+        8,
+        6,
+        126,
+        128
+      ],
+      "overlay_fixture": "tests/fixtures/item_recognition/gama_millionaire_lucky_overlay.png",
+      "overlay_sha256": "6cfa1d4d70e176fe81e3a617e334bddd5fbe045244ec1d08d3187e3a2d70206b"
+    }
+  },
+  "reference_bounds": {
+    "888b3ea1b16d017d4225954c2d35f87461a8404292825b2c2faad3fb9a593399": [
+      8,
+      6,
+      126,
+      128
+    ]
+  }
 }

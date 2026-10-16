@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 
 import farm
 from test_stages import FakeDevice
+from instance_fixtures import legacy_target
 
 
 class StaminaControlTests(unittest.TestCase):
@@ -20,6 +21,7 @@ class StaminaControlTests(unittest.TestCase):
         self.patches = [patch.object(farm, 'RUNTIME', self.runtime),
                         patch.object(farm, 'STOP', self.runtime / 'STOP'),
                         patch.object(farm, 'event'),
+                        patch.object(farm, 'record_alive', side_effect=lambda record, key='pid': farm.alive(record.get(key))),
                         patch.object(farm, 'alive', side_effect=lambda pid: pid == os.getpid()),
                         patch.object(farm.time, 'time', side_effect=lambda: self.now),
                         patch.object(farm.time, 'sleep'),
@@ -35,8 +37,8 @@ class StaminaControlTests(unittest.TestCase):
                                         'point': [450, 1524],
                                         'expected': ['READY_TO_START', 'STAMINA_PROMPT']}},
         }
-        farm.write_json(self.runtime / 'selection.json', {'stage': 'rich-b'})
-        farm.write_json(self.runtime / 'session.json', {'stage': 'rich-b', 'mission_verified': True})
+        farm.write_json(self.runtime / 'selection.json', {'stage': 'universal'})
+        farm.write_json(self.runtime / 'session.json', {'stage': 'universal', 'mission_verified': True})
 
     def tearDown(self):
         for item in reversed(self.patches):
@@ -45,7 +47,7 @@ class StaminaControlTests(unittest.TestCase):
 
     def engine(self):
         with patch.object(farm, 'Device', return_value=FakeDevice(self.frame)):
-            engine = farm.Engine('rich-b')
+            engine = farm.Engine('universal')
         engine.observe = lambda: (self.frame, self.screen, copy.deepcopy(self.specs[self.screen]), {})
         return engine
 
@@ -62,7 +64,7 @@ class StaminaControlTests(unittest.TestCase):
     def test_all_durations_persist_and_are_used_by_new_engines(self):
         for minutes in (5, 10, 15, 20, 25):
             with self.subTest(minutes=minutes):
-                (self.runtime / 'rich_b.json').unlink(missing_ok=True)
+                (self.runtime / 'universal.json').unlink(missing_ok=True)
                 self.screen = 'STAMINA_PROMPT'
                 farm.set_stamina_duration(minutes)
                 self.assertEqual(farm.stamina_wait_minutes(), minutes)
@@ -175,22 +177,26 @@ class FullRestartControlTests(unittest.TestCase):
         self.runtime = Path(self.temp.name)
         self.device = Mock(spec=FakeDevice)
         self.patches = [patch.object(farm, 'RUNTIME', self.runtime),
+                        patch.object(farm, 'selected_instance', return_value=legacy_target()),
+                        patch.object(farm, 'effective_instance', return_value=legacy_target()),
+                        patch.object(farm, 'validate_mapping'),
                         patch.object(farm, 'STOP', self.runtime / 'STOP'),
                         patch.object(farm, 'event'),
+                        patch.object(farm, 'record_alive', side_effect=lambda record, key='pid': farm.alive(record.get(key))),
                         patch.object(farm, 'Device', return_value=self.device),
                         patch.object(farm, 'alive', return_value=False),
                         patch.object(farm.subprocess, 'run')]
         for item in self.patches:
             item.start()
-        farm.write_json(self.runtime / 'selection.json', {'stage': 'rich-b'})
-        farm.write_json(self.runtime / 'supervisor.json', {'pid': 111, 'worker_pid': 222, 'stage': 'rich-b'})
+        farm.write_json(self.runtime / 'selection.json', {'stage': 'universal'})
+        farm.write_json(self.runtime / 'supervisor.json', {'pid': 111, 'worker_pid': 222, 'stage': 'universal'})
         self.progress = {'pending': {'id': 'retry', 'source': 'READY_TO_RETRY',
                                     'expected': ['READY_TO_START'], 'time': 1},
                          'stamina_until': 12345, 'counts': {'started': 9},
                          'run': {'id': 'preserved'}, 'worker_pid': 222,
                          'heartbeat': 1, 'screen': 'UNKNOWN', 'blocked': 'error'}
-        farm.write_json(self.runtime / 'rich_b.json', self.progress)
-        farm.write_json(self.runtime / 'session.json', {'stage': 'rich-b', 'mission_verified': True})
+        farm.write_json(self.runtime / 'universal.json', self.progress)
+        farm.write_json(self.runtime / 'session.json', {'stage': 'universal', 'mission_verified': True})
         farm.write_json(self.runtime / 'stamina_request.json', {'id': 'obsolete'})
         (self.runtime / 'events.jsonl').write_text('preserve log', encoding='utf-8')
 
@@ -200,14 +206,14 @@ class FullRestartControlTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_shutdown_failure_never_launches_or_clears_progress(self):
-        before = (self.runtime / 'rich_b.json').read_bytes()
+        before = (self.runtime / 'universal.json').read_bytes()
         session = (self.runtime / 'session.json').read_bytes()
         with patch.object(farm, 'live_controller_pids', return_value=[111, 222]), \
              patch.object(farm, 'start') as launch:
             with self.assertRaisesRegex(RuntimeError, 'old controller still active'):
-                farm.full_restart('scrolls-a', shutdown_timeout=0)
+                farm.full_restart('universal', shutdown_timeout=0)
         launch.assert_not_called()
-        self.assertEqual((self.runtime / 'rich_b.json').read_bytes(), before)
+        self.assertEqual((self.runtime / 'universal.json').read_bytes(), before)
         self.assertEqual((self.runtime / 'session.json').read_bytes(), session)
         self.device.connect.assert_not_called()
         self.assertTrue((self.runtime / 'stamina_request.json').exists())
@@ -217,16 +223,16 @@ class FullRestartControlTests(unittest.TestCase):
         with patch.object(farm, 'live_controller_pids',
                           side_effect=lambda: [] if farm.STOP.exists() else [111, 222]), \
              patch.object(farm, 'start') as launch:
-            farm.full_restart('scrolls-a')
+            farm.full_restart('universal')
         launch.assert_called_once()
         self.device.connect.assert_called_once_with()
-        self.assertEqual(launch.call_args.args, ('rich-b',))
+        self.assertEqual(launch.call_args.args, ('universal',))
         self.assertTrue(launch.call_args.kwargs['restarting'])
         self.assertEqual(launch.call_args.kwargs['expected_stop'], farm.STOP.read_text('utf-8'))
-        reset = farm.read_json(self.runtime / 'rich_b.json')
+        reset = farm.read_json(self.runtime / 'universal.json')
         self.assertEqual(reset, {key: value for key, value in self.progress.items()
                                  if key not in ('worker_pid', 'heartbeat', 'screen', 'blocked')})
-        self.assertEqual(farm.read_json(self.runtime / 'session.json'), {'stage': 'rich-b', 'mission_verified': False})
+        self.assertEqual(farm.read_json(self.runtime / 'session.json'), {'stage': 'universal', 'mission_verified': False})
         self.assertFalse((self.runtime / 'stamina_request.json').exists())
         self.assertEqual((self.runtime / 'events.jsonl').read_text('utf-8'), 'preserve log')
         self.assertEqual([call.args[0] for call in farm.event.call_args_list], [
@@ -236,7 +242,7 @@ class FullRestartControlTests(unittest.TestCase):
             'full_restart_relaunch', 'full_restart_completed'])
 
     def test_concurrent_stop_cancels_restart_without_reset_or_launch(self):
-        before = (self.runtime / 'rich_b.json').read_bytes()
+        before = (self.runtime / 'universal.json').read_bytes()
         def stop_after_exit(name, **kwargs):
             if name == 'full_restart_exit_confirmed':
                 farm.STOP.write_text('Intentional user stop\n', encoding='utf-8')
@@ -246,19 +252,17 @@ class FullRestartControlTests(unittest.TestCase):
             with self.assertRaisesRegex(InterruptedError, 'Full Restart cancelled'):
                 farm.full_restart()
         launch.assert_not_called()
-        self.assertEqual((self.runtime / 'rich_b.json').read_bytes(), before)
+        self.assertEqual((self.runtime / 'universal.json').read_bytes(), before)
         self.assertEqual(farm.STOP.read_text('utf-8'), 'Intentional user stop\n')
 
-    def test_restart_lock_blocks_duplicate_restart_start_and_stage_switch(self):
+    def test_restart_lock_blocks_duplicate_restart_and_start(self):
         with farm.lock('restart'):
             with self.assertRaises(RuntimeError):
                 farm.full_restart()
             with self.assertRaisesRegex(RuntimeError, 'Full Restart is underway'):
-                farm.start('rich-b')
-            with self.assertRaisesRegex(RuntimeError, 'Full Restart is underway'):
-                farm.select_stage('scrolls-a')
+                farm.start('universal')
         farm.subprocess.run.assert_not_called()
-        self.assertEqual(farm.selected_stage(), 'rich-b')
+        self.assertEqual(farm.selected_stage(), 'universal')
 
     def test_relaunch_failure_is_logged_and_worker_guards_remain_in_force(self):
         with patch.object(farm, 'live_controller_pids', return_value=[]), \
@@ -269,7 +273,7 @@ class FullRestartControlTests(unittest.TestCase):
         self.assertIn('identity validation failed', farm.event.call_args.kwargs['error'])
         with patch.object(farm, 'live_controller_pids', return_value=[999]):
             with self.assertRaisesRegex(RuntimeError, 'Existing account controller alive'):
-                farm.start('rich-b')
+                farm.start('universal')
         farm.subprocess.run.assert_not_called()
 
     def test_connection_failure_never_relaunches(self):
@@ -288,34 +292,34 @@ class FullRestartControlTests(unittest.TestCase):
                 (self.runtime / 'supervisor.json').unlink(missing_ok=True)
                 return []
             return [111, 222]
-        before = (self.runtime / 'rich_b.json').read_bytes()
+        before = (self.runtime / 'universal.json').read_bytes()
         with patch.object(farm, 'live_controller_pids', side_effect=controllers), \
              patch.object(farm, 'alive', return_value=True), \
              patch.object(farm, 'start') as launch:
             with self.assertRaisesRegex(RuntimeError, 'old controller still active'):
                 farm.full_restart(shutdown_timeout=0)
         launch.assert_not_called()
-        self.assertEqual((self.runtime / 'rich_b.json').read_bytes(), before)
+        self.assertEqual((self.runtime / 'universal.json').read_bytes(), before)
 
     def test_restart_runs_existing_start_path_once_then_duplicate_start_is_noop(self):
         def launch(*args, **kwargs):
             self.assertFalse(farm.STOP.exists())
             self.device.connect.assert_called_once_with()
             farm.write_json(self.runtime / 'supervisor.json',
-                            {'pid': 9001, 'worker_pid': 9002, 'stage': 'rich-b'})
+                            {'pid': 9001, 'worker_pid': 9002, 'stage': 'universal'})
             return subprocess.CompletedProcess(args, 0,
                 json.dumps({'ReturnValue': 0, 'ProcessId': 9001}), '')
         farm.subprocess.run.side_effect = launch
         with patch.object(farm, 'live_controller_pids',
                           side_effect=lambda: [] if farm.STOP.exists() else [111, 222]), \
              patch.object(farm, 'alive', side_effect=lambda pid: pid in (9001, 9002)):
-            farm.full_restart('scrolls-a')
-            farm.start('rich-b')
+            farm.full_restart('universal')
+            farm.start('universal')
         farm.subprocess.run.assert_called_once()
         self.assertFalse(farm.STOP.exists())
-        self.assertEqual(farm.selected_stage(), 'rich-b')
+        self.assertEqual(farm.selected_stage(), 'universal')
         self.assertEqual(farm.read_json(self.runtime / 'supervisor.json')['worker_pid'], 9002)
-        self.assertEqual(farm.read_json(self.runtime / 'rich_b.json')['pending'], self.progress['pending'])
+        self.assertEqual(farm.read_json(self.runtime / 'universal.json')['pending'], self.progress['pending'])
 
 
 if __name__ == '__main__':

@@ -14,6 +14,8 @@ import numpy as np
 import farm
 import loot_tracking as loot
 from test_loot_tracking import FakeRecognizer, result, reward
+from test_stages import FakeDevice
+from instance_fixtures import legacy_target
 
 
 class DevelopmentRestartTests(unittest.TestCase):
@@ -22,14 +24,18 @@ class DevelopmentRestartTests(unittest.TestCase):
         self.runtime = Path(self.temp.name)
         self.stop = self.runtime / 'STOP'
         self.latch = self.runtime / 'session.json'
-        self.latch.write_text('{"pending":{"id":"retry"},"mission_verified":true}')
+        self.latch.write_text('{"stage":"universal","pending":{"id":"retry"},"mission_verified":true}')
         self.before_latch = self.latch.read_bytes()
         self.patches = [patch.object(farm, 'RUNTIME', self.runtime),
+                        patch.object(farm, 'selected_instance', return_value=legacy_target()),
+                        patch.object(farm, 'validate_mapping'),
+                        patch.object(farm, 'Device', return_value=FakeDevice()),
                         patch.object(farm, 'STOP', self.stop),
                         patch.object(farm, 'event'),
+                        patch.object(farm, 'record_alive', side_effect=lambda record, key='pid': farm.alive(record.get(key))),
                         patch.object(farm, 'live_controller_pids', return_value=[]),
                         patch.object(farm, 'lock_busy', return_value=False),
-                        patch.object(farm, 'selected_stage', return_value='scrolls-a')]
+                        patch.object(farm, 'selected_stage', return_value='universal')]
         for item in self.patches:
             item.start()
 
@@ -44,7 +50,7 @@ class DevelopmentRestartTests(unittest.TestCase):
         with patch.object(farm.subprocess, 'run') as launch, \
              patch.object(farm, 'write_json') as write:
             with self.assertRaises(InterruptedError):
-                farm.start('scrolls-a', expected_stop='development-owned-stop')
+                farm.start('universal', expected_stop='development-owned-stop')
         launch.assert_not_called()
         write.assert_not_called()
         self.assertEqual(self.stop.read_bytes(), before_stop)
@@ -54,7 +60,7 @@ class DevelopmentRestartTests(unittest.TestCase):
         with patch.object(farm.subprocess, 'run') as launch, \
              patch.object(farm, 'write_json') as write:
             with self.assertRaises(InterruptedError):
-                farm.start('scrolls-a', expected_stop='development-owned-stop')
+                farm.start('universal', expected_stop='development-owned-stop')
         launch.assert_not_called()
         write.assert_not_called()
         self.assertFalse(self.stop.exists())
@@ -74,7 +80,7 @@ class DevelopmentRestartTests(unittest.TestCase):
              patch.object(farm.subprocess, 'run') as launch, \
              patch.object(farm, 'write_json') as write:
             with self.assertRaises(InterruptedError):
-                farm.start('scrolls-a', expected_stop='development-owned-stop')
+                farm.start('universal', expected_stop='development-owned-stop')
         self.assertEqual(locks, ['control'])
         launch.assert_not_called()
         write.assert_not_called()
@@ -86,17 +92,17 @@ class DevelopmentRestartTests(unittest.TestCase):
 
         def launch(*args, **kwargs):
             farm.write_json(self.runtime / 'supervisor.json',
-                {'pid': 9001, 'worker_pid': 9002, 'stage': 'scrolls-a'})
+                {'pid': 9001, 'worker_pid': 9002, 'stage': 'universal'})
             return subprocess.CompletedProcess(args, 0,
                 json.dumps({'ReturnValue': 0, 'ProcessId': 9001}), '')
 
         with patch.object(farm, 'alive', side_effect=lambda pid: pid in (9001, 9002)), \
              patch.object(farm.subprocess, 'run', side_effect=launch) as mocked_launch:
-            farm.start('scrolls-a')
+            farm.start('universal')
         mocked_launch.assert_called_once()
         self.assertFalse(self.stop.exists())
         self.assertEqual(self.latch.read_bytes(), self.before_latch)
-        self.assertEqual(farm.read_json(self.runtime / 'selection.json')['stage'], 'scrolls-a')
+        self.assertEqual(farm.read_json(self.runtime / 'selection.json')['stage'], 'universal')
 
 
 class ValidationEvidenceTests(unittest.TestCase):
@@ -115,7 +121,7 @@ class ValidationEvidenceTests(unittest.TestCase):
         recognizer = FakeRecognizer(result([reward()], status='complete'))
         with patch.dict(os.environ, {'NBR_LOOT_VALIDATION_DIR': str(directory),
                                     'NBR_LOOT_VALIDATION_MAX_RUNS': str(limit)}):
-            collector = loot.Collector(self.root, 'scrolls-a', 'fixture:validation',
+            collector = loot.Collector(self.root, 'universal', 'fixture:validation',
                 recognizer_factory=lambda: recognizer)
         self.collectors.append(collector)
         return collector
@@ -145,7 +151,8 @@ class ValidationEvidenceTests(unittest.TestCase):
         self.assertEqual(len(data['runs']), 2)
         self.assertTrue(all(run['screenshot_path'] is None for run in data['runs']))
         self.assertEqual(list((self.root / 'runtime' / 'loot').rglob('*.png')), [])
-        self.assertIsNone(data['items'][0]['confirmed_acquired'])
+        self.assertEqual(data['items'][0]['confirmed_acquired'], 2)
+        self.assertEqual(data['total_drops'], 2)
 
     def test_non_development_path_is_ignored_without_losing_session_record(self):
         # Prefix resemblance must not pass the resolved-parent ownership check.

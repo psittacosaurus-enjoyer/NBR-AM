@@ -31,7 +31,7 @@ def main():
                 entry['kind'] = 'full_screen_candidate' if entry['width'] >= 300 and entry['height'] >= 500 else 'cropped_reference'
                 entry['inspection_status'] = 'not_yet_manually_reviewed'
                 if entry['sha256'] in reviewed:
-                    for key in ('inspection_status','screen_type','stage','visual_notes'):
+                    for key in ('inspection_status','screen_type','visual_notes'):
                         if key in reviewed[entry['sha256']]:
                             entry[key] = reviewed[entry['sha256']][key]
                 duplicate = seen.get(entry['sha256'])

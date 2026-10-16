@@ -32,26 +32,6 @@
       ]
     }
   },
-  "stages": {
-    "All Scrolls [A]": {
-      "path": "stage-0.png",
-      "box": [
-        200,
-        170,
-        650,
-        72
-      ]
-    },
-    "Getting Rich Quick! [B]": {
-      "path": "stage-1.png",
-      "box": [
-        200,
-        170,
-        650,
-        72
-      ]
-    }
-  },
   "reward_region": [
     48,
     402,
@@ -191,6 +171,16 @@
         139
       ],
       "label": "Lucky Drop unopened chest"
+    },
+    {
+      "path": "placeholder-lucky-back.png",
+      "box": [
+        381,
+        411,
+        134,
+        139
+      ],
+      "label": "Unrevealed Lucky Drop"
     }
   ],
   "placeholder_threshold": 0.92,
@@ -266,30 +256,6 @@
       "verification": "Visually inspected saved Mission Results screenshot; no live game access."
     },
     {
-      "source": "assets/reference_images/starting_point.png",
-      "sha256": "e29b987acc5caa5704827542240d0edff450f77e356016ebc18e13149a83b616",
-      "box": [
-        200,
-        170,
-        650,
-        72
-      ],
-      "template": "stage-0.png",
-      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
-    },
-    {
-      "source": "tests/fixtures/rich_b/ready_to_retry.png",
-      "sha256": "c9e33763346a34d4aa2b2622404cdc32e1f2bf92f017a4646add6f323930fbc5",
-      "box": [
-        200,
-        170,
-        650,
-        72
-      ],
-      "template": "stage-1.png",
-      "verification": "Visually inspected saved Mission Results screenshot; no live game access."
-    },
-    {
       "source": "tests/fixtures/rich_b/reward_reveal.png",
       "sha256": "02ab87da67b14f58f74308d14c4bf00f7382b5b1ba0658221f0873f64999d72b",
       "box": [
@@ -336,6 +302,18 @@
       ],
       "template": "placeholder-8.png",
       "verification": "Visually inspected saved Mission Results screenshot; no live game access."
+    },
+    {
+      "source": "tests/fixtures/item_recognition/bravery_lucky_unrevealed.png",
+      "sha256": "b83bb2de6e0b9f9ac588bc48d92f43148c0e91a70b8f7da1c982aa6951f902d0",
+      "box": [
+        381,
+        411,
+        134,
+        139
+      ],
+      "template": "placeholder-lucky-back.png",
+      "verification": "Visual review of a Lucky Drop card back in a retained acquired-results frame."
     }
   ]
 }

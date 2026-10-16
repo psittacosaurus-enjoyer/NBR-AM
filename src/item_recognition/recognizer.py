@@ -11,13 +11,16 @@ import numpy as np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 try:
     from .reward_identity import character_references, canonical_groups
+    from .reward_layout import unrevealed_label
 except ImportError:
     from reward_identity import character_references, canonical_groups
+    from reward_layout import unrevealed_label
 
 ROOT=Path(__file__).resolve().parent
 PROJECT=ROOT.parents[1]
 DEFAULT_LIBRARY=PROJECT/'runtime/library'
 DEFAULT_TEMPLATES=PROJECT/'assets/item_recognition'
+_MATCH_BATCH_SIZE=32
 
 def image_rgb(value):
     if isinstance(value,Image.Image): return np.asarray(value.convert('RGB'))
@@ -46,13 +49,13 @@ def _library_module():
     return mod
 
 class ItemRecognizer:
-    def __init__(self,library_path=DEFAULT_LIBRARY,calibration_path='auto',templates_dir=None,include_characters=True):
+    def __init__(self,library_path=DEFAULT_LIBRARY,calibration_path='auto',templates_dir=None,include_characters=True,reviewed_path='auto'):
         location=Path(library_path).resolve()
         self.library_root=location if location.is_dir() else location.parent.parent if location.parent.name=='data' else location.parent
         self.db_path=location/'data/library.sqlite3' if location.is_dir() else location
         self.templates_dir=Path(templates_dir or DEFAULT_TEMPLATES)
         self.references=[]; self.character_references=[]; self.reference_errors=[]; self.excluded_references=[]; self.library_reference_count=0; self._images=[]
-        self.threshold=.88; self.margin=.04; self.calibration=None
+        self.threshold=.88; self.margin=.04; self.calibration=None; calibration_file_hash=None
         if calibration_path=='auto':
             available=DEFAULT_TEMPLATES/'calibration.json'
             calibration_path=None
@@ -61,6 +64,7 @@ class ItemRecognizer:
                 if stored.get('library_sha256')==file_hash(self.db_path): calibration_path=available
         if calibration_path:
             self.calibration=json.loads(Path(calibration_path).read_text('utf-8'))
+            calibration_file_hash=file_hash(calibration_path)
             self.threshold=float(self.calibration['threshold']); self.margin=float(self.calibration['margin'])
             if not 0<=self.threshold<=1 or not 0<=self.margin<=1: raise ValueError('Invalid calibration bounds')
             if self.calibration.get('library_sha256') and self.calibration['library_sha256']!=file_hash(self.db_path):
@@ -87,10 +91,18 @@ class ItemRecognizer:
                 for record in character_references(source):
                     self._load_reference(record); self.character_references.append(record)
         self._records={r['id']:r for r in self.references+self.character_references}
+        reviewed,reviewed_hash=self._reviewed_rewards(reviewed_path,calibration_file_hash)
+        base_groups=(self.calibration or {}).get('canonical_groups',[]) if (self.calibration or {}).get('schema_version',1)>=2 else []
         self.identity_map,self.canonical_groups=canonical_groups(list(self._records.values()),
-            (self.calibration or {}).get('canonical_groups',[]) if (self.calibration or {}).get('schema_version',1)>=2 else [],self.supported)
+            base_groups+reviewed['canonical_groups'],self.supported)
+        for group in reviewed['canonical_groups']:
+            canonical=group['canonical_item_id']
+            if canonical in reviewed['supported_item_ids'] and all(self.identity_map.get(mid)==canonical for mid in group['member_ids']):
+                self.supported_items.add(canonical)
+        self.supported=self.supported_items | self.supported_characters
         self.reference_snapshot={'library_sha256':file_hash(self.db_path),
             'calibration_sha256':hashlib.sha256(json.dumps(self.calibration,sort_keys=True).encode()).hexdigest() if self.calibration else None,
+            'reviewed_rewards_sha256':reviewed_hash,
             'item_reference_records':len(self.references),'character_reference_records':len(self.character_references),
             'item_reference_images':sum(r['record_type']=='item' for r in self._images),
             'character_reference_images':sum(r['record_type']=='character' for r in self._images)}
@@ -110,6 +122,45 @@ class ItemRecognizer:
             self.quantity_reader=QuantityReader(self.templates_dir/'quantity')
         except (ImportError,OSError,ValueError): self.quantity_reader=None
 
+    def _reviewed_rewards(self,path,calibration_file_hash):
+        """Add reviewed aliases only to the exact library/calibration they validated.
+
+        This source-controlled supplement never changes thresholds or the live
+        calibration file. Invalid or stale declarations cannot promote identities.
+        """
+        empty={'canonical_groups':[],'supported_item_ids':[]}
+        if not self.calibration or not calibration_file_hash or path is None: return empty,None
+        path=DEFAULT_TEMPLATES/'reviewed_rewards.json' if path=='auto' else Path(path)
+        try:
+            raw=path.read_bytes(); reviewed=json.loads(raw)
+            if (not isinstance(reviewed,dict) or reviewed.get('schema_version')!=1
+                    or reviewed.get('library_sha256')!=file_hash(self.db_path)
+                    or reviewed.get('base_calibration_sha256')!=calibration_file_hash): return empty,None
+            groups=reviewed.get('canonical_groups'); supported=reviewed.get('supported_item_ids')
+            if (not isinstance(groups,list) or not isinstance(supported,list)
+                    or any(not isinstance(rid,str) for rid in supported)): return empty,None
+            valid=[]
+            for group in groups:
+                if not isinstance(group,dict): continue
+                canonical=group.get('canonical_item_id'); members=group.get('member_ids')
+                if (not isinstance(canonical,str) or not isinstance(members,list) or len(members)<2
+                        or any(not isinstance(mid,str) or mid not in self._records for mid in members)
+                        or len(set(members))!=len(members)
+                        or canonical not in members or self._records[canonical]['record_type']!='item'
+                        or group.get('allow_alternate_names') is not True
+                        or not isinstance(group.get('source_card_id'),str) or not group['source_card_id'].isdigit()
+                        or not group.get('evidence')): continue
+                # The existing identity policy verifies every member's source
+                # card and rejects conflicting element, rarity, type or game ID.
+                mapping,details=canonical_groups(list(self._records.values()),[group],self.supported)
+                evidence=details.get(canonical,{}).get('evidence',[])
+                if (all(mapping.get(mid)==canonical for mid in members)
+                        and any(e.get('kind')=='reviewed_calibration' and e.get('source_card_id')==group['source_card_id'] for e in evidence)):
+                    valid.append(group)
+            if not valid: return empty,None
+            return {'canonical_groups':valid,'supported_item_ids':supported},hashlib.sha256(raw).hexdigest()
+        except (OSError,ValueError,TypeError): return empty,None
+
     def _load_reference(self,record):
         paths=list(dict.fromkeys(str((self.library_root/a['local_image_path']).resolve()) for a in record['assets'] if a['status']=='ok' and a['local_image_path']))
         record['reference_paths']=paths
@@ -117,6 +168,14 @@ class ItemRecognizer:
             try:
                 with Image.open(path) as im:
                     rgba=np.asarray(im.convert('RGBA')); rgb=rgba[:,:,:3]; alpha=rgba[:,:,3]
+                # Some source cards contain opaque edge artifacts that distort
+                # automatic trimming. Reviewed bounds apply to exact bytes only.
+                reviewed=(self.calibration or {}).get('reference_bounds',{})
+                bounds=reviewed.get(file_hash(path)) if reviewed else None
+                if bounds is not None:
+                    if not isinstance(bounds,list) or len(bounds)!=4 or any(type(v) is not int for v in bounds):
+                        raise ValueError('Invalid reviewed reference bounds')
+                    rgb=crop(rgb,bounds); alpha=crop(alpha,bounds)
                 # Keep frame, rarity and element marks. Remove only transparent margins.
                 yy,xx=np.where(alpha>16)
                 if not len(xx): raise ValueError('Fully transparent reference')
@@ -168,15 +227,21 @@ class ItemRecognizer:
             result['reason']='Missing references or blank/uninformative icon'; return result
         pixels=cv2.resize(rgb,(64,64),interpolation=cv2.INTER_AREA).astype(np.float32)/255
         # Masked color error preserves element and rarity differences; spatial correlation measures structure.
-        mse=((self._pixels-pixels)**2*self._mask).sum(axis=(1,2,3))/self._weight
-        color=np.clip(1-np.sqrt(mse),0,1)
-        mean_ref=(self._pixels*self._mask).sum(axis=(1,2,3))/self._weight
-        mean_crop=(pixels*self._mask).sum(axis=(1,2,3))/self._weight
-        a=self._pixels-mean_ref[:,None,None,None]; b=pixels-mean_crop[:,None,None,None]
-        numerator=(a*b*self._mask).sum(axis=(1,2,3))
-        denominator=np.sqrt((a*a*self._mask).sum(axis=(1,2,3))*(b*b*self._mask).sum(axis=(1,2,3)))
-        correlation=np.divide(numerator,denominator,out=np.zeros_like(numerator),where=denominator>1e-8)
-        scores=.55*color+.45*np.clip(correlation,0,1)
+        # Bound temporary arrays independently of library size. Keep every
+        # score so aliases and competing identities still rank globally.
+        scores=np.empty(len(self._images),dtype=np.float32)
+        for start in range(0,len(self._images),_MATCH_BATCH_SIZE):
+            end=start+_MATCH_BATCH_SIZE
+            references=self._pixels[start:end]; mask=self._mask[start:end]; weight=self._weight[start:end]
+            mse=((references-pixels)**2*mask).sum(axis=(1,2,3))/weight
+            color=np.clip(1-np.sqrt(mse),0,1)
+            mean_ref=(references*mask).sum(axis=(1,2,3))/weight
+            mean_crop=(pixels*mask).sum(axis=(1,2,3))/weight
+            a=references-mean_ref[:,None,None,None]; b=pixels-mean_crop[:,None,None,None]
+            numerator=(a*b*mask).sum(axis=(1,2,3))
+            denominator=np.sqrt((a*a*mask).sum(axis=(1,2,3))*(b*b*mask).sum(axis=(1,2,3)))
+            correlation=np.divide(numerator,denominator,out=np.zeros_like(numerator),where=denominator>1e-8)
+            scores[start:end]=.55*color+.45*np.clip(correlation,0,1)
         best_by_item={}
         for i,r in enumerate(self._images):
             canonical=self.identity_map[r['item_id']]; record=self._records[canonical]
@@ -223,10 +288,7 @@ class ItemRecognizer:
         phases=[(self._anchor_score(normalized,a['path'],a['box']),name) for name,a in p['phases'].items()]
         score,phase=max(phases)
         if score<p['anchor_threshold']: return None
-        stages=[(self._anchor_score(normalized,a['path'],a['box']),name) for name,a in p['stages'].items()]
-        stage_score,stage=max(stages)
-        stage=stage if stage_score>=p['anchor_threshold'] else 'unknown'
-        return {'screen_type':phase,'stage':stage,'normalized':normalized,'region':p.get('reward_region') if phase=='acquired' else None,
+        return {'screen_type':phase,'normalized':normalized,'region':p.get('reward_region') if phase=='acquired' else None,
                 'scale_x':rgb.shape[1]/p['width'],'scale_y':rgb.shape[0]/p['height'],'anchor_score':round(score,6)}
 
     def detect_icons(self,rgb,region):
@@ -245,19 +307,12 @@ class ItemRecognizer:
         p=self.profile; found=[]
         for box in p['grid_boxes']:
             tile=crop(rgb,box)
-            # Compare card frame to reference images; the identity classifier handles final thresholds.
-            score=self.match_icon(tile)
-            if self._has_card_frame(tile):
-                found.append((box,'icon',score))
-                continue
-            placeholder=None
-            for template in p.get('placeholders',[]):
-                with Image.open(self.templates_dir/template['path']) as im: target=np.asarray(im.convert('RGB'))
-                current=cv2.resize(tile,(target.shape[1],target.shape[0]))
-                sim=float(cv2.matchTemplate(current,target,cv2.TM_CCOEFF_NORMED)[0,0])
-                if sim>=p.get('placeholder_threshold',.94): placeholder=(template['label'],sim); break
+            # Package backs have card-like borders too; exclude them before identity matching.
+            placeholder=unrevealed_label(tile,p,self.templates_dir)
             if placeholder:
-                found.append((box,'unrevealed',{'identity_status':'unknown','item_id':None,'item_name':None,'match_score':None,'candidates':[], 'reason':'Unopened reward package: '+placeholder[0]}))
+                found.append((box,'unrevealed',{'identity_status':'unknown','item_id':None,'item_name':None,'match_score':None,'candidates':[], 'reason':'Unopened reward package: '+placeholder}))
+            elif self._has_card_frame(tile):
+                found.append((box,'icon',self.match_icon(tile)))
         return found
 
     @staticmethod
@@ -270,9 +325,14 @@ class ItemRecognizer:
         bottom=float((gy[h-16:h-1,20:w-10]>110).mean(axis=1).max())
         return right>.68 and bottom>.68
 
-    def analyze_screenshot(self,screenshot_path,stage='unknown',reward_region=None,icon_boxes=None,quantity_boxes=None,debug_path=None):
+    def analyze_screenshot(self,screenshot_path,reward_region=None,icon_boxes=None,quantity_boxes=None,debug_path=None,**legacy_metadata):
+        # Older collectors can lazily load this newer API while farming runs.
+        # Accept their unused attribution argument without identifying a mission.
+        unexpected=set(legacy_metadata)-{'stage'}
+        if unexpected:
+            raise TypeError('Unexpected recognition argument: '+', '.join(sorted(unexpected)))
         path=Path(screenshot_path)
-        result={'schema_version':1,'screenshot':str(path.resolve()),'screenshot_sha256':None,'stage':stage,'status':'error',
+        result={'schema_version':1,'screenshot':str(path.resolve()),'screenshot_sha256':None,'status':'error',
                 'screen_type':'unknown','reward_region':None,'rewards':[],'unknown_rewards':[],'warnings':[],
                 'totals':{},'summary_fields':[],'diagnostics':{'quantity_defaults_used':False,'input_controls_used':False,
                     'reference_snapshot':dict(self.reference_snapshot)}}
@@ -284,7 +344,7 @@ class ItemRecognizer:
         context=self.detect_reward_region(rgb) if reward_region is None and icon_boxes is None else None
         work=rgb; sx=sy=1.0; proposals=[]
         if context:
-            result['screen_type']=context['screen_type']; result['stage']=context['stage'] if stage=='unknown' else stage
+            result['screen_type']=context['screen_type']
             work=context['normalized']; sx=context['scale_x']; sy=context['scale_y']
             result['diagnostics']['screen_anchor_score']=context['anchor_score']
             if context['screen_type']=='summary':
@@ -359,7 +419,7 @@ class ItemRecognizer:
             label=field['scope']+': '+str(field['quantity'] if accepted else '?')
             left=max(0,x-190); top=max(25,y-18)
             draw.rectangle((left,top,x+w,top+16),fill='black'); draw.text((left+2,top+2),label,fill=color)
-        draw.rectangle((0,0,image.width,22),fill='black'); draw.text((5,4),result['status']+' | '+result['stage']+' | green: matched / orange: review / red: unknown / qty ?: unknown',fill='white')
+        draw.rectangle((0,0,image.width,22),fill='black'); draw.text((5,4),result['status']+' | green: matched / orange: review / red: unknown / qty ?: unknown',fill='white')
         target=Path(path).resolve()
         if target==Path(result['screenshot']).resolve(): raise ValueError('Debug output must not overwrite input')
         target.parent.mkdir(parents=True,exist_ok=True); image.save(target)

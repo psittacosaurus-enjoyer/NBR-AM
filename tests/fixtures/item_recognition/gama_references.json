@@ -1,0 +1,265 @@
+{
+  "records": [
+    {
+      "id": "item_90a64a4261e34bad15a7f5d5",
+      "record_type": "item",
+      "source_key": "gama-chan \"full to the brim\"|None|None",
+      "display_name": "Gama-chan \"Full to the Brim\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/ryo-acquisition",
+      "game_id": "936",
+      "category": "gama",
+      "element": "Bravery",
+      "rarity": "2",
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Gama-chan \"Full to the Brim\"",
+          "icon": "/naruto-blazing/missions/card-0936.webp",
+          "kind": "gama"
+        },
+        "source": null
+      },
+      "assets": [
+        {
+          "id": "asset_35268bd1573f59045e68da69",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/c/c5/Card-0936.png/revision/latest?cb=20161104230305",
+          "sha256": "d7ac8c3f5ada73a689d01687f767148014aa2b352c19e4eb474bc00ee4195ad5",
+          "role": "card",
+          "file": "gama_refs/d7ac8c3f5ada73a689d01687f767148014aa2b352c19e4eb474bc00ee4195ad5.png"
+        },
+        {
+          "id": "asset_c46acf5c88100fec6fb00a81",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0936.webp",
+          "sha256": "8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897",
+          "role": "icon",
+          "file": "gama_refs/8dce066f4372d5b684efb7072614259303b28d93f6865d943b22ad15cb66d897.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_cf15ca9f80280592d7c29010",
+      "record_type": "item",
+      "source_key": "gama-chan \"big spender\"|None|None",
+      "display_name": "Gama-chan \"Big Spender\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/ninja-gods-summoned",
+      "game_id": "937",
+      "category": "gama",
+      "element": "Bravery",
+      "rarity": "3",
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Gama-chan \"Big Spender\"",
+          "kind": "gama",
+          "icon": "/naruto-blazing/missions/card-0937.webp"
+        },
+        "source": null
+      },
+      "assets": [
+        {
+          "id": "asset_5d75c048f1b49a0fd5561fcb",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/7/76/Card-0937.png/revision/latest?cb=20161104230311",
+          "sha256": "2c5f58efc1b52f9edc5cdf62f235c1cf45a599d9ae96e4c6fd7590bddb1d9dfd",
+          "role": "card",
+          "file": "gama_refs/2c5f58efc1b52f9edc5cdf62f235c1cf45a599d9ae96e4c6fd7590bddb1d9dfd.png"
+        },
+        {
+          "id": "asset_d665a0d015cac79aee4d5cad",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0937.webp",
+          "sha256": "9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6",
+          "role": "icon",
+          "file": "gama_refs/9da3b6ce623d2a62a4a9e99f8453c2960ce848ea32507e06f94c0187a1f6d6b6.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_948ed64af6d887bff7cece0f",
+      "record_type": "item",
+      "source_key": "fandom:fandom:card_no:1161",
+      "display_name": "Gama-chan \"Millionaire\"",
+      "source_url": "https://naruto-blazing.fandom.com/wiki/Gama-chan_%22Millionaire%22",
+      "game_id": "1161",
+      "category": "gama",
+      "element": "Bravery",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Gama-chan \"Millionaire\"",
+          "kind": "gama",
+          "stars": 4,
+          "element": "Bravery"
+        },
+        "source": "Fandom"
+      },
+      "assets": [
+        {
+          "id": "asset_20f00b351e1585e28755ed22",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/0/0b/Card-1161.png/revision/latest?cb=20190213025048",
+          "sha256": "888b3ea1b16d017d4225954c2d35f87461a8404292825b2c2faad3fb9a593399",
+          "role": "card",
+          "file": "gama_refs/888b3ea1b16d017d4225954c2d35f87461a8404292825b2c2faad3fb9a593399.png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "gama_millionaire_animated.png",
+      "sha256": "3a178c6f41285a23289a84393cafa0d5fa03ae6ed0f945ef80bd0cc4dd573362",
+      "expected_rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_948ed64af6d887bff7cece0f"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_948ed64af6d887bff7cece0f"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_948ed64af6d887bff7cece0f"
+        }
+      ]
+    },
+    {
+      "file": "gama_millionaire_holdout.png",
+      "sha256": "5dc26c1c5008e8aa74cce54405b41e507fbc501a6820883fe290524d83c1705c",
+      "expected_rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_90a64a4261e34bad15a7f5d5"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_948ed64af6d887bff7cece0f"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_cf15ca9f80280592d7c29010"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_948ed64af6d887bff7cece0f"
+        }
+      ]
+    }
+  ],
+  "basis": "Independent visual comparison with the source-linked Card-1161.png: Bravery badge, four-star silver frame, frog holding gold ingots. Includes animated glow and an independent current-run capture. Each acquired icon is one drop."
+}

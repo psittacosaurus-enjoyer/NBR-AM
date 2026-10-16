@@ -1,0 +1,144 @@
+{
+  "records": [
+    {
+      "id": "item_1236b95a29ae3856765c7a6e",
+      "record_type": "item",
+      "source_key": "limit break crystal \"bravery crystal\"|None|Bravery",
+      "display_name": "Limit Break Crystal \"Bravery Crystal\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/trial-bravery",
+      "game_id": null,
+      "category": "item",
+      "element": "Bravery",
+      "rarity": null,
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[29].stages[0].drops[0]",
+        "original": {
+          "name": "Limit Break Crystal \"Bravery Crystal\"",
+          "icon": "/naruto-blazing/missions/card-0950.webp",
+          "kind": "item"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/trial-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[29].stages[0].drops[0]",
+            "record": {
+              "name": "Limit Break Crystal \"Bravery Crystal\"",
+              "icon": "/naruto-blazing/missions/card-0950.webp",
+              "kind": "item"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/trial-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[29].stages[1].drops[0]",
+            "record": {
+              "name": "Limit Break Crystal \"Bravery Crystal\"",
+              "icon": "/naruto-blazing/missions/card-0950.webp",
+              "kind": "item"
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Limit Break Crystal \"Bravery Crystal\""
+        ],
+        "game_id_kind": null,
+        "element_code": null
+      },
+      "assets": [
+        {
+          "id": "asset_58484bd0051a2dec9d623d02",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0950.webp",
+          "sha256": "e156b20293e479a08079f932172e47f261ee5168e2ae7e5a057460e384afe3d3",
+          "file": "ramen_refs/e156b20293e479a08079f932172e47f261ee5168e2ae7e5a057460e384afe3d3.webp",
+          "role": "icon"
+        }
+      ]
+    },
+    {
+      "id": "item_012b9dcd3dbb3309689802c2",
+      "record_type": "item",
+      "source_key": "bravery crystal|None|Bravery",
+      "display_name": "Bravery Crystal",
+      "source_url": "https://gachawiki.net/naruto-blazing",
+      "game_id": null,
+      "category": "crystal",
+      "element": "Bravery",
+      "rarity": null,
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/limit-break.json",
+        "json_pointer": "$.elements.Bravery.crystal",
+        "original": {
+          "name": "Bravery Crystal",
+          "kind": "crystal",
+          "element": "Bravery",
+          "icon": "/naruto-blazing/lb/card-0950.webp",
+          "label_source": "Public Naruto module pr() names elemental crystals, books, own5/own6 and ultimate.",
+          "trial": "Demonstration of Bravery"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/limit-break.json",
+            "json_pointer": "$.elements.Bravery.crystal",
+            "record": {
+              "name": "Bravery Crystal",
+              "kind": "crystal",
+              "element": "Bravery",
+              "icon": "/naruto-blazing/lb/card-0950.webp",
+              "label_source": "Public Naruto module pr() names elemental crystals, books, own5/own6 and ultimate.",
+              "trial": "Demonstration of Bravery"
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Bravery Crystal"
+        ],
+        "game_id_kind": null,
+        "element_code": null
+      },
+      "assets": [
+        {
+          "id": "asset_692eef3e19e57080d2974689",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/lb/card-0950.webp",
+          "sha256": "e156b20293e479a08079f932172e47f261ee5168e2ae7e5a057460e384afe3d3",
+          "file": "ramen_refs/e156b20293e479a08079f932172e47f261ee5168e2ae7e5a057460e384afe3d3.webp",
+          "role": "icon"
+        }
+      ]
+    }
+  ],
+  "canonical": "item_1236b95a29ae3856765c7a6e",
+  "alias": "item_012b9dcd3dbb3309689802c2",
+  "evidence": {
+    "basis": "Independent comparison of the saved acquired cards with source-linked local card 0950: gold crystal, Bravery badge, silver four-star frame. Both records explicitly reference card 0950 via their original /lb/card-0950 and /missions/card-0950 URLs, agree on Bravery, and have compatible crystal/item categories. Shared pixels alone do not establish identity. The differently named Fandom record is not merged.",
+    "screenshot": "tests/fixtures/item_recognition/bravery_crystal_results.png",
+    "screenshot_sha256": "0b3affff19f0721e6cb8f40b137a9c14152f67fedcc80c1cf6ce071b4439ccb1",
+    "bounding_boxes": [
+      [
+        57,
+        411,
+        134,
+        139
+      ],
+      [
+        219,
+        411,
+        134,
+        139
+      ]
+    ],
+    "source_urls": [
+      "https://gachawiki.net/naruto-blazing/lb/card-0950.webp",
+      "https://gachawiki.net/naruto-blazing/missions/card-0950.webp"
+    ],
+    "quantity": null
+  }
+}

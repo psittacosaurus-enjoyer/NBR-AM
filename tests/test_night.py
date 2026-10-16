@@ -8,7 +8,7 @@ import farm
 from test_stages import FakeDevice
 
 
-STAGE = 'night-of-tragedy-a'
+STAGE = 'universal'
 FIXTURES = 'tests/fixtures/night_of_tragedy_a/'
 
 
@@ -36,21 +36,10 @@ class NightTests(unittest.TestCase):
     def engine(self, filename='in_battle.png'):
         device = FakeDevice(self.image(FIXTURES + filename))
         with patch.object(farm, 'Device', return_value=device):
-            return farm.Engine(STAGE)
+            engine = farm.Engine(STAGE)
+            engine.mission_verified = True
+            return engine
 
-    def test_configuration_and_templates_are_stage_specific(self):
-        stage = farm.load_stage(STAGE)
-        self.assertTrue(stage['manual_first_battle'])
-        self.assertEqual(stage['name'], 'Night of Tragedy [A]')
-        self.assertEqual(stage['progress'], self.runtime / 'night_of_tragedy_a.json')
-        self.assertEqual(stage['catalog'], farm.ROOT / 'assets/patterns/night_of_tragedy_a.json')
-        detector = farm.Detector(STAGE)
-        for template in detector.templates:
-            with self.subTest(template=template):
-                self.assertTrue((farm.ROOT / template).resolve().is_relative_to(
-                    (farm.ROOT / 'assets/patterns/night_of_tragedy_a').resolve()))
-        self.assertFalse({s['name'] for s in detector.states} &
-                         {'HOME_MENU', 'TITLE_START', 'TEAM_MENU', 'HELPER_SELECTION'})
 
     def test_actual_captures_detect_without_ocr(self):
         detector = farm.Detector(STAGE)
@@ -63,15 +52,6 @@ class NightTests(unittest.TestCase):
             with self.subTest(screen=screen):
                 self.assertEqual(detector.classify(self.image(FIXTURES + filename))[0], screen)
 
-    def test_other_stage_landing_and_results_are_rejected(self):
-        detector = farm.Detector(STAGE)
-        for path in ['tests/fixtures/ready_to_start.png', 'tests/fixtures/results_next.png',
-                     'tests/fixtures/reward_reveal.png', 'assets/reference_images/starting_point.png',
-                     'tests/fixtures/practice_ready_to_start.png', 'tests/fixtures/practice_current.png',
-                     'tests/fixtures/rich_b/ready_to_start.png', 'tests/fixtures/rich_b/results_next.png',
-                     'tests/fixtures/rich_b/reward_reveal.png', 'tests/fixtures/rich_b/ready_to_retry.png']:
-            with self.subTest(path=path):
-                self.assertEqual(detector.classify(self.image(path))[0], 'UNKNOWN')
 
     def test_fresh_completion_holdouts_and_dimmed_rejection(self):
         detector = farm.Detector(STAGE)
@@ -93,7 +73,7 @@ class NightTests(unittest.TestCase):
         for filename in ('ready_to_retry.png', 'stamina_prompt.png', 'rank_up_stamina_ack.png'):
             with self.subTest(other_screen=filename):
                 self.assertNotEqual(detector.classify(self.image(FIXTURES + filename))[0], 'REWARD_REVEAL')
-        spec = next(s for s in detector.states if s['name'] == 'REWARD_REVEAL')
+        _, spec, _ = detector.classify(self.image(FIXTURES + 'reward_stall_00.png'))
         frame = self.image(FIXTURES + 'reward_stall_00.png')
         for anchor in spec['anchors']:
             with self.subTest(region=anchor['region']):
@@ -102,23 +82,6 @@ class NightTests(unittest.TestCase):
                 changed[y1:y2, x1:x2] = 0
                 self.assertNotEqual(detector.classify(changed)[0], 'REWARD_REVEAL')
 
-    def test_first_start_screen_waits_for_manual_battle(self):
-        engine = self.engine('ready_to_start.png')
-        engine.tick()
-        engine.tick()
-        self.assertEqual(engine.device.actions, [])
-        self.assertFalse(engine.mission_verified)
-
-    def test_captured_rank_up_dialog_and_fresh_holdout_are_stage_guarded(self):
-        detector = farm.Detector(STAGE)
-        for filename in ('rank_up_stamina_ack.png', 'rank_ack_holdout.png'):
-            with self.subTest(filename=filename):
-                self.assertEqual(detector.classify(self.image(FIXTURES + filename))[0],
-                                 'RANK_UP_STAMINA_ACK')
-        self.assertEqual(detector.classify(self.image(FIXTURES + 'rank_up_results.png'))[0],
-                         'RESULTS_NEXT')
-        self.assertEqual(detector.classify(self.image('tests/fixtures/rich_b/rank_up_stamina_ack.png'))[0],
-                         'UNKNOWN')
 
     def test_rank_up_acknowledgement_resolves_completion_then_advances_results(self):
         engine = self.engine()
@@ -137,11 +100,13 @@ class NightTests(unittest.TestCase):
         self.assertEqual(engine.data['pending']['id'], 'next')
 
     def test_two_cycles_reuse_existing_macros(self):
-        engine = self.engine()
+        engine = self.engine('ready_to_start.png')
         engine.tick()
-        self.assertEqual(engine.device.actions, [])
+        engine.device.image = self.image(FIXTURES + 'in_battle.png')
+        engine.tick()
+        self.assertEqual(engine.device.actions, ['start_mission'])
         self.assertEqual(engine.device.commands, [])
-        expected = []
+        expected = ['start_mission']
         cycle = [('mission_complete.png', 'advance_completion'),
                  ('results_next.png', 'next'), ('reward_reveal.png', 'reveal_rewards'),
                  ('ready_to_retry.png', 'retry'), ('ready_to_start.png', 'start_mission'),
@@ -156,7 +121,7 @@ class NightTests(unittest.TestCase):
                         expected.append(action)
                     self.assertEqual(engine.device.actions, expected)
             self.assertEqual(engine.data['counts']['completed'], number)
-            self.assertEqual(engine.data['counts']['started'], number)
+            self.assertEqual(engine.data['counts']['started'], number + 1)
 
     def test_stop_and_existing_account_owner_block_actions(self):
         engine = self.engine('ready_to_retry.png')
@@ -165,30 +130,11 @@ class NightTests(unittest.TestCase):
         self.assertEqual(engine.device.actions, [])
         for name in ('worker', 'supervisor'):
             with self.subTest(lock=name), farm.lock(name):
-                with self.assertRaises(RuntimeError):
-                    farm.select_stage(STAGE)
                 with patch.object(farm.subprocess, 'run') as launch:
                     with self.assertRaises(RuntimeError):
                         farm.start(STAGE)
                     launch.assert_not_called()
 
-    def test_captured_stamina_prompt_and_holdout_require_every_guard(self):
-        detector = farm.Detector(STAGE)
-        frame = self.image(FIXTURES + 'stamina_prompt.png')
-        for filename in ('stamina_prompt.png', 'stamina_holdout.png'):
-            self.assertEqual(detector.classify(self.image(FIXTURES + filename))[0], 'STAMINA_PROMPT')
-        self.assertEqual(detector.classify(self.image('tests/fixtures/rich_b/not_enough_stamina.png'))[0],
-                         'UNKNOWN')
-        spec = next(s for s in detector.states if s['name'] == 'STAMINA_PROMPT')
-        for anchor in spec['anchors']:
-            with self.subTest(region=anchor['region']):
-                changed = frame.copy()
-                x1, y1, x2, y2 = anchor['region']
-                changed[y1:y2, x1:x2] = 0
-                self.assertEqual(detector.classify(changed)[0], 'UNKNOWN')
-        changed = frame.copy()
-        changed[982:1054, 200:399] = (255, 0, 255)
-        self.assertEqual(detector.classify(changed)[0], 'UNKNOWN')
 
     def test_real_stamina_prompt_reuses_600_second_timer_across_stop_restart(self):
         engine = self.engine()
@@ -215,23 +161,6 @@ class NightTests(unittest.TestCase):
             engine.tick()
             engine.tick()
         self.assertEqual(engine.device.actions, ['retry'])
-
-    def test_persisted_retry_can_resume_verified_stamina_without_first_battle(self):
-        engine = self.engine('stamina_prompt.png')
-        engine.data['pending'] = {'id': 'retry', 'source': 'READY_TO_RETRY',
-                                  'expected': ['READY_TO_START', 'STAMINA_PROMPT'], 'time': 0}
-        engine.save()
-        engine = self.engine('stamina_prompt.png')
-        self.assertFalse(engine.mission_verified)
-        engine.tick()
-        self.assertEqual(engine.device.actions, ['dismiss_stamina'])
-
-    def test_initial_stamina_prompt_cannot_bypass_manual_first_battle(self):
-        engine = self.engine('stamina_prompt.png')
-        engine.tick()
-        engine.tick()
-        self.assertEqual(engine.device.actions, [])
-        self.assertFalse(engine.mission_verified)
 
 
 if __name__ == '__main__':

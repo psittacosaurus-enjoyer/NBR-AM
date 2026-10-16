@@ -1,0 +1,1733 @@
+{
+  "records": [
+    {
+      "id": "item_2f23f5a4588977b62c07167f",
+      "record_type": "item",
+      "source_key": "bravery \"ichiraku ramen, xxl\"|4|Bravery",
+      "display_name": "Bravery \"Ichiraku Ramen, XXL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+      "game_id": "12704",
+      "category": "item",
+      "element": "Bravery",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+        "json_pointer": "$.gaiden[0].hard.missions[11].conditions[0].rewards[0]",
+        "original": {
+          "kind": "item",
+          "amount": 1,
+          "unit": 12704,
+          "name": "Bravery",
+          "title": "Ichiraku Ramen, XXL",
+          "stars": 4,
+          "element": 4,
+          "icon": "/naruto-blazing/story/units/12704.webp"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[0].hard.missions[11].conditions[0].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12704,
+              "name": "Bravery",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 4,
+              "icon": "/naruto-blazing/story/units/12704.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[1].hard.missions[5].conditions[2].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12704,
+              "name": "Bravery",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 4,
+              "icon": "/naruto-blazing/story/units/12704.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[1].hard.missions[8].conditions[0].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12704,
+              "name": "Bravery",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 4,
+              "icon": "/naruto-blazing/story/units/12704.webp"
+            }
+          }
+        ],
+        "source_identifiers": [
+          "12704"
+        ],
+        "original_names": [
+          "Bravery \"Ichiraku Ramen, XXL\""
+        ],
+        "game_id_kind": "unit",
+        "element_code": 4
+      },
+      "assets": [
+        {
+          "id": "asset_8771a681f1c38f11a6251c15",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/4/40/Card-0970.png/revision/latest?cb=20161215044903",
+          "role": "card",
+          "file": "ramen_refs/asset_8771a681f1c38f11a6251c15.png",
+          "sha256": "e98874eecec3453bb96cc0b200091afd1bf3066793e95ed680e2d0728979152e"
+        },
+        {
+          "id": "asset_cf7bf1e7639aeb99543bd643",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/story/units/12704.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_cf7bf1e7639aeb99543bd643.webp",
+          "sha256": "2253e392c90c95ffe658007812c5035e85e7d80f5c85087dc24e95ab6c8613b3"
+        },
+        {
+          "id": "asset_a40a33782f99cc45698a7c59",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0970.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_a40a33782f99cc45698a7c59.webp",
+          "sha256": "093f36cb7873dd0cb181ad722b34431337c23a62b064f777ffc95d266a61ff60"
+        }
+      ]
+    },
+    {
+      "id": "item_8743978673b0ccdee6b9ca07",
+      "record_type": "item",
+      "source_key": "heart \"ichiraku ramen, xxl\"|4|Heart",
+      "display_name": "Heart \"Ichiraku Ramen, XXL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+      "game_id": "12674",
+      "category": "item",
+      "element": "Heart",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+        "json_pointer": "$.gaiden[0].hard.missions[8].conditions[0].rewards[0]",
+        "original": {
+          "kind": "item",
+          "amount": 1,
+          "unit": 12674,
+          "name": "Heart",
+          "title": "Ichiraku Ramen, XXL",
+          "stars": 4,
+          "element": 1,
+          "icon": "/naruto-blazing/story/units/12674.webp"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[0].hard.missions[8].conditions[0].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12674,
+              "name": "Heart",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 1,
+              "icon": "/naruto-blazing/story/units/12674.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[0].hard.missions[10].conditions[0].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12674,
+              "name": "Heart",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 1,
+              "icon": "/naruto-blazing/story/units/12674.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[1].hard.missions[1].conditions[2].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12674,
+              "name": "Heart",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 1,
+              "icon": "/naruto-blazing/story/units/12674.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[1].hard.missions[2].conditions[0].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12674,
+              "name": "Heart",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 1,
+              "icon": "/naruto-blazing/story/units/12674.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/story",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/story.json",
+            "json_pointer": "$.gaiden[1].hard.missions[6].conditions[0].rewards[0]",
+            "record": {
+              "kind": "item",
+              "amount": 1,
+              "unit": 12674,
+              "name": "Heart",
+              "title": "Ichiraku Ramen, XXL",
+              "stars": 4,
+              "element": 1,
+              "icon": "/naruto-blazing/story/units/12674.webp"
+            }
+          }
+        ],
+        "source_identifiers": [
+          "12674"
+        ],
+        "original_names": [
+          "Heart \"Ichiraku Ramen, XXL\""
+        ],
+        "game_id_kind": "unit",
+        "element_code": 1
+      },
+      "assets": [
+        {
+          "id": "asset_bf901a5a0cb23802eea277a0",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/a/a8/Card-0967.png/revision/latest?cb=20161215044854",
+          "role": "card",
+          "file": "ramen_refs/asset_bf901a5a0cb23802eea277a0.png",
+          "sha256": "629601613b5591eaa52b8004fd9130f5bfb35bc5ff173cee4b1081de73cb282a"
+        },
+        {
+          "id": "asset_d460ca4f44ea22b9c3120f1c",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/story/units/12674.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_d460ca4f44ea22b9c3120f1c.webp",
+          "sha256": "341c5e96168aac8a06a6a04192ef5e455b67ab5c07f15b75e467bf63d39bf8da"
+        },
+        {
+          "id": "asset_2d088896b69e338d8bcc88aa",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0967.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_2d088896b69e338d8bcc88aa.webp",
+          "sha256": "9999980431e507777e31c28359b1002a4c59c00f5fc769004b0d5c23a867da52"
+        }
+      ]
+    },
+    {
+      "id": "item_b4178c2f0e22eb691b458c96",
+      "record_type": "item",
+      "source_key": "wisdom \"ichiraku ramen, xxl\"|None|Wisdom",
+      "display_name": "Wisdom \"Ichiraku Ramen, XXL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+      "game_id": "971",
+      "category": "ramen",
+      "element": "Wisdom",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[24].stages[3].drops[1]",
+        "original": {
+          "name": "Wisdom \"Ichiraku Ramen, XXL\"",
+          "icon": "/naruto-blazing/missions/card-0971.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[3].drops[1]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0971.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[3].lucky[0]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0971.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[3].rewards[2].reward",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0971.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[3].lucky[4]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0971.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[3].chains[0][1].rewards[1]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0971.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Wisdom \"Ichiraku Ramen, XXL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "971",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Wisdom_%22Ichiraku_Ramen%2C_XXL%22",
+            "source_key": "fandom:card_no:971"
+          },
+          "rarity": {
+            "value": "4",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Wisdom_%22Ichiraku_Ramen%2C_XXL%22",
+            "source_key": "fandom:card_no:971"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_49cce0aae244c2dc71a376ba",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/b/b0/Card-0971.png/revision/latest?cb=20161215044905",
+          "role": "card",
+          "file": "ramen_refs/asset_49cce0aae244c2dc71a376ba.png",
+          "sha256": "cceeefa2a0cf3a651e10b5ea2a5504cd297d28053b16255fa981bcfb5e4b9252"
+        },
+        {
+          "id": "asset_55d6fb7e63f8375fbe62c411",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0971.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_55d6fb7e63f8375fbe62c411.webp",
+          "sha256": "ce47892bbe23d444e3d578c22c122c5deae6379a7c83840ad2ef016fc9a25690"
+        },
+        {
+          "id": "asset_876d5cee27093743e8a99e85",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/story/units/12714.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_876d5cee27093743e8a99e85.webp",
+          "sha256": "8e47cb86d3ef394521e5873bb003f33620a7f26137a79bf939de6572f267c31b"
+        }
+      ]
+    },
+    {
+      "id": "item_0196d2d789faf1bd23719d48",
+      "record_type": "item",
+      "source_key": "body \"ichiraku ramen, xxl\"|None|Body",
+      "display_name": "Body \"Ichiraku Ramen, XXL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+      "game_id": "969",
+      "category": "ramen",
+      "element": "Body",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[22].stages[3].drops[1]",
+        "original": {
+          "name": "Body \"Ichiraku Ramen, XXL\"",
+          "icon": "/naruto-blazing/missions/card-0969.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[3].drops[1]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0969.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[3].lucky[0]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0969.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[3].rewards[2].reward",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0969.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[3].drops[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0969.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[3].lucky[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0969.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[3].chains[0][0].rewards[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0969.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Body \"Ichiraku Ramen, XXL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "969",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Body_%22Ichiraku_Ramen%2C_XXL%22",
+            "source_key": "fandom:card_no:969"
+          },
+          "rarity": {
+            "value": "4",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Body_%22Ichiraku_Ramen%2C_XXL%22",
+            "source_key": "fandom:card_no:969"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_d4a122ff936c963532d5db66",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/6/69/Card-0969.png/revision/latest?cb=20161215044900",
+          "role": "card",
+          "file": "ramen_refs/asset_d4a122ff936c963532d5db66.png",
+          "sha256": "1188d71f8a9f992d254f11e44c612fd9f1ae994b4b733a080f0c6dd617a43581"
+        },
+        {
+          "id": "asset_3367b456572a87247a8f5fa0",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0969.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_3367b456572a87247a8f5fa0.webp",
+          "sha256": "f72e350ddefe49a3cf465a1bdfc48cb45afa83c7222bd49ba591e550b4cf8b7c"
+        },
+        {
+          "id": "asset_ec08875cf125bc01334f3d60",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/story/units/12694.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_ec08875cf125bc01334f3d60.webp",
+          "sha256": "ce28cccc39bf1b89040118054f0b20cbe8cc38c080317dd95159c56199be46e7"
+        }
+      ]
+    },
+    {
+      "id": "item_8564fb55369c9789b4a03023",
+      "record_type": "item",
+      "source_key": "skill \"ichiraku ramen, xxl\"|None|Skill",
+      "display_name": "Skill \"Ichiraku Ramen, XXL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+      "game_id": "968",
+      "category": "ramen",
+      "element": "Skill",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[21].stages[3].drops[1]",
+        "original": {
+          "name": "Skill \"Ichiraku Ramen, XXL\"",
+          "icon": "/naruto-blazing/missions/card-0968.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[3].drops[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0968.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[3].lucky[0]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0968.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[3].rewards[2].reward",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0968.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[3].drops[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "icon": "/naruto-blazing/missions/card-0968.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[3].lucky[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0968.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[3].chains[0][0].rewards[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0968.webp",
+              "amount": 3
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/panel",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.panels[0].tasks[1].rewards[0]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0968.webp",
+              "amount": 2
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/panel",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.panels[0].tasks[6].rewards[0]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XXL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0968.webp",
+              "amount": 2
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Skill \"Ichiraku Ramen, XXL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "968",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Skill_%22Ichiraku_Ramen%2C_XXL%22",
+            "source_key": "fandom:card_no:968"
+          },
+          "rarity": {
+            "value": "4",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Skill_%22Ichiraku_Ramen%2C_XXL%22",
+            "source_key": "fandom:card_no:968"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_efab7e81958b23dc9352d449",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/9/92/Card-0968.png/revision/latest?cb=20161215044857",
+          "role": "card",
+          "file": "ramen_refs/asset_efab7e81958b23dc9352d449.png",
+          "sha256": "b97d960aa04779481c82ddee0f72854e92aaee9deea3634b15fad46ef5c04d0c"
+        },
+        {
+          "id": "asset_ea7a28bee1fd54c14a414403",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0968.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_ea7a28bee1fd54c14a414403.webp",
+          "sha256": "81ba1328233c22b99ca538817345a0673857266afbd7d068107c0bac09f4b445"
+        },
+        {
+          "id": "asset_354eaa00627643bc390c933a",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/story/units/12684.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_354eaa00627643bc390c933a.webp",
+          "sha256": "85be503058403072683c6229791b3e9c09b5a6b3453de4153b25039ee1323eef"
+        }
+      ]
+    },
+    {
+      "id": "item_7ae53d5fd4cca77838aaece8",
+      "record_type": "item",
+      "source_key": "wisdom \"ichiraku ramen, reg\"|None|Wisdom",
+      "display_name": "Wisdom \"Ichiraku Ramen, Reg\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/ryo-acquisition",
+      "game_id": "927",
+      "category": "ramen",
+      "element": "Wisdom",
+      "rarity": "1",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[9].stages[0].rewards[2].reward",
+        "original": {
+          "name": "Wisdom \"Ichiraku Ramen, Reg\"",
+          "kind": "ramen",
+          "icon": "/naruto-blazing/missions/card-0927.webp"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/ryo-acquisition",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[9].stages[0].rewards[2].reward",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, Reg\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0927.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[0].drops[0]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, Reg\"",
+              "icon": "/naruto-blazing/missions/card-0927.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[0].lucky[0]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, Reg\"",
+              "icon": "/naruto-blazing/missions/card-0927.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[0].lucky[4]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, Reg\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0927.webp"
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Wisdom \"Ichiraku Ramen, Reg\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "927",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Wisdom_%22Ichiraku_Ramen%2C_Reg%22",
+            "source_key": "fandom:card_no:927"
+          },
+          "rarity": {
+            "value": "1",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Wisdom_%22Ichiraku_Ramen%2C_Reg%22",
+            "source_key": "fandom:card_no:927"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_a6285f281f2e229a5670a171",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/c/ca/Card-0927.png/revision/latest?cb=20161104230119",
+          "role": "card",
+          "file": "ramen_refs/asset_a6285f281f2e229a5670a171.png",
+          "sha256": "11f464c8898b59f2a652b2bd9184772844ee4ddfb35847f7a0618dc929025e2e"
+        },
+        {
+          "id": "asset_7f8582488128ef0cb56bafdf",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0927.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_7f8582488128ef0cb56bafdf.webp",
+          "sha256": "cb7219263aea16308f44dc811d308c016317cb1ec70cf675ac56ecb401ac6b30"
+        },
+        {
+          "id": "asset_4b937fd1c64616028299d46d",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/story/units/11631.webp",
+          "role": "icon",
+          "file": "ramen_refs/asset_4b937fd1c64616028299d46d.webp",
+          "sha256": "7c16cdab6a6837d598931d0840954f0d029a233851705abc0d2d4692fa855088"
+        }
+      ]
+    },
+    {
+      "id": "item_3be4ceccb4ed8b0c5f9696d0",
+      "record_type": "item",
+      "source_key": "heart \"ichiraku ramen, xl\"|None|Heart",
+      "display_name": "Heart \"Ichiraku Ramen, XL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-heart",
+      "game_id": "917",
+      "category": "ramen",
+      "element": "Heart",
+      "rarity": "3",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[20].stages[1].drops[1]",
+        "original": {
+          "name": "Heart \"Ichiraku Ramen, XL\"",
+          "icon": "/naruto-blazing/missions/card-0917.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-heart",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[20].stages[1].drops[1]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0917.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-heart",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[20].stages[2].drops[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-heart",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[20].stages[2].lucky[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-heart",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[20].stages[2].rewards[2].reward",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-heart",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[20].stages[3].drops[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0917.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].drops[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0917.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].lucky[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].rewards[2].reward",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[0].chains[4][0].rewards[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[2].chains[2][0].rewards[0]",
+            "record": {
+              "name": "Heart \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0917.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Heart \"Ichiraku Ramen, XL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "917",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Heart_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:917"
+          },
+          "rarity": {
+            "value": "3",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Heart_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:917"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_11ca2aef3c40cc8ef6f3f663",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0917.webp",
+          "sha256": "12e59b36a8f8e0dc8025da73f69a63359fe1bbcdd836b9f6a29b63ae35cb2b1c",
+          "file": "ramen_refs/12e59b36a8f8e0dc8025da73f69a63359fe1bbcdd836b9f6a29b63ae35cb2b1c.webp",
+          "role": "icon"
+        },
+        {
+          "id": "asset_9cb638912dd4701238ba49af",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/c/c0/Portrait-0917.png/revision/latest?cb=20161129211613",
+          "sha256": "291166d0a297fadae7083e58bded61addd799b120adedb764d63fe21d06a1368",
+          "file": "ramen_refs/291166d0a297fadae7083e58bded61addd799b120adedb764d63fe21d06a1368.png",
+          "role": "artwork"
+        },
+        {
+          "id": "asset_f3a9dc7b0eb7399c9ca7be2f",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/8/8f/Card-0917.png/revision/latest?cb=20161104225931",
+          "sha256": "9c9db96c5fe02a3b363621f0aa085f8864e8c6649dd20f197b632d65c3b96b92",
+          "file": "ramen_refs/9c9db96c5fe02a3b363621f0aa085f8864e8c6649dd20f197b632d65c3b96b92.png",
+          "role": "card"
+        }
+      ]
+    },
+    {
+      "id": "item_54167d4cce6d7ce537f4cdac",
+      "record_type": "item",
+      "source_key": "skill \"ichiraku ramen, xl\"|None|Skill",
+      "display_name": "Skill \"Ichiraku Ramen, XL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+      "game_id": "920",
+      "category": "ramen",
+      "element": "Skill",
+      "rarity": "3",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[21].stages[1].drops[1]",
+        "original": {
+          "name": "Skill \"Ichiraku Ramen, XL\"",
+          "icon": "/naruto-blazing/missions/card-0920.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[1].drops[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0920.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[2].drops[0]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0920.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[2].lucky[0]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0920.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[2].rewards[2].reward",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0920.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-skill",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[21].stages[3].drops[0]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0920.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].drops[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0920.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].lucky[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0920.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[0].chains[4][0].rewards[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0920.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[2].chains[2][0].rewards[1]",
+            "record": {
+              "name": "Skill \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0920.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Skill \"Ichiraku Ramen, XL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "920",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Skill_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:920"
+          },
+          "rarity": {
+            "value": "3",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Skill_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:920"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_6a0b6c4a5a83f696f32054dd",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0920.webp",
+          "sha256": "caf7215eb0cb00929d000b5e72ffecfd7663f8766e8dfbb7ed93201a396e13f9",
+          "file": "ramen_refs/caf7215eb0cb00929d000b5e72ffecfd7663f8766e8dfbb7ed93201a396e13f9.webp",
+          "role": "icon"
+        },
+        {
+          "id": "asset_8b2e759b204f981142d3eb31",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/b/b0/Card-0920.png/revision/latest?cb=20161104225951",
+          "sha256": "76a27afa3fe5cc34aa35198cd9300702953e899f3bcf7d3c2e7f16efd3289968",
+          "file": "ramen_refs/76a27afa3fe5cc34aa35198cd9300702953e899f3bcf7d3c2e7f16efd3289968.png",
+          "role": "card"
+        },
+        {
+          "id": "asset_ccb560b7e7bc0fdda265c631",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/d/d9/Portrait-0920.png/revision/latest?cb=20161129212050",
+          "sha256": "7a947b36ab599ec85e499ff7ccd5b6fba1b358f52145d52af755ee6682de98bf",
+          "file": "ramen_refs/7a947b36ab599ec85e499ff7ccd5b6fba1b358f52145d52af755ee6682de98bf.png",
+          "role": "artwork"
+        }
+      ]
+    },
+    {
+      "id": "item_8f4e03640198460d720b04f9",
+      "record_type": "item",
+      "source_key": "body \"ichiraku ramen, xl\"|None|Body",
+      "display_name": "Body \"Ichiraku Ramen, XL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+      "game_id": "923",
+      "category": "ramen",
+      "element": "Body",
+      "rarity": "3",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[22].stages[1].drops[1]",
+        "original": {
+          "name": "Body \"Ichiraku Ramen, XL\"",
+          "icon": "/naruto-blazing/missions/card-0923.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[1].drops[1]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0923.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[2].drops[0]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0923.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[2].lucky[0]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0923.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[2].rewards[2].reward",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0923.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-body",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[22].stages[3].drops[0]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0923.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].drops[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0923.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].lucky[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0923.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[0].chains[4][0].rewards[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0923.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[2].chains[2][0].rewards[2]",
+            "record": {
+              "name": "Body \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0923.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Body \"Ichiraku Ramen, XL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "923",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Body_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:923"
+          },
+          "rarity": {
+            "value": "3",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Body_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:923"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_2edb34f7ec4122d9d1d258f4",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/d/d0/Card-0923.png/revision/latest?cb=20161104230002",
+          "sha256": "0144cfed7d1700c129d1c2728365adb42d5815545f931f6a2ab817c0bd179d4c",
+          "file": "ramen_refs/0144cfed7d1700c129d1c2728365adb42d5815545f931f6a2ab817c0bd179d4c.png",
+          "role": "card"
+        },
+        {
+          "id": "asset_32722bb98bf522a20f2bff14",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/e/e2/Portrait-0923.png/revision/latest?cb=20161129213017",
+          "sha256": "45eaa5cecd0d586b750eba504c9f61668b887f64778b042bbcfa1adb28a5d673",
+          "file": "ramen_refs/45eaa5cecd0d586b750eba504c9f61668b887f64778b042bbcfa1adb28a5d673.png",
+          "role": "artwork"
+        },
+        {
+          "id": "asset_95779143e768bf8b262b362f",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0923.webp",
+          "sha256": "4d977e91c5afbb90d60f5e8bea3d2e95ecd8a97092967ad2f9c835db4484a836",
+          "file": "ramen_refs/4d977e91c5afbb90d60f5e8bea3d2e95ecd8a97092967ad2f9c835db4484a836.webp",
+          "role": "icon"
+        }
+      ]
+    },
+    {
+      "id": "item_58d3f0fbc779edee3b80538c",
+      "record_type": "item",
+      "source_key": "bravery \"ichiraku ramen, xl\"|None|Bravery",
+      "display_name": "Bravery \"Ichiraku Ramen, XL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-bravery",
+      "game_id": "926",
+      "category": "ramen",
+      "element": "Bravery",
+      "rarity": "3",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[23].stages[1].drops[1]",
+        "original": {
+          "name": "Bravery \"Ichiraku Ramen, XL\"",
+          "icon": "/naruto-blazing/missions/card-0926.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[23].stages[1].drops[1]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0926.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[23].stages[2].drops[0]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0926.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[23].stages[2].lucky[0]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0926.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[23].stages[2].rewards[2].reward",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0926.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-bravery",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[23].stages[3].drops[0]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0926.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].lucky[3]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0926.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[0].chains[2][0].rewards[0]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0926.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[2].chains[2][1].rewards[0]",
+            "record": {
+              "name": "Bravery \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0926.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Bravery \"Ichiraku Ramen, XL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "926",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Bravery_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:926"
+          },
+          "rarity": {
+            "value": "3",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Bravery_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:926"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_3951ec362cd58eb60d56bb7b",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0926.webp",
+          "sha256": "50a3e219c21d769c8fe7bbfff74aad586343e83c6dba9999ac89da987c53eb05",
+          "file": "ramen_refs/50a3e219c21d769c8fe7bbfff74aad586343e83c6dba9999ac89da987c53eb05.webp",
+          "role": "icon"
+        },
+        {
+          "id": "asset_6def5a993946008e8abd1c05",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/b/b9/Card-0926.png/revision/latest?cb=20161104230115",
+          "sha256": "1c9d8a70523c0390497d41737eba50220b9a8ba70f474496214673e27f9f4a37",
+          "file": "ramen_refs/1c9d8a70523c0390497d41737eba50220b9a8ba70f474496214673e27f9f4a37.png",
+          "role": "card"
+        },
+        {
+          "id": "asset_7f092b205c47579c372a1c99",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/d/d6/Portrait-0926.png/revision/latest?cb=20161129213839",
+          "sha256": "4295d96b7253c0cdf481caded8324c73e96e5accbe1dcf07ed6d41215f10ae74",
+          "file": "ramen_refs/4295d96b7253c0cdf481caded8324c73e96e5accbe1dcf07ed6d41215f10ae74.png",
+          "role": "artwork"
+        }
+      ]
+    },
+    {
+      "id": "item_f07e75e2a57c1fd2f2c6c056",
+      "record_type": "item",
+      "source_key": "wisdom \"ichiraku ramen, xl\"|None|Wisdom",
+      "display_name": "Wisdom \"Ichiraku Ramen, XL\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+      "game_id": "929",
+      "category": "ramen",
+      "element": "Wisdom",
+      "rarity": "3",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+        "json_pointer": "$.missions[24].stages[1].drops[1]",
+        "original": {
+          "name": "Wisdom \"Ichiraku Ramen, XL\"",
+          "icon": "/naruto-blazing/missions/card-0929.webp",
+          "kind": "ramen"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "occurrences": [
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[1].drops[1]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0929.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[2].drops[0]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0929.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[2].lucky[0]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0929.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[2].rewards[2].reward",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0929.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-wisdom",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[24].stages[3].drops[0]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "icon": "/naruto-blazing/missions/card-0929.webp",
+              "kind": "ramen"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/enhance-all",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/missions.json",
+            "json_pointer": "$.missions[25].stages[2].lucky[4]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0929.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[0].chains[2][0].rewards[1]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0929.webp"
+            }
+          },
+          {
+            "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninja-trials.json",
+            "json_pointer": "$.trials[2].chains[2][1].rewards[1]",
+            "record": {
+              "name": "Wisdom \"Ichiraku Ramen, XL\"",
+              "kind": "ramen",
+              "icon": "/naruto-blazing/missions/card-0929.webp",
+              "amount": 3
+            }
+          }
+        ],
+        "source_identifiers": [],
+        "original_names": [
+          "Wisdom \"Ichiraku Ramen, XL\""
+        ],
+        "game_id_kind": null,
+        "element_code": null,
+        "source_enrichment": {
+          "game_id": {
+            "value": "929",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Wisdom_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:929"
+          },
+          "rarity": {
+            "value": "3",
+            "source_url": "https://naruto-blazing.fandom.com/wiki/Wisdom_%22Ichiraku_Ramen%2C_XL%22",
+            "source_key": "fandom:card_no:929"
+          }
+        },
+        "game_id_namespace": "card_no"
+      },
+      "assets": [
+        {
+          "id": "asset_44a8cf0dbb421526ed930f8f",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/0/00/Card-0929.png/revision/latest?cb=20161104230126",
+          "sha256": "d16d4eb9888386e0147aa86d11b14e2dc2968967d819e35ec589f956ecb4be33",
+          "file": "ramen_refs/d16d4eb9888386e0147aa86d11b14e2dc2968967d819e35ec589f956ecb4be33.png",
+          "role": "card"
+        },
+        {
+          "id": "asset_46f14c1a13b4619ff5951adf",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0929.webp",
+          "sha256": "fa96bb0ea973a01b3cedad444c31a16e5489de50cc42ae97480a3fa81b7dffd2",
+          "file": "ramen_refs/fa96bb0ea973a01b3cedad444c31a16e5489de50cc42ae97480a3fa81b7dffd2.webp",
+          "role": "icon"
+        },
+        {
+          "id": "asset_6d0a003b8fa9a6b9a07f79cb",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/1/15/Portrait-0929.png/revision/latest?cb=20161129214509",
+          "sha256": "37bb2d9eda7c6d888970caeb40ba11cf11989fccf41d58bd9b108ae1e1f85756",
+          "file": "ramen_refs/37bb2d9eda7c6d888970caeb40ba11cf11989fccf41d58bd9b108ae1e1f85756.png",
+          "role": "artwork"
+        }
+      ]
+    }
+  ],
+  "expected_top_row": [
+    "item_2f23f5a4588977b62c07167f",
+    "item_8743978673b0ccdee6b9ca07",
+    "item_b4178c2f0e22eb691b458c96",
+    "item_0196d2d789faf1bd23719d48",
+    "item_8564fb55369c9789b4a03023"
+  ],
+  "uncalibrated_control": "item_7ae53d5fd4cca77838aaece8",
+  "xl_item_ids": {
+    "Heart": "item_3be4ceccb4ed8b0c5f9696d0",
+    "Skill": "item_54167d4cce6d7ce537f4cdac",
+    "Body": "item_8f4e03640198460d720b04f9",
+    "Bravery": "item_58d3f0fbc779edee3b80538c",
+    "Wisdom": "item_f07e75e2a57c1fd2f2c6c056"
+  },
+  "xl_examples": [
+    {
+      "file": "all_cups_body_xl_results.png",
+      "sha256": "04ba7011beb5b5a46bf783ac6d5a56c0d629518dccf0970cf75dff4d72e9629b",
+      "expected_rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_2f23f5a4588977b62c07167f"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_8f4e03640198460d720b04f9"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_b4178c2f0e22eb691b458c96"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_0196d2d789faf1bd23719d48"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_8564fb55369c9789b4a03023"
+        }
+      ]
+    },
+    {
+      "file": "all_cups_skill_xl_results.png",
+      "sha256": "249f93c4b7e616387c86184e177485623412569487dddd5cf65d427e5dab7b3d",
+      "expected_rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_2f23f5a4588977b62c07167f"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_54167d4cce6d7ce537f4cdac"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_b4178c2f0e22eb691b458c96"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_0196d2d789faf1bd23719d48"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_8564fb55369c9789b4a03023"
+        }
+      ]
+    },
+    {
+      "file": "all_cups_xl_results.png",
+      "sha256": "bce893c616a3ecfe7fbec9d4cf9e95d5523354cb90e0d1be7e7eae4fbd695107",
+      "expected_rewards": [
+        {
+          "bounding_box": [
+            57,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_3be4ceccb4ed8b0c5f9696d0"
+        },
+        {
+          "bounding_box": [
+            219,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_54167d4cce6d7ce537f4cdac"
+        },
+        {
+          "bounding_box": [
+            381,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_8f4e03640198460d720b04f9"
+        },
+        {
+          "bounding_box": [
+            543,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_f07e75e2a57c1fd2f2c6c056"
+        },
+        {
+          "bounding_box": [
+            705,
+            411,
+            134,
+            139
+          ],
+          "item_id": "item_58d3f0fbc779edee3b80538c"
+        },
+        {
+          "bounding_box": [
+            57,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_8f4e03640198460d720b04f9"
+        },
+        {
+          "bounding_box": [
+            219,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_f07e75e2a57c1fd2f2c6c056"
+        },
+        {
+          "bounding_box": [
+            381,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_f07e75e2a57c1fd2f2c6c056"
+        },
+        {
+          "bounding_box": [
+            543,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_8f4e03640198460d720b04f9"
+        },
+        {
+          "bounding_box": [
+            705,
+            573,
+            134,
+            139
+          ],
+          "item_id": "item_58d3f0fbc779edee3b80538c"
+        }
+      ]
+    }
+  ]
+}

@@ -17,7 +17,7 @@ class CompletionRecognitionTests(unittest.TestCase):
                         patch.object(farm, 'event'), patch.object(farm.time, 'sleep')]
         for item in self.patches:
             item.start()
-        self.detector = farm.Detector('rich-b')
+        self.detector = farm.Detector('universal')
 
     def tearDown(self):
         for item in reversed(self.patches):
@@ -52,10 +52,10 @@ class CompletionRecognitionTests(unittest.TestCase):
             self.assertNotEqual(self.detector.classify(self.image(path))[0], 'MISSION_COMPLETE', path)
 
     def test_quick_poll_and_two_different_glow_frames_advance_once(self):
-        farm.write_json(self.runtime / 'session.json', {'stage':'rich-b', 'mission_verified':True})
+        farm.write_json(self.runtime / 'session.json', {'stage':'universal', 'mission_verified':True})
         device = FakeDevice(self.image('tests/fixtures/battle.png'))
         with patch.object(farm, 'Device', return_value=device):
-            engine = farm.Engine('rich-b')
+            engine = farm.Engine('universal')
         self.assertEqual(engine.tick(), 2)
         self.assertEqual(device.actions, [])
         frames = [self.image('tests/fixtures/rich_b/completion_animation/' + name + '.png')
@@ -67,10 +67,10 @@ class CompletionRecognitionTests(unittest.TestCase):
         self.assertEqual(engine.data['pending']['id'], 'advance_completion')
 
     def test_unknown_animation_in_verified_active_run_keeps_quick_poll_and_loss_probe(self):
-        farm.write_json(self.runtime / 'session.json', {'stage':'rich-b', 'mission_verified':True})
+        farm.write_json(self.runtime / 'session.json', {'stage':'universal', 'mission_verified':True})
         device = FakeDevice(farm.np.zeros((1600,900,3), dtype='uint8'))
         with patch.object(farm, 'Device', return_value=device):
-            engine = farm.Engine('rich-b')
+            engine = farm.Engine('universal')
         engine.data['run'] = {'id':'active', 'start':0, 'outcome':None}
         with patch.object(farm, 'ocr_text', return_value='') as probe:
             self.assertEqual(engine.tick(), 2)

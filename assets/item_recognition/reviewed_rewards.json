@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "library_sha256": "a82ec954131da2200f72c398e9fc1be4ec40fc092499000aec42102855b572c5",
+  "base_calibration_sha256": "c6c94e0e5e030c4e8933726fd9dab594589e3af2efb57fceb929f9ec8bc44bcc",
+  "supported_item_ids": [
+    "item_8a08c9e34f839ff53da4e800",
+    "item_1236b95a29ae3856765c7a6e",
+    "item_eefc62d8f7bf053966c6efc6"
+  ],
+  "canonical_groups": [
+    {
+      "canonical_item_id": "item_8a08c9e34f839ff53da4e800",
+      "member_ids": [
+        "item_8a08c9e34f839ff53da4e800",
+        "item_1b2d387ff9aecc9a21798d23"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "947",
+      "evidence": {
+        "basis": "Independent review of the captured acquired-reward cards and local source-linked library assets: both source records explicitly identify card 0947, agree on Heart element, have compatible item/crystal categories, and have no conflicting known rarity or game ID. The Fandom source explicitly supplies No. 947 and four-star rarity. The two library names represent the same Heart Crystal; shared pixels alone were not used to establish identity.",
+        "screenshot": "tests/fixtures/item_recognition/heart_crystal_results.png",
+        "screenshot_sha256": "ec82d8a1cee11caf8a68525cde1054d50e12f9b2417d2642e25c17327ad2ab08",
+        "bounding_boxes": [
+          [
+            57,
+            411,
+            134,
+            139
+          ],
+          [
+            219,
+            411,
+            134,
+            139
+          ]
+        ],
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-0947.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-0947.webp",
+          "https://naruto-blazing.fandom.com/wiki/Limit_Break_Crystal_%22Heart_Crystal%22"
+        ],
+        "source_reference": "runtime/library/assets/items/8d0d336ae3f5f155bcac92cf40bf4e6e66d034e52e9dc404e8ad0f3a1162a8fe.png",
+        "quantity": null
+      }
+    },
+    {
+      "canonical_item_id": "item_1236b95a29ae3856765c7a6e",
+      "member_ids": [
+        "item_1236b95a29ae3856765c7a6e",
+        "item_012b9dcd3dbb3309689802c2"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "950",
+      "evidence": {
+        "basis": "Independent comparison of the saved acquired cards with source-linked local card 0950: gold crystal, Bravery badge, silver four-star frame. Both records explicitly reference card 0950 via their original /lb/card-0950 and /missions/card-0950 URLs, agree on Bravery, and have compatible crystal/item categories. Shared pixels alone do not establish identity. The differently named Fandom record is not merged.",
+        "screenshot": "tests/fixtures/item_recognition/bravery_crystal_results.png",
+        "screenshot_sha256": "0b3affff19f0721e6cb8f40b137a9c14152f67fedcc80c1cf6ce071b4439ccb1",
+        "bounding_boxes": [
+          [
+            57,
+            411,
+            134,
+            139
+          ],
+          [
+            219,
+            411,
+            134,
+            139
+          ]
+        ],
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-0950.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-0950.webp"
+        ],
+        "quantity": null,
+        "unrevealed_control": "tests/fixtures/item_recognition/bravery_lucky_unrevealed.png"
+      }
+    },
+    {
+      "canonical_item_id": "item_eefc62d8f7bf053966c6efc6",
+      "member_ids": [
+        "item_eefc62d8f7bf053966c6efc6",
+        "item_d1ad38aa0a569a91e4d5ffc6"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "948",
+      "evidence": {
+        "basis": "Full-library source-card audit: each record explicitly references the same /missions/ or /lb/ card number; known type, element, rarity, game ID and material category are compatible. Shared artwork alone was not used. Unseen identities remain uncalibrated. Independent live ADB capture confirms green Skill badge, green spiral crystal and four-star silver frame.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-0948.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-0948.webp"
+        ],
+        "screenshots": [
+          {
+            "file": "skill_crystal_results.png",
+            "sha256": "cd15600151055708b824826c00fbfb081b2295fd7437bcd54b42ad2a8adaac92",
+            "icons": 2
+          },
+          {
+            "file": "skill_crystal_three_results.png",
+            "sha256": "409944b999d660e601d90c9fe3119787009fc8baba9baba13aa339861d310281",
+            "icons": 3
+          }
+        ]
+      }
+    },
+    {
+      "canonical_item_id": "item_4e52f1f09cb115b6cdbd1316",
+      "member_ids": [
+        "item_4e52f1f09cb115b6cdbd1316",
+        "item_aa35f180c5b73ba780c2ccc7"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "951",
+      "evidence": {
+        "basis": "Full-library source-card audit: each record explicitly references the same /missions/ or /lb/ card number; known type, element, rarity, game ID and material category are compatible. Shared artwork alone was not used. Unseen identities remain uncalibrated.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-0951.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-0951.webp"
+        ]
+      }
+    },
+    {
+      "canonical_item_id": "item_d5325e6515a52b82be215874",
+      "member_ids": [
+        "item_d5325e6515a52b82be215874",
+        "item_907aca4139cfff37133dbada"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "1142",
+      "evidence": {
+        "basis": "Full-library source-card audit: each record explicitly references the same /missions/ or /lb/ card number; known type, element, rarity, game ID and material category are compatible. Shared artwork alone was not used. Unseen identities remain uncalibrated.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-1142.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-1142.webp"
+        ]
+      }
+    }
+  ]
+}

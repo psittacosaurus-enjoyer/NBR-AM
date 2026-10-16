@@ -29,9 +29,9 @@ def dashboard(session_id="session-1", completed_runs=1):
                       "screenshot_path": "missing-diagnostic.png", "warnings": ["Quantity unavailable"],
                       "unknown_icons": 1, "ambiguous_icons": 1,
                       "rewards": [{"item_id": "item-1", "item_name": "Scroll", "identity_status": "matched",
-                                   "quantity": None, "quantity_status": "unknown"},
+                                   "quantity": None, "quantity_status": "unknown", "reward_scope": "acquired"},
                                   {"item_id": "unconfirmed", "item_name": "Candidate", "identity_status": "candidate",
-                                   "quantity": 99, "quantity_status": "verified"}]}]}
+                                   "quantity": 99, "quantity_status": "verified", "reward_scope": "acquired"}]}]}
 
 
 class LootBackend(manager_test.FakeBackend):
@@ -73,12 +73,26 @@ class LootGuiTests(unittest.TestCase):
         self.wait_until(lambda: window._loot_data.get("completed_runs") == 1)
         return window, backend
 
-    def test_observed_icons_are_distinct_from_unknown_and_partial_confirmed_quantities(self):
+    def test_loot_tiles_are_visible_without_a_dropdown_in_both_themes(self):
+        window, backend = self.ready()
+        for appearance in ("original", "retro98", "original"):
+            window.set_appearance(appearance)
+            self.app.processEvents()
+            self.assertTrue(window.loot_grid.isVisible())
+            self.assertFalse(window.loot_history.isVisible())
+            self.assertFalse(window.log_view.isVisible())
+            self.assertEqual(len(window.loot_grid.tiles), 2)
+            self.assertEqual({tile.item['item_id']: tile.count_label.text() for tile in window.loot_grid.tiles},
+                             {'item-1': '2', 'item-2': '1'})
+            self.assertFalse(hasattr(window, "loot_history_toggle"))
+        self.assertEqual(backend.commands, [])
+
+    def test_drops_use_icon_counts_even_when_text_quantities_are_unknown_or_different(self):
         window, backend = self.ready()
         self.assertEqual(window.loot_item_table.item(0, 1).text(), "2")
-        self.assertEqual(window.loot_item_table.item(0, 2).text(), "Unknown")
-        self.assertEqual(window.loot_item_table.item(1, 2).text(), "7 (known only)")
-        self.assertIn("unknown quantities excluded", window.loot_summary_label.text())
+        self.assertEqual(window.loot_item_table.item(0, 2).text(), "2")
+        self.assertEqual(window.loot_item_table.item(1, 2).text(), "1")
+        self.assertIn("Drops: Scroll: 2; Crystal: 1", window.loot_summary_label.text())
         self.assertIn("Completed runs observed: 1", window.loot_summary_label.text())
         self.assertEqual(window.loot_status_label.text(), "Tracking Active")
         self.assertIn("Process started:", window.loot_session_label.text())
@@ -86,12 +100,25 @@ class LootGuiTests(unittest.TestCase):
         run = window.loot_run_tree.topLevelItem(0)
         candidate = run.child(2)
         self.assertIn("unconfirmed identity", candidate.text(0))
-        self.assertEqual(candidate.text(2), "Unknown")
+        self.assertEqual(candidate.text(2), "1 drop")
+        self.assertEqual(backend.commands, [])
+
+    def test_unidentified_drops_get_their_own_counter_without_item_credit(self):
+        window, backend = self.ready()
+        backend.loot.update(total_drops=5, unidentified_drops=2)
+        window.refresh_loot()
+        self.wait_until(lambda: len(window.loot_grid.tiles) == 3)
+        self.assertEqual([tile.count_label.text() for tile in window.loot_grid.tiles], ['2', '1', '2'])
+        unknown = window.loot_grid.tiles[-1]
+        self.assertEqual(unknown.item['item_name'], 'Unidentified')
+        self.assertIsNone(unknown.item.get('item_id'))
+        self.assertEqual(unknown.icon_label.text(), '?')
+        self.assertEqual(len(window._loot_data['items']), 2)
         self.assertEqual(backend.commands, [])
 
     def test_history_expansion_survives_automatic_persisted_record_updates(self):
         window, backend = self.ready()
-        window.loot_history_toggle.setChecked(True)
+        window.recognition_details_action.setChecked(True)
         self.assertTrue(window.loot_history.isVisible())
         window.loot_run_tree.topLevelItem(0).setExpanded(True)
         backend.loot["completed_runs"] = 2
@@ -197,7 +224,7 @@ class LootGuiTests(unittest.TestCase):
             self.wait_until(lambda: window._loot_data.get("completed_runs") == 1)
             self.assertEqual(window.loot_item_table.item(0, 0).text(), "Offline scroll fixture")
             self.assertEqual(window.loot_item_table.item(0, 1).text(), "1")
-            self.assertEqual(window.loot_item_table.item(0, 2).text(), "Unknown")
+            self.assertEqual(window.loot_item_table.item(0, 2).text(), "1")
             expanded_event = {**event, 'completion_id': 'offline-completion:2', 'run_id': 'offline-run:2'}
             expanded_result = {'rewards': [{'item_id': 'fandom-material', 'item_name': 'Fandom material fixture',
                 'identity_status': 'matched', 'member_ids': ['fandom-material', 'source-alias'],
@@ -208,12 +235,12 @@ class LootGuiTests(unittest.TestCase):
             window.refresh()
             self.wait_until(lambda: window._loot_data.get('completed_runs') == 2)
             self.assertEqual(window._loot_data['recognized_icons'], 2)
-            self.assertEqual(window._loot_data['confirmed_quantities'], {'fandom-material': 3})
+            self.assertEqual(window._loot_data['confirmed_quantities'], {'fandom-material': 1, 'offline-scroll': 1})
             self.assertEqual(window.loot_item_table.item(0, 0).text(), 'Fandom material fixture')
             self.assertEqual(window.loot_item_table.item(0, 1).text(), '1')
-            self.assertEqual(window.loot_item_table.item(0, 2).text(), '3')
+            self.assertEqual(window.loot_item_table.item(0, 2).text(), '1')
             self.assertEqual(window.loot_item_table.item(1, 0).text(), 'Offline scroll fixture')
-            self.assertEqual(window.loot_item_table.item(1, 2).text(), 'Unknown')
+            self.assertEqual(window.loot_item_table.item(1, 2).text(), '1')
             store.end_session(sid)
             window.refresh()
             self.wait_until(lambda: window.loot_status_label.text() == "Session Ended")

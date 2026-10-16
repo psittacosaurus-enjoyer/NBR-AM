@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import numpy as np
 from PIL import Image, ImageDraw
@@ -14,6 +14,7 @@ PROJECT = Path(__file__).resolve().parents[2] / 'src/item_recognition'
 sys.path.insert(0, str(PROJECT))
 sys.path.insert(0, str(PROJECT.parent / 'game_library'))
 import library as L
+import recognizer as recognition
 from recognizer import ItemRecognizer
 
 
@@ -105,6 +106,22 @@ class RecognizerTests(unittest.TestCase):
         self.assertIsNone(result['item_id'])
         self.assertGreaterEqual(len(result['candidates']), 2)
 
+    def test_bounded_batches_preserve_scores_and_global_ambiguity(self):
+        self.db = L.connect(self.path)
+        self.add_reference('other-scroll', 'Bravery Awakening Scroll', icon(0))
+        self.db.commit()
+        self.db.close()
+        recognizer = self.recognizer()
+        controls = [icon(0), icon(1), icon(2)]
+        with patch.object(recognition, '_MATCH_BATCH_SIZE', len(recognizer._images)):
+            expected = [recognizer.match_icon(image) for image in controls]
+        with patch.object(recognition, '_MATCH_BATCH_SIZE', 1):
+            actual = [recognizer.match_icon(image) for image in controls]
+        self.assertEqual(actual, expected)
+        self.assertEqual(actual[0]['identity_status'], 'ambiguous')
+        self.assertEqual(actual[1]['identity_status'], 'candidate')
+        self.assertEqual(actual[2]['identity_status'], 'unknown')
+
     def test_multiple_images_for_one_item_are_one_identity(self):
         self.db = L.connect(self.path)
         self.add_reference('scroll', 'Heart Awakening Scroll', icon(0), asset_suffix='_alternate')
@@ -122,6 +139,21 @@ class RecognizerTests(unittest.TestCase):
         self.assertEqual(references[self.items['scroll']]['rarity'], '4')
         self.assertTrue(all(Path(p).is_file() for r in references.values() for p in r['reference_paths']))
         self.assertIsInstance(recognizer.reference_report(), dict)
+
+    def test_reviewed_reference_bounds_apply_only_to_exact_source_bytes(self):
+        asset = self.root / 'assets/items/scroll.png'
+        calibration = self.root / 'bounds.json'
+        data = dict(threshold=.88, margin=.04, supported_item_ids=[],
+                    reference_bounds={hashlib.sha256(asset.read_bytes()).hexdigest(): [5, 6, 60, 59]})
+        calibration.write_text(json.dumps(data), encoding='utf-8')
+        recognizer = self.recognizer(calibration_path=calibration)
+        image = next(r for r in recognizer._images if r['item_id'] == self.items['scroll'])
+        self.assertEqual(image['original'].shape[:2], (59, 60))
+        data['reference_bounds'] = {'0'*64: [5, 6, 60, 59]}
+        calibration.write_text(json.dumps(data), encoding='utf-8')
+        recognizer = self.recognizer(calibration_path=calibration)
+        image = next(r for r in recognizer._images if r['item_id'] == self.items['scroll'])
+        self.assertEqual(image['original'].shape[:2], (72, 72))
 
     def test_source_item_with_enemy_combat_evidence_is_excluded_without_db_changes(self):
         self.db = L.connect(self.path)
@@ -185,9 +217,9 @@ class RecognizerTests(unittest.TestCase):
 
     def test_explicit_icon_crop_preserves_identity_when_quantity_unreadable(self):
         screenshot = self.screenshot()
-        result = self.recognizer().analyze_screenshot(screenshot, stage='Synthetic Stage',
+        result = self.recognizer().analyze_screenshot(screenshot,
             icon_boxes=[[30, 80, 72, 72]], quantity_boxes=[[115, 115, 35, 25]])
-        self.assertEqual(result['stage'], 'Synthetic Stage')
+        self.assertNotIn('stage', result)
         self.assertEqual(len(result['rewards']), 1)
         reward = result['rewards'][0]
         self.assertEqual(reward['item_id'], self.items['scroll'])
@@ -198,6 +230,17 @@ class RecognizerTests(unittest.TestCase):
         self.assertTrue(result['warnings'])
         self.assertEqual(result['totals'], {})
         json.dumps(result)
+
+    def test_running_older_collector_can_supply_ignored_attribution_argument(self):
+        recognizer = self.recognizer()
+        screenshot = self.screenshot()
+        modern = recognizer.analyze_screenshot(screenshot, icon_boxes=[[30, 80, 72, 72]])
+        legacy = recognizer.analyze_screenshot(screenshot, stage='obsolete attribution',
+                                               icon_boxes=[[30, 80, 72, 72]])
+        self.assertEqual(legacy, modern)
+        self.assertNotIn('stage', legacy)
+        with self.assertRaises(TypeError):
+            recognizer.analyze_screenshot(screenshot, misspelled_argument=True)
 
     def test_numeric_totals_require_both_validated_identity_and_quantity(self):
         screenshot = self.screenshot()

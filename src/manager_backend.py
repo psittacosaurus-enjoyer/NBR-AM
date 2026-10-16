@@ -1,4 +1,4 @@
-"""Small, synchronous GUI adapter for the existing acc1 controller.
+"""Small, synchronous GUI adapter for the independent farming controller.
 
 The GUI runs these calls in background threads. Only an explicit command()
 may change controller state; monitoring never connects or launches a device.
@@ -6,14 +6,16 @@ may change controller state; monitoring never connects or launches a device.
 from __future__ import annotations
 
 import ctypes
+from contextlib import closing
 from ctypes import wintypes
 from datetime import datetime
 import json
 import os
 from pathlib import Path
-import socket
+import sqlite3
 import subprocess
 
+import bluestacks
 import farm
 
 
@@ -57,14 +59,22 @@ class ControllerBackend:
     def loot_snapshot(self, snapshot, session_id=None, limit=100, offset=0):
         """Read durable loot records without launching a collector or controlling farming."""
         from loot_tracking import read_dashboard
-        return read_dashboard(self.root, snapshot, session_id=session_id, limit=limit, offset=offset)
+        from manager_loot import enrich_loot_items
+        data = read_dashboard(self.root, snapshot, session_id=session_id, limit=limit, offset=offset)
+        data['items'] = enrich_loot_items(self.root, data.get('items') or [])
+        return data
 
-    def _invoke(self, action, stage=None, timeout=45, requested_generation=None):
+    def _invoke(self, action, stage=None, timeout=45, requested_generation=None,
+                *, instance_key=None, instance_name=None, endpoint=None):
         args = [str(self.python), str(self.root / "src" / "farm.py"), action]
         if stage is not None:
             args.extend(["--minutes" if action == "stamina-duration" else "--stage", str(stage)])
         if requested_generation is not None:
             args.extend(["--stop-generation", requested_generation])
+        for option, value in (("--instance-key", instance_key),
+                              ("--instance-name", instance_name), ("--endpoint", endpoint)):
+            if value is not None:
+                args.extend([option, str(value)])
         try:
             result = subprocess.run(args, cwd=self.root, capture_output=True, text=True,
                                     encoding="utf-8", errors="replace", timeout=timeout,
@@ -87,7 +97,7 @@ class ControllerBackend:
         return lambda: self.command(action, stage, requested_generation=generation)
 
     def command(self, action, stage=None, *, requested_generation=None):
-        if action not in {"start", "stop", "select", "restart", "end-stamina-wait", "stamina-duration"}:
+        if action not in {"start", "stop", "restart", "end-stamina-wait", "stamina-duration"}:
             raise ValueError("Unsupported manager command")
         if action == "stamina-duration":
             if type(stage) is not int or stage not in (5, 10, 15, 20, 25):
@@ -97,8 +107,6 @@ class ControllerBackend:
             stage = "universal"
         if stage is not None and stage not in farm.STAGE_IDS:
             raise ValueError("Unknown farming stage")
-        if action == "select" and stage is None:
-            raise ValueError("Select a farming stage first")
         if action in {"stop", "end-stamina-wait"}:
             stage = None  # Existing stop is account-wide, regardless of selection.
         if action == "restart":
@@ -144,27 +152,86 @@ class ControllerBackend:
         if started is None:
             started = supervisor.get("started")
         state["started_at"] = started if isinstance(started, (int, float)) and started > 0 else None
+        state['session_completed_missions'] = self.session_completed_missions(state)
         return state
+
+    def session_completed_missions(self, snapshot):
+        """Count durable completion events for this farming process, including recognition failures."""
+        identity = (snapshot.get('supervisor', {}).get('pid_identity')
+                    or snapshot.get('farm', {}).get('worker_pid_identity'))
+        path = self.root / 'runtime/loot/loot.sqlite3'
+        if not identity or not path.is_file():
+            return None
+        try:
+            with closing(sqlite3.connect(path.as_uri() + '?mode=ro', uri=True, timeout=.1)) as db:
+                row = db.execute('SELECT COUNT(c.completion_id) FROM sessions s '
+                                 'LEFT JOIN completions c ON c.session_id=s.session_id '
+                                 'WHERE s.process_identity=? GROUP BY s.session_id', (identity,)).fetchone()
+                return row[0] if row else None
+        except (sqlite3.Error, OSError):
+            return None
 
     @staticmethod
     def _valid_pid(pid):
         return isinstance(pid, int) and not isinstance(pid, bool) and pid > 0
 
-    def connection(self):
-        result = {"available": False, "instance": f"acc1 · Pie64 · {farm.SERIAL}", "detail": ""}
+    def _instance_state(self):
+        """Ask the controller for its effective target, including older active workers."""
         try:
-            if not farm.ADB.is_file():
-                raise ControllerError("BlueStacks ADB executable is unavailable")
-            # An ADB client may otherwise start a server as a side effect. A
-            # passive socket probe first ensures a server is already listening.
-            try:
-                with socket.create_connection(("127.0.0.1", 5037), timeout=.5):
-                    pass
-            except OSError:
-                result["detail"] = "ADB server is unavailable. Open BlueStacks acc1."
+            state = json.loads(self._invoke("status", timeout=15))
+        except (json.JSONDecodeError, TypeError) as exc:
+            raise ControllerError("Controller returned invalid instance status") from exc
+        if not isinstance(state, dict) or type(state.get("running")) is not bool:
+            raise ControllerError("Controller returned invalid instance status")
+        return state
+
+    def instances(self):
+        discovered = bluestacks.discover()
+        entries = [item.to_dict() for item in discovered["instances"]]
+        detail = discovered.get("detail", "")
+        try:
+            state = self._instance_state()
+        except ControllerError as exc:
+            return dict(instances=entries, selected_key=None, active_key=None,
+                        locked=True, detail=f"{detail} {exc}".strip())
+        target = state.get("instance")
+        key = target.get("key") if isinstance(target, dict) else None
+        if target and key and all(item["key"] != key for item in entries):
+            # A disconnected saved/active target remains visible; never silently
+            # substitute a different discovered device.
+            entries.append({**target, "status": "unavailable",
+                            "connection_status": "Disconnected",
+                            "detail": state.get("instance_error") or "Saved instance is unavailable."})
+        return dict(instances=entries, selected_key=key,
+                    active_key=key if state["running"] else None,
+                    locked=bool(state.get("instance_locked", state["running"])),
+                    selection_required=bool(state.get("instance_selection_required", not key)),
+                    detail=" ".join(filter(None, (detail, state.get("instance_error", "")))))
+
+    def apply_instance(self, key):
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("Select an instance first")
+        # The CLI re-resolves and verifies under the same control lock used by
+        # Start. A stale GUI status cannot allow switching a running process.
+        return self._invoke("select-instance", instance_key=key)
+
+    def manual_instance(self, name, endpoint=""):
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError("Enter an instance name or identifier")
+        return self._invoke("select-instance", instance_name=name.strip(), endpoint=endpoint.strip())
+
+    def connection(self):
+        result = {"available": False, "instance": "Select an instance", "detail": ""}
+        try:
+            state = self._instance_state()
+            data = state.get("instance")
+            if not data:
+                result["detail"] = state.get("instance_error") or "Open Instance to select your BlueStacks instance."
                 return result
-            farm.Device().verify()  # Read-only mapping and Android identity check.
-            result.update(available=True, detail="Connected; acc1 identity verified")
+            target = bluestacks.Instance.from_dict(data)
+            result["instance"] = target.display_name
+            bluestacks.verify_identity(target)  # Passive ADB transport; never connects or launches.
+            result.update(available=True, detail=f"Connected; {target.display_name} identity verified")
         except Exception as exc:
             result["detail"] = f"Connection unavailable: {str(exc)[:500]}"
         return result

@@ -30,7 +30,7 @@ class ConnectionRecoveryTests(unittest.TestCase):
         self.assertIsNotNone(image)
         return image
 
-    def engine(self, path, stage='rich-b', verified=True):
+    def engine(self, path, stage='universal', verified=True):
         farm.write_json(self.runtime / 'session.json',
                         {'stage': stage, 'mission_verified': verified})
         device = FakeDevice(self.image(path))
@@ -81,7 +81,7 @@ class ConnectionRecoveryTests(unittest.TestCase):
         self.assertEqual(engine.device.actions, [])
 
     def test_unverified_or_mismatched_session_keeps_connection_latched(self):
-        for verified, session_stage in ((False, 'rich-b'), (True, 'scrolls-a')):
+        for verified, session_stage in ((False, 'universal'), (True, 'different-session')):
             with self.subTest(verified=verified, session_stage=session_stage):
                 engine = self.engine('tests/fixtures/mission_complete.png', verified=verified)
                 farm.write_json(self.runtime / 'session.json',

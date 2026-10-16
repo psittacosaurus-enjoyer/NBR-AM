@@ -45,8 +45,8 @@ class FakeRecognizer:
         self.release = release
         self.calls = []
 
-    def analyze_screenshot(self, screenshot_path, stage="unknown", **kwargs):
-        self.calls.append((str(screenshot_path), stage))
+    def analyze_screenshot(self, screenshot_path, **kwargs):
+        self.calls.append((str(screenshot_path), kwargs))
         if self.entered:
             self.entered.set()
         if self.release and not self.release.wait(5):
@@ -100,6 +100,13 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(len(fake.calls), 2)
         self.assertEqual(len({run["completion_id"] for run in data["runs"]}), 2)
 
+    def test_reviewed_reward_changes_invalidate_reference_snapshot(self):
+        before = loot._recognition_revision(self.root)
+        path = self.root / 'assets/item_recognition/reviewed_rewards.json'
+        path.parent.mkdir(parents=True)
+        path.write_text('{"schema_version": 1}', encoding='utf-8')
+        self.assertNotEqual(before, loot._recognition_revision(self.root))
+
     def test_default_collector_refreshes_references_between_runs_without_backfill(self):
         first = FakeRecognizer(result([reward('old-identity', quantity=2, quantity_status='verified')]))
         expanded_reward = reward('expanded-identity', quantity=None)
@@ -123,11 +130,12 @@ class LootTrackingTests(unittest.TestCase):
             data = self.dashboard(collector)
             self.assertEqual(data['completed_runs'], 3)
             self.assertEqual(data['recognized_icons'], 3)
-            self.assertEqual(data['confirmed_quantities'], {'old-identity': 4})
+            self.assertEqual(data['confirmed_quantities'], {'old-identity': 2, 'expanded-identity': 1})
             item = next(i for i in data['items'] if i['item_id'] == 'expanded-identity')
             self.assertEqual(item['item_name'], 'New Fandom Material')
-            self.assertIsNone(item['confirmed_acquired'])
-            self.assertEqual(item['unknown_quantities'], 1)
+            self.assertEqual(item['confirmed_acquired'], 1)
+            self.assertEqual(item['drop_count'], 1)
+            self.assertEqual(item['unknown_quantities'], 0)
             self.assertEqual(len(first.calls), 2)
             self.assertEqual(len(expanded.calls), 1)
 
@@ -198,6 +206,8 @@ class LootTrackingTests(unittest.TestCase):
         data = self.dashboard(reopened)
         self.assertEqual(data["completed_runs"], 1)
         self.assertEqual(data["recognized_icons"], 1)
+        self.assertEqual(data['drop_counts'], {'fixture-scroll': 1})
+        self.assertEqual(data['total_drops'], 1)
         self.assertEqual(len(fake.calls), 1)
         self.assertEqual(len(other_fake.calls), 0)
 
@@ -214,104 +224,47 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(self.dashboard(next_process)["completed_runs"], 1)
         self.assertEqual(len(loot.LootStore(self.root).sessions()), 2)
 
-    def test_universal_visual_identity_is_saved_per_run_without_relabeling_history(self):
-        collector, fake = self.collector(stage="universal")
-        self.observe(collector, 1)
-        fake.output["stage"] = "rich-b"
-        self.observe(collector, 2)
-        fake.output["stage"] = "unknown"
-        self.observe(collector, 3)
+    def test_reward_recognition_has_no_mission_attribution_input(self):
+        collector, fake = self.collector(stage='universal')
+        for sequence in range(1,4):
+            self.observe(collector, sequence)
         data = self.dashboard(collector)
-        self.assertEqual([call[1] for call in fake.calls], ["unknown"] * 3)
-        self.assertEqual(data["session"]["stage"], "universal")
-        self.assertEqual([run["stage"] for run in data["runs"]], ["unknown", "rich-b", "scrolls-a"])
-        self.assertTrue(all(run["automation_stage"] == "universal" for run in data["runs"]))
-        self.assertEqual(data["recognized_icons"], 3)
-        collector.close()
-        self.assertEqual([run["stage"] for run in loot.LootStore(self.root).dashboard(collector.session_id)["runs"]],
-                         ["unknown", "rich-b", "scrolls-a"])
+        self.assertEqual([call[1] for call in fake.calls], [{}]*3)
+        self.assertEqual(data['recognized_icons'], 3)
+        self.assertTrue(all(run['stage']=='universal' for run in data['runs']))
+        self.assertTrue(all('automation_stage' not in run for run in data['runs']))
 
-    def test_legacy_session_labels_are_preserved_and_universal_missing_identity_is_unknown(self):
-        legacy, fake = self.collector(stage="rich-b")
-        self.observe(legacy)
-        self.assertEqual(fake.calls[0][1], "rich-b")
-        self.assertEqual(self.dashboard(legacy)["runs"][0]["stage"], "rich-b")
-        # Successive workers share a replay spool; retire the first test worker
-        # before introducing another recognizer with different fixture evidence.
-        legacy.close()
-        output = result([reward()])
-        output.pop("stage")
-        universal, _ = self.collector(output, stage="universal", process="fixture:universal")
+    def test_historical_sessions_remain_readable_without_attribution(self):
+        historical, fake = self.collector(stage='rich-b')
+        self.observe(historical)
+        self.assertEqual(fake.calls[0][1], {})
+        self.assertEqual(self.dashboard(historical)['runs'][0]['stage'], 'rich-b')
+        historical.close()
+        universal, _ = self.collector(stage='universal', process='fixture:universal')
         self.observe(universal)
         universal.completed(2)
         universal.missing(2)
         self.assertTrue(universal.wait_idle(10))
-        self.assertEqual([run["stage"] for run in self.dashboard(universal)["runs"]], ["unknown", "unknown"])
-        self.assertEqual(self.dashboard(legacy)["runs"][0]["stage"], "rich-b")
+        self.assertTrue(all(run['stage']=='universal' for run in self.dashboard(universal)['runs']))
+        self.assertEqual(self.dashboard(historical)['recognized_icons'], 1)
 
-    def test_universal_replay_uses_saved_event_mode_under_legacy_worker(self):
-        prior, _ = self.collector(stage="universal", process="fixture:prior-universal")
+    def test_replay_needs_only_saved_completion_evidence(self):
+        prior, _ = self.collector(stage='universal', process='fixture:prior-universal')
         prior._stop.set()
         prior._thread.join(3)
-        prior.completed("saved-universal")
-        self.assertTrue(prior.evidence("saved-universal", self.frame))
-        current, fake = self.collector(stage="rich-b", process="fixture:current-legacy")
+        prior.completed('saved-universal')
+        self.assertTrue(prior.evidence('saved-universal', self.frame))
+        current, fake = self.collector(stage='rich-b', process='fixture:current-historical')
         self.assertTrue(current.wait_idle(10))
-        self.assertEqual(fake.calls[0][1], "unknown")
-        self.assertEqual(self.dashboard(prior)["runs"][0]["stage"], "scrolls-a")
-        self.assertEqual(self.dashboard(current)["completed_runs"], 0)
-
-    def test_verified_results_title_fills_unknown_visual_identity_per_event(self):
-        output = result([reward()])
-        output['stage'] = 'unknown'
-        collector, fake = self.collector(output, stage='universal')
-        for sequence, name in enumerate(('Practice Training [Part 1]', 'Night of Tragedy [A]', None), 1):
-            collector.completed(sequence)
-            self.assertTrue(collector.evidence(sequence, self.frame, mission_name=name))
-            self.assertTrue(collector.wait_idle(10))
-        self.assertEqual([run['stage'] for run in self.dashboard(collector)['runs']],
-                         ['unknown', 'Night of Tragedy [A]', 'Practice Training [Part 1]'])
-        self.assertTrue(all(stage == 'unknown' for _, stage in fake.calls))
-
-    def test_conflicting_verified_results_title_and_visual_identity_stay_unknown(self):
-        collector, _ = self.collector(stage='universal')
-        collector.completed(1)
-        self.assertTrue(collector.evidence(1, self.frame, mission_name='Getting Rich Quick! [B]'))
-        self.assertTrue(collector.wait_idle(10))
-        run = self.dashboard(collector)['runs'][0]
-        self.assertEqual(run['stage'], 'unknown')
-        self.assertIn('disagree', ' '.join(run['warnings']))
-        self.assertEqual(self.dashboard(collector)['recognized_icons'], 1)
-
-    def test_verified_results_title_survives_replay_without_new_worker_attribution(self):
-        output = result([reward()])
-        output.pop('stage')
-        prior, _ = self.collector(output, stage='universal', process='fixture:verified-prior')
-        prior._stop.set()
-        prior._thread.join(3)
-        prior.completed('saved-title')
-        self.assertTrue(prior.evidence('saved-title', self.frame, mission_name='Practice Training [Part 1]'))
-        event = next(iter(prior._events.values()))
-        self.assertEqual(json.loads(prior._path(event).read_text('utf-8'))['mission_name'],
-                         'Practice Training [Part 1]')
-        current, fake = self.collector(output, stage='rich-b', process='fixture:verified-current')
-        self.assertTrue(current.wait_idle(10))
-        self.assertEqual(fake.calls[0][1], 'unknown')
-        self.assertEqual(self.dashboard(prior)['runs'][0]['stage'], 'Practice Training [Part 1]')
+        self.assertEqual(fake.calls[0][1], {})
+        self.assertEqual(self.dashboard(prior)['recognized_icons'], 1)
         self.assertEqual(self.dashboard(current)['completed_runs'], 0)
 
-    def test_verified_title_alias_agreement_preserves_visual_label(self):
-        output = result([reward()])
-        output['stage'] = 'All Scrolls [A]'
-        collector, _ = self.collector(output, stage='universal')
-        collector.completed(1)
-        self.assertTrue(collector.evidence(1, self.frame, mission_name='scrolls-a'))
-        self.assertTrue(collector.wait_idle(10))
-        run = self.dashboard(collector)['runs'][0]
-        self.assertEqual(run['stage'], 'All Scrolls [A]')
-        self.assertFalse(any('disagree' in warning for warning in run['warnings']))
 
-    def test_confirmed_quantity_requires_verified_acquired_evidence(self):
+
+
+
+    def test_each_acquired_icon_is_one_drop_regardless_of_text_quantity(self):
         observations = [reward(quantity=7, quantity_status="verified"), reward(),
                         reward(quantity=90, quantity_status="candidate"),
                         reward(quantity=500, quantity_status="verified", scope="condition"),
@@ -326,16 +279,50 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(data["recognized_icons"], 3)
         item = next(row for row in data["items"] if row["item_id"] == "fixture-scroll")
         self.assertEqual(item["observed_icons"], 3)
-        self.assertEqual(item["confirmed_acquired"], 7)
-        self.assertEqual(item["unknown_quantities"], 2)
+        self.assertEqual(item["confirmed_acquired"], 3)
+        self.assertEqual(item['drop_count'], 3)
+        self.assertEqual(item["unknown_quantities"], 0)
+        self.assertEqual(data['drop_counts'], {'fixture-scroll': 3})
+        self.assertEqual(data['total_drops'], 4)
+        self.assertEqual(data['unidentified_drops'], 1)
         self.assertFalse(any(row["item_id"] == "fixture-review" for row in data["items"]))
+
+    def test_unrevealed_packages_and_condition_cards_cannot_be_credited_as_item_drops(self):
+        package = reward('unrevealed', quantity=999, quantity_status='verified')
+        package['visual_state'] = 'unrevealed'
+        collector, _ = self.collector(result([
+            reward(), reward(scope='condition'), package,
+            reward('unassigned', status='ambiguous')]))
+        self.observe(collector)
+        first = self.dashboard(collector)
+        self.assertEqual(first['total_drops'], 2)
+        self.assertEqual(first['unidentified_drops'], 1)
+        self.assertEqual(first['drop_counts'], {'fixture-scroll': 1})
+        self.assertEqual(first['recognized_icons'], 1)
+        self.assertEqual(first['drop_counts'], self.dashboard(collector)['drop_counts'])
+
+    def test_drop_recency_uses_full_session_even_when_history_is_paged(self):
+        store = loot.LootStore(self.root)
+        session = store.ensure_session('fixture:recency', 'universal')
+        for sequence, ids in ((1, ('old', 'shared')), (2, ('recent', 'shared'))):
+            event = dict(session_id=session, completion_id=f'recency:{sequence}',
+                         run_id=f'recency:{sequence}', run_sequence=sequence, completed_at=sequence * 100)
+            store.finish(event, 'recognized', result([reward(rid) for rid in ids]), None, [])
+        data = store.dashboard(session, limit=1, offset=1)
+        self.assertEqual(data['runs'][0]['run_sequence'], 1)
+        items = {item['item_id']: item for item in data['items']}
+        self.assertEqual(items['old']['last_drop_sequence'], 1)
+        self.assertEqual(items['recent']['last_drop_sequence'], 2)
+        self.assertEqual(items['shared']['last_drop_sequence'], 2)
+        self.assertEqual(items['shared']['last_drop_at'], 200)
+        self.assertEqual(items['shared']['drop_count'], 2)
 
     def test_quantity_unknown_is_normal_and_successful_temp_copy_is_removed(self):
         collector, _ = self.collector()
         self.observe(collector)
         data = self.dashboard(collector)
         self.assertEqual(data["failures"], 0)
-        self.assertIsNone(data["items"][0]["confirmed_acquired"])
+        self.assertEqual(data["items"][0]["confirmed_acquired"], 1)
         self.assertFalse(data["runs"][0].get("screenshot_path"))
         self.assertEqual(list((self.root / "runtime" / "loot").rglob("*.png")), [])
 
@@ -356,6 +343,7 @@ class LootTrackingTests(unittest.TestCase):
                 collector.evidence(1, self.frame)
                 self.assertTrue(collector.wait_idle(10))
                 self.assertEqual(len(list(evidence.parent.glob("*" + data["runs"][0]["completion_id"] + "*.png"))), 1)
+                collector.close()
 
     def test_recognition_exception_preserves_evidence_and_farming_call_returns(self):
         fake = FakeRecognizer(error=RuntimeError("fixture recognition failure"))
@@ -389,6 +377,7 @@ class LootTrackingTests(unittest.TestCase):
                 data = self.dashboard(collector)
                 self.assertEqual(data["failures"], 1)
                 self.assertTrue(Path(data["runs"][0]["screenshot_path"]).is_file())
+                collector.close()
 
     def test_incomplete_results_preserve_evidence_even_when_visible_icons_are_known(self):
         output = result([reward()])
@@ -501,10 +490,10 @@ class LootTrackingTests(unittest.TestCase):
         self.assertTrue(reopened.wait_idle(10))
         data = self.dashboard(reopened)
         self.assertEqual(data["completed_runs"], 1)
-        self.assertEqual(data["items"][0]["confirmed_acquired"], 4)
+        self.assertEqual(data["items"][0]["confirmed_acquired"], 1)
         self.assertIn(reopened.completed("restart-replay"), (None, completion_id))
         self.assertFalse(reopened.evidence("restart-replay", self.frame))
-        self.assertEqual(self.dashboard(reopened)["items"][0]["confirmed_acquired"], 4)
+        self.assertEqual(self.dashboard(reopened)["items"][0]["confirmed_acquired"], 1)
 
     def test_new_process_replays_saved_prior_session_evidence_into_prior_session_only(self):
         output = result([reward(quantity=2, quantity_status="verified")], status="complete")
@@ -517,7 +506,7 @@ class LootTrackingTests(unittest.TestCase):
         self.assertTrue(current.wait_idle(10))
         old_data, new_data = self.dashboard(prior), self.dashboard(current)
         self.assertEqual(old_data["completed_runs"], 1)
-        self.assertEqual(old_data["items"][0]["confirmed_acquired"], 2)
+        self.assertEqual(old_data["items"][0]["confirmed_acquired"], 1)
         self.assertEqual(new_data["completed_runs"], 0)
         self.assertEqual(new_data["items"], [])
 
@@ -599,12 +588,45 @@ class LootTrackingTests(unittest.TestCase):
         data = self.dashboard(collector)
         self.assertGreater(data["recognized_icons"], 0)
         self.assertEqual(data["failures"], 0)
-        self.assertTrue(all(row["confirmed_acquired"] is None for row in data["items"]))
+        self.assertTrue(all(row["confirmed_acquired"] == row['observed_icons'] for row in data["items"]))
         self.assertEqual(hashlib.sha256(screenshot.read_bytes()).hexdigest(), before_source)
         self.assertEqual(hashlib.sha256(library.read_bytes()).hexdigest(), before_library)
 
 
 class FarmerLootHookTests(unittest.TestCase):
+    def test_retry_waits_for_lucky_reveal_and_records_the_final_three_icons_once(self):
+        import farm
+        from test_safety import FakeDevice
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        runtime = Path(temporary.name)
+        engine = farm.Engine.__new__(farm.Engine)
+        engine.stage = farm.load_stage('universal')
+        engine.mission_verified = True
+        engine.detector = farm.Detector()
+        engine.device = FakeDevice(cv2.imread(str(ROOT / 'tests/fixtures/item_recognition/bravery_lucky_unrevealed.png')))
+        engine.data = dict(screen='READY_TO_RETRY', pending=None, stamina_until=0,
+                           run=dict(id='fixture-lucky', start=time.time(), outcome='completed'),
+                           counts=dict(started=1, completed=1, failed=0))
+        engine.save = Mock()
+        engine.loot_collector = Mock()
+        engine.loot_collector.evidence.return_value = True
+        with patch.object(farm, 'event'), patch.object(farm.time, 'sleep'), \
+             patch.object(farm, 'STOP', runtime / 'STOP'), patch.object(farm, 'RUNTIME', runtime):
+            self.assertEqual(engine.tick(), 1)
+            self.assertEqual(engine.device.actions, [])
+            engine.loot_collector.evidence.assert_not_called()
+            self.assertIsNone(engine.data['pending'])
+            final = cv2.imread(str(ROOT / 'tests/fixtures/item_recognition/bravery_lucky_revealed.png'))
+            engine.device.image = final
+            engine.tick()
+            engine.tick()
+        self.assertEqual(engine.device.actions, ['retry'])
+        engine.loot_collector.evidence.assert_called_once()
+        self.assertEqual(engine.loot_collector.evidence.call_args.args[0], 'fixture-lucky')
+        np.testing.assert_array_equal(engine.loot_collector.evidence.call_args.args[1], final)
+        self.assertEqual(engine.data['counts']['completed'], 1)
+
     def test_verified_completion_generates_one_event_and_reuses_results_frame_both_stages(self):
         import farm
         for stage in ("scrolls-a", "rich-b"):

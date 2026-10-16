@@ -672,12 +672,12 @@
             145,
             145
           ],
-          "item_id": null,
-          "item_name": null,
+          "item_id": "item_948ed64af6d887bff7cece0f",
+          "item_name": "Gama-chan \"Millionaire\"",
           "quantity": null,
           "quantity_status": "not_displayed",
           "rarity": 4,
-          "identity_status": "unknown",
+          "identity_status": "matched",
           "visual_description": "4-star frog with gold bars"
         },
         {
@@ -719,12 +719,12 @@
             145,
             145
           ],
-          "item_id": null,
-          "item_name": null,
+          "item_id": "item_948ed64af6d887bff7cece0f",
+          "item_name": "Gama-chan \"Millionaire\"",
           "quantity": null,
           "quantity_status": "not_displayed",
           "rarity": 4,
-          "identity_status": "unknown",
+          "identity_status": "matched",
           "visual_description": "4-star frog with gold bars"
         }
       ],
@@ -799,12 +799,12 @@
             145,
             145
           ],
-          "item_id": null,
-          "item_name": null,
+          "item_id": "item_948ed64af6d887bff7cece0f",
+          "item_name": "Gama-chan \"Millionaire\"",
           "quantity": null,
           "quantity_status": "not_displayed",
           "rarity": 4,
-          "identity_status": "unknown",
+          "identity_status": "matched",
           "visual_description": "4-star frog with gold bars"
         },
         {
@@ -862,12 +862,12 @@
             145,
             145
           ],
-          "item_id": null,
-          "item_name": null,
+          "item_id": "item_948ed64af6d887bff7cece0f",
+          "item_name": "Gama-chan \"Millionaire\"",
           "quantity": null,
           "quantity_status": "not_displayed",
           "rarity": 4,
-          "identity_status": "unknown",
+          "identity_status": "matched",
           "visual_description": "4-star frog with gold bars"
         },
         {
@@ -877,12 +877,12 @@
             145,
             145
           ],
-          "item_id": null,
-          "item_name": null,
+          "item_id": "item_948ed64af6d887bff7cece0f",
+          "item_name": "Gama-chan \"Millionaire\"",
           "quantity": null,
           "quantity_status": "not_displayed",
           "rarity": 4,
-          "identity_status": "unknown",
+          "identity_status": "matched",
           "visual_description": "4-star frog with gold bars"
         }
       ],
@@ -1193,6 +1193,5 @@
       "excluded_region": "Completion Reward Conditions below y1180, including the same crystal, chest and 13.4% field, are not acquired drops."
     }
   ],
-  "quantities": "No acquired icon has an explicit quantity label in these five positives. Star numerals are rarity. Do not substitute quantity1.",
-  "missing_reference": "4-star frog holding gold bars has no named item reference in current catalog; five positive slots intentionally have null identity."
+  "quantities": "No acquired icon has an explicit quantity label in these five positives. Star numerals are rarity. Do not substitute quantity1."
 }

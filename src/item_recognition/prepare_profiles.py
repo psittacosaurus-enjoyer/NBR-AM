@@ -9,8 +9,6 @@ PROJECT=ROOT.parents[1]
 
 def build():
     directory=PROJECT/'assets/item_recognition'; directory.mkdir(exist_ok=True)
-    sources={'All Scrolls [A]':PROJECT/'assets/reference_images/starting_point.png',
-             'Getting Rich Quick! [B]':PROJECT/'tests/fixtures/rich_b/ready_to_retry.png'}
     evidence=[]
     def save(path,name,box):
         with Image.open(path) as im:
@@ -18,18 +16,20 @@ def build():
             im.crop((box[0],box[1],box[0]+box[2],box[1]+box[3])).save(directory/(name+'.png'))
         evidence.append({'source':path.resolve().relative_to(PROJECT).as_posix(),'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'box':box,'template':name+'.png','verification':'Visually inspected saved Mission Results screenshot; no live game access.'})
         return {'path':name+'.png','box':box}
-    first=sources['All Scrolls [A]']
+    first=PROJECT/'assets/reference_images/starting_point.png'
     header=save(first,'mission-results',[22,27,520,78])
     acquired=save(first,'acquired-header',[240,287,420,53])
     summary=save(PROJECT/'tests/fixtures/results_next.png','summary-header',[228,300,452,55])
-    stages={stage:save(path,'stage-'+str(i),[200,170,650,72]) for i,(stage,path) in enumerate(sources.items())}
     boxes=[[57+162*c,411+162*r,134,139] for r in range(3) for c in range(5)]
     placeholders=[]
     sealed=PROJECT/'tests/fixtures/rich_b/reward_reveal.png'
     for i,label in [(0,'green sealed package'),(3,'silver sealed package'),(4,'brown sealed package'),(8,'Lucky Drop unopened chest')]:
         entry=save(sealed,'placeholder-'+str(i),boxes[i]); entry['label']=label; placeholders.append(entry)
+    lucky=save(PROJECT/'tests/fixtures/item_recognition/bravery_lucky_unrevealed.png',
+               'placeholder-lucky-back',[381,411,134,139])
+    lucky['label']='Unrevealed Lucky Drop'; placeholders.append(lucky)
     profile={'version':1,'width':900,'height':1600,'anchor_threshold':.94,'header':header,
-             'phases':{'acquired':acquired,'summary':summary},'stages':stages,
+             'phases':{'acquired':acquired,'summary':summary},
              'reward_region':[48,402,800,735],'grid_boxes':boxes,'proposal_threshold':.78,
              'placeholders':placeholders,'placeholder_threshold':.92,
              'summary_fields':[{'name':'first_special_reward_amount','scope':'condition_display','box':[786,489,86,25]},

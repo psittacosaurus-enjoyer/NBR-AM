@@ -8,7 +8,7 @@ import farm
 from test_stages import FakeDevice
 
 
-STAGE = 'practice-part-1'
+STAGE = 'universal'
 
 
 class PracticeTests(unittest.TestCase):
@@ -35,7 +35,9 @@ class PracticeTests(unittest.TestCase):
     def engine(self, path='tests/fixtures/battle.png'):
         device = FakeDevice(self.image(path))
         with patch.object(farm, 'Device', return_value=device):
-            return farm.Engine(STAGE)
+            engine = farm.Engine(STAGE)
+            engine.mission_verified = True
+            return engine
 
     def practice_image(self, path, start=False):
         """Synthetic shared-control fixture with the captured practice title."""
@@ -48,110 +50,6 @@ class PracticeTests(unittest.TestCase):
         image[y1:y2, 190:735] = title
         return image
 
-    def test_configuration_preserves_existing_catalog_and_independent_progress(self):
-        stage = farm.load_stage(STAGE)
-        self.assertEqual(stage['name'], 'Practice Training [Part 1]')
-        self.assertTrue(stage['manual_first_battle'])
-        self.assertEqual(stage['catalog'], farm.CATALOG)
-        self.assertEqual(stage['progress'], self.runtime / 'practice_part_1.json')
-        self.assertEqual(farm.load_stage('scrolls-a')['progress'], self.runtime / 'farm.json')
-        self.assertEqual(farm.load_stage('rich-b')['progress'], self.runtime / 'rich_b.json')
-
-    def test_initial_battle_observation_sends_no_inputs(self):
-        engine = self.engine()
-        for _ in range(3):
-            engine.tick()
-        self.assertEqual(engine.device.actions, [])
-        self.assertEqual(engine.device.commands, [])
-        self.assertEqual(engine.data['screen'], 'IN_BATTLE')
-        self.assertEqual(engine.data['run']['origin'], 'manual_first_battle')
-        self.assertEqual(engine.data['counts']['completed'], 0)
-        self.assertTrue(farm.read_json(self.runtime / 'session.json')['mission_verified'])
-
-    def test_wrong_mission_results_cannot_bypass_first_manual_battle(self):
-        engine = self.engine('assets/reference_images/starting_point.png')
-        engine.tick()
-        self.assertEqual(engine.device.actions, [])
-        self.assertFalse(engine.mission_verified)
-
-    def test_initial_start_screen_cannot_initiate_first_battle(self):
-        engine = self.engine('tests/fixtures/practice_ready_to_start.png')
-        engine.data['pending'] = None
-        engine.tick()
-        engine.tick()
-        self.assertEqual(engine.device.actions, [])
-        self.assertFalse(engine.mission_verified)
-
-    def test_persisted_retry_safely_resumes_start_screen(self):
-        engine = self.engine('tests/fixtures/practice_ready_to_start.png')
-        engine.data['pending'] = {'id': 'retry', 'source': 'READY_TO_RETRY',
-                                  'expected': ['READY_TO_START'], 'time': 0}
-        engine.tick()
-        engine.tick()
-        self.assertEqual(engine.device.actions, ['start_mission'])
-        self.assertTrue(engine.mission_verified)
-        self.assertEqual(engine.data['pending']['id'], 'start_mission')
-
-    def test_verified_results_resume_when_first_battle_finished_before_start(self):
-        engine = self.engine()
-        engine.device.image = self.practice_image('assets/reference_images/starting_point.png')
-        engine.tick()
-        engine.tick()
-        self.assertEqual(engine.device.actions, ['retry'])
-        self.assertTrue(engine.mission_verified)
-
-    def test_two_cycles_reuse_existing_completion_results_retry_and_start_actions(self):
-        engine = self.engine()
-        engine.tick()
-        expected = []
-        cycle = [('tests/fixtures/mission_complete.png', 'MISSION_COMPLETE', 'advance_completion'),
-                 ('tests/fixtures/results_next.png', 'RESULTS_NEXT', 'next'),
-                 ('tests/fixtures/reward_reveal.png', 'REWARD_REVEAL', 'reveal_rewards'),
-                 ('assets/reference_images/starting_point.png', 'READY_TO_RETRY', 'retry'),
-                 ('tests/fixtures/ready_to_start.png', 'READY_TO_START', 'start_mission'),
-                 ('tests/fixtures/battle.png', 'IN_BATTLE', None)]
-        for number in (1, 2):
-            for path, screen, action in cycle:
-                with self.subTest(cycle=number, screen=screen):
-                    engine.device.image = (self.practice_image(path, start=screen == 'READY_TO_START')
-                                           if screen in {'READY_TO_START', 'READY_TO_RETRY', 'RESULTS_NEXT', 'REWARD_REVEAL'}
-                                           else self.image(path))
-                    engine.tick()
-                    engine.tick()
-                    self.assertEqual(engine.data['screen'], screen)
-                    if action:
-                        expected.append(action)
-                    self.assertEqual(engine.device.actions, expected)
-            self.assertEqual(engine.data['counts']['completed'], number)
-            self.assertEqual(engine.data['counts']['started'], number)
-
-    def test_original_mission_titles_missing_guards_and_dimmed_controls_are_rejected(self):
-        detector = farm.Detector(STAGE)
-        for path in ('assets/reference_images/starting_point.png', 'tests/fixtures/results_next.png',
-                     'tests/fixtures/reward_reveal.png', 'tests/fixtures/ready_to_start.png'):
-            with self.subTest(path=path):
-                self.assertEqual(detector.classify(self.image(path))[0], 'UNKNOWN')
-                start = path.endswith('ready_to_start.png')
-                image = self.practice_image(path, start=start)
-                self.assertNotEqual(detector.classify(image)[0], 'UNKNOWN')
-                changed = image.copy()
-                y1, y2 = (395, 461) if start else (182, 247)
-                changed[y1:y2, 190:735] = 0
-                self.assertEqual(detector.classify(changed)[0], 'UNKNOWN')
-                dimmed = (image.astype(float) * .5).astype(image.dtype)
-                self.assertEqual(detector.classify(dimmed)[0], 'UNKNOWN')
-        for filename in ('ready_to_start', 'results_next', 'reward_reveal', 'ready_to_retry'):
-            with self.subTest(other_stage=filename):
-                self.assertEqual(detector.classify(self.image('tests/fixtures/rich_b/' + filename + '.png'))[0], 'UNKNOWN')
-
-    def test_routine_battle_and_results_detection_never_uses_ocr(self):
-        engine = self.engine()
-        with patch.object(farm, 'ocr_text', side_effect=AssertionError('Routine OCR prohibited')) as ocr:
-            engine.tick()
-            engine.device.image = self.practice_image('tests/fixtures/results_next.png')
-            engine.tick()
-            engine.tick()
-            ocr.assert_not_called()
 
     def test_captured_practice_results_and_start_fixtures_are_recognized_without_ocr(self):
         detector = farm.Detector(STAGE)
@@ -212,15 +110,6 @@ class PracticeTests(unittest.TestCase):
         self.assertIsNone(engine.data['pending'])
         self.assertEqual(engine.data['stamina_until'], 1604)
 
-    def test_existing_account_owner_blocks_practice_selection_and_start(self):
-        for name in ('worker', 'supervisor'):
-            with self.subTest(lock=name), farm.lock(name):
-                with self.assertRaises(RuntimeError):
-                    farm.select_stage(STAGE)
-                with patch.object(farm.subprocess, 'run') as launch:
-                    with self.assertRaises(RuntimeError):
-                        farm.start(STAGE)
-                    launch.assert_not_called()
 
     def test_rank_up_dialog_acknowledges_once_and_confirms_results(self):
         engine = self.engine()

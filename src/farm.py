@@ -1,4 +1,4 @@
-"""Deterministic, acc1-only farming. No model, network API, or currency actions."""
+"""Deterministic farming on one verified BlueStacks instance at a time."""
 from __future__ import annotations
 
 import argparse
@@ -20,6 +20,7 @@ import time
 import uuid
 
 from process_state import process_identity
+from bluestacks import Instance, discover, resolve_manual, validate_mapping, verify_identity, _server_port
 
 # Screenshot matching needs no BLAS pool; concurrent CLI imports must stay small.
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -29,7 +30,7 @@ cv2.setNumThreads(1)
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "runtime"
-CATALOG = ROOT / "assets" / "patterns" / "catalog.json"
+CATALOG = ROOT / "assets" / "patterns" / "universal.json"
 STOP = RUNTIME / "STOP"
 ADB = Path(r"C:\Program Files\BlueStacks_nxt\HD-Adb.exe")
 CONF = Path(r"C:\ProgramData\BlueStacks_nxt\bluestacks.conf")
@@ -39,6 +40,170 @@ ACTIVITY = "com.reblazing.nbrc/com.blazingdreamers.nbrclient.NbrPlayerActivity"
 SIZE = (900, 1600)
 STAMINA_WAIT_SECONDS = 600
 STAMINA_MINUTES = (5, 10, 15, 20, 25)
+_PROCESS_INSTANCE = None
+
+
+def instance_dict(instance):
+    return instance.to_dict()
+
+
+def instance_from_dict(value):
+    if not isinstance(value, dict):
+        raise RuntimeError("Saved instance target is invalid; select a verified instance")
+    try:
+        instance = Instance(**{name: value[name] for name in Instance.__dataclass_fields__})
+    except (KeyError, TypeError, ValueError) as exc:
+        raise RuntimeError("Saved instance target is invalid; select a verified instance") from exc
+    if not all(isinstance(getattr(instance, name), str) for name in Instance.__dataclass_fields__):
+        raise RuntimeError("Saved instance target is invalid")
+    if not instance.instance_id or not instance.endpoint or not instance.android_id or not instance.adb_path:
+        raise RuntimeError("Saved instance target is incomplete")
+    return instance
+
+
+def legacy_owner():
+    owner = read_json(RUNTIME / "legacy_instance.json")
+    if not isinstance(owner, dict):
+        raise RuntimeError("Legacy instance ownership record is invalid")
+    return owner
+
+
+def legacy_instance():
+    """The old controller can only have owned this exact, config-backed target."""
+    try:
+        config = dict(re.findall(r'^([^=]+)="(.*)"$', CONF.read_text(encoding="utf-8-sig"), re.MULTILINE))
+    except OSError as exc:
+        raise RuntimeError("Legacy acc1 mapping is unavailable; instance selection is required") from exc
+    prefix = "bst.instance.Pie64."
+    if (config.get(prefix + "display_name") != "acc1" or config.get(prefix + "adb_port") != "5555"
+            or not config.get(prefix + "android_id")):
+        raise RuntimeError("Legacy acc1 mapping changed; refusing to guess a target")
+    owner = legacy_owner()
+    if owner.get("unresolved"):
+        raise RuntimeError("Legacy instance ownership is unresolved; select a separately verified instance")
+    if owner and instance_from_dict(owner).android_id != config[prefix + "android_id"]:
+        raise RuntimeError("Legacy Android identity changed; select a separately verified instance")
+    return Instance(str(CONF), "Pie64", "acc1", str(ADB), SERIAL,
+                    config[prefix + "android_id"], "unavailable", "disconnected", "Legacy acc1 target")
+
+
+def is_legacy_instance(instance):
+    coordinates = (instance.instance_id == "Pie64" and instance.endpoint == SERIAL
+                   and os.path.normcase(os.path.abspath(instance.config_path)) == os.path.normcase(os.path.abspath(CONF)))
+    if not coordinates:
+        return False
+    owner = legacy_owner()
+    if owner.get("unresolved"):
+        return False
+    return not owner or instance_from_dict(owner).android_id == instance.android_id
+
+
+def preserve_legacy_owner(instance):
+    """Bind old unnamespaced latches before an explicit selection can replace them."""
+    path = RUNTIME / "legacy_instance.json"
+    if path.exists():
+        owner = legacy_owner()
+        if not owner.get("unresolved"):
+            instance_from_dict(owner)
+        return
+    previous = read_json(RUNTIME / "instance_selection.json")
+    if previous:
+        previous = instance_from_dict(previous)
+        if is_legacy_instance(previous):
+            write_json(path, instance_dict(previous))
+            return
+    legacy_state = any((RUNTIME / name).exists() for name in
+                       ("selection.json", "session.json", "universal.json", "farm.json"))
+    if not legacy_state:
+        if is_legacy_instance(instance):
+            write_json(path, instance_dict(instance))
+        return
+    if legacy_state or is_legacy_instance(instance):
+        try:
+            legacy = legacy_instance()
+        except RuntimeError:
+            # The original device identity cannot be recovered. Keep its old
+            # progress quarantined even if Pie64/5555 is recreated in the future.
+            write_json(path, {"unresolved": True})
+            return
+        write_json(path, instance_dict(legacy))
+
+
+def instance_runtime(instance=None):
+    instance = instance or _PROCESS_INSTANCE
+    if instance is None or is_legacy_instance(instance):
+        return RUNTIME
+    identity = hashlib.sha256((instance.key + "\0" + instance.android_id).encode()).hexdigest()[:24]
+    return RUNTIME / "instances" / identity
+
+
+def state_path(name, instance=None):
+    return instance_runtime(instance) / name
+
+
+def instance_account(instance):
+    return "acc1" if is_legacy_instance(instance) else "instance_" + hashlib.sha256(
+        (instance.key + "\0" + instance.android_id).encode()).hexdigest()[:24]
+
+
+def controller_active():
+    """Locks and legacy claims are authoritative even without creation identities."""
+    return bool(live_controller_pids() or lock_busy("worker") or lock_busy("supervisor")
+                or any(process_may_be_alive(record) for record in recorded_processes()))
+
+
+def instance_locked():
+    return controller_active() or lock_busy("restart") or lock_busy("control")
+
+
+def active_instance():
+    if not controller_active():
+        return None
+    targets = []
+    for name, key in (("supervisor.json", "pid"), ("controller.json", "worker_pid")):
+        record = read_json(RUNTIME / name)
+        if record.get("instance") and (process_may_be_alive({"pid": record.get(key),
+                "pid_identity": record.get(key + "_identity")}) or lock_busy("supervisor" if key == "pid" else "worker")):
+            targets.append(instance_from_dict(record["instance"]))
+    if targets:
+        if len({(target.key, target.android_id, target.endpoint) for target in targets}) != 1:
+            raise RuntimeError("Active controller target records disagree; selection is locked")
+        return targets[0]
+    # A pre-v1.23 supervisor may respawn this source with no target argument.
+    return legacy_instance()
+
+
+def selected_instance():
+    saved = read_json(RUNTIME / "instance_selection.json")
+    if saved:
+        instance = instance_from_dict(saved)
+        validate_mapping(instance)
+        return instance
+    legacy_state = any((RUNTIME / name).exists() for name in
+                       ("selection.json", "session.json", "universal.json", "farm.json"))
+    if legacy_state:
+        # Never reinterpret old pending input, waits or session history as another account.
+        return legacy_instance()
+    instances = discover()["instances"]
+    if len(instances) != 1:
+        raise RuntimeError("Select a BlueStacks instance" if instances else "No verified BlueStacks instance is available")
+    validate_mapping(instances[0])
+    return instances[0]
+
+
+def effective_instance():
+    return _PROCESS_INSTANCE or active_instance() or selected_instance()
+
+
+def select_instance(instance):
+    with lock("control"):
+        if controller_active() or lock_busy("restart"):
+            raise RuntimeError("Instance selection is locked while automation is active or its exit is unverified")
+        validate_mapping(instance)
+        verify_identity(instance, connect=True)
+        preserve_legacy_owner(instance)
+        write_json(RUNTIME / "instance_selection.json", instance_dict(instance))
+    return instance
 
 
 def stamina_wait_minutes():
@@ -71,11 +236,12 @@ def stamina_status(progress):
 def end_stamina_wait():
     with lock("control"), lock("stamina-control"):
         stage = selected_stage()
-        progress = read_json(load_stage(stage)["progress"])
+        target = active_instance()
+        progress = read_json(load_stage(stage, target)["progress"])
         if (stamina_status(progress) != "WAITING" or progress.get("pending")
                 or progress.get("manager_controls_version") != 1):
             raise RuntimeError("No confirmed interruptible stamina wait is active")
-        write_json(RUNTIME / "stamina_request.json", {
+        write_json(state_path("stamina_request.json", target), {
             "worker_pid": progress["worker_pid"], "stage": stage,
             "stamina_until": progress["stamina_until"], "id": uuid.uuid4().hex})
     event("stamina_wait_end_requested", stage=stage)
@@ -85,22 +251,14 @@ ctypes.windll.kernel32.OpenProcess.restype = wintypes.HANDLE
 ctypes.windll.kernel32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
 ctypes.windll.kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 ALLOWED_ACTIONS = {
-    "retry", "start_mission", "advance_completion", "next", "decline_revive",
-    "dismiss_stamina", "back", "nav_right", "emergency", "scroll_missions",
-    "select_scrolls", "select_rank_a", "solo", "select_first_helper",
-    "title_start", "dismiss_known_popup", "retry_connection", "reveal_rewards",
-    "select_rich", "select_rank_b",
+    "retry", "start_mission", "advance_completion", "next", "dismiss_stamina",
+    "dismiss_known_popup", "retry_connection", "reveal_rewards",
 }
 STATE_ACTIONS = {
     "READY_TO_RETRY": "retry", "READY_TO_START": "start_mission", "IN_BATTLE": None,
     "MISSION_COMPLETE": "advance_completion", "RESULTS_NEXT": "next", "TRIAL_COINS_NEXT": "next", "REWARD_REVEAL": "reveal_rewards",
-    "RELEASE_SCREEN": "back", "TEAM_MENU": "back", "TITLE_START": "title_start",
-    "NEWS_POPUP": "dismiss_known_popup", "INITIAL_POPUP": "dismiss_known_popup", "WELCOME_POPUP": "dismiss_known_popup",
     "RANK_UP_STAMINA_ACK": "dismiss_known_popup", "RANK_UP_RESULTS": "next",
-    "HOME_MENU": "nav_right", "HOME_EMERGENCY": "emergency", "SCROLLS_BANNER": "select_scrolls",
-    "RANK_SELECTION": "select_rank_a", "SOLO_SELECTION": "solo", "HELPER_SELECTION": "select_first_helper",
     "COMMUNICATION_ERROR": "retry_connection", "STAMINA_PROMPT": "dismiss_stamina",
-    "REVIVAL_PROMPT": "decline_revive", "MISSION_FAILED": "back", "LUCKY_REWARD": "reveal_rewards",
 }
 
 
@@ -128,46 +286,26 @@ def write_json(path, value):
             time.sleep(.05)
 
 
-STAGE_IDS = ("universal", "scrolls-a", "rich-b", "practice-part-1", "night-of-tragedy-a")
+STAGE_IDS = ("universal",)
 
 
-def load_stage(stage="scrolls-a"):
+def load_stage(stage="universal", instance=None):
     if stage not in STAGE_IDS:
         raise ValueError("Unknown farming stage")
-    defaults = {"id": stage, "name": "All Scrolls [A]" if stage == "scrolls-a" else "Getting Rich Quick! [B]",
-                "catalog": "assets/patterns/catalog.json" if stage == "scrolls-a" else "assets/patterns/rich_b.json",
-                "progress": "runtime/farm.json" if stage == "scrolls-a" else "runtime/rich_b.json"}
-    if stage == "universal":
-        defaults.update(name="Universal — current mission", catalog="assets/patterns/catalog.json",
-                        progress="runtime/universal.json")
-    if stage == "practice-part-1":
-        defaults.update(name="Practice Training [Part 1]", catalog="assets/patterns/catalog.json",
-                        progress="runtime/practice_part_1.json", manual_first_battle=True)
-    if stage == "night-of-tragedy-a":
-        defaults.update(name="Night of Tragedy [A]", catalog="assets/patterns/night_of_tragedy_a.json",
-                        progress="runtime/night_of_tragedy_a.json", manual_first_battle=True)
-    config = {**defaults, **read_json(ROOT / "config" / (stage + ".json"))}
-    config["id"] = stage
-    # Stage files cannot redirect controller state or load an arbitrary catalog.
-    if config["catalog"] != defaults["catalog"] or config["progress"] != defaults["progress"]:
-        raise RuntimeError("Unexpected stage catalog/progress path")
-    config["catalog"] = CATALOG if defaults["catalog"] == "assets/patterns/catalog.json" else ROOT / config["catalog"]
-    config["progress"] = RUNTIME / Path(defaults["progress"]).name
-    config["manual_first_battle"] = stage in {"practice-part-1", "night-of-tragedy-a"}
-    overrides = config.get("state_actions", {})
-    allowed_overrides = {"RICH_BANNER": "select_rich", "RANK_SELECTION": "select_rank_b",
-                         "SCROLLS_LIST_POSITION": "scroll_missions"} if stage == "rich-b" else {}
-    if any(allowed_overrides.get(name) != action for name, action in overrides.items()):
-        raise RuntimeError("Unsafe stage action override")
-    config["state_actions"] = {**STATE_ACTIONS, **overrides}
-    return config
+    return {"id": stage, "name": "Universal — current mission", "catalog": CATALOG,
+            "progress": state_path("universal.json", instance), "state_actions": dict(STATE_ACTIONS)}
 
 
 def selected_stage():
-    stage = read_json(RUNTIME / "selection.json").get("stage", "universal")
-    if stage not in STAGE_IDS:
-        raise RuntimeError("Invalid saved stage selection")
-    return stage
+    return "universal"
+
+
+def progress_records(instance=None):
+    """Retain account safeguards from saved controller state across upgrades."""
+    for path in instance_runtime(instance).glob("*.json"):
+        data = read_json(path)
+        if isinstance(data, dict) and any(key in data for key in ("counts", "pending", "stamina_until")):
+            yield path, data
 
 
 def alive(pid):
@@ -200,6 +338,30 @@ def record_alive(record, key="pid"):
         return process_identity(pid)[0] == expected
     except (OSError, ValueError):
         return False
+
+
+def process_may_be_alive(record):
+    """Access denied is not evidence of exit; a recycled, identified PID is."""
+    pid = record.get("pid")
+    if type(pid) is not int or pid <= 0:
+        return False
+    if alive(pid):
+        expected = record.get("pid_identity")
+        if expected:
+            try:
+                return process_identity(pid)[0] == expected
+            except (OSError, ValueError):
+                pass
+        return True
+    handle = ctypes.windll.kernel32.OpenProcess(0x1000, False, pid)
+    if handle:
+        try:
+            code = ctypes.c_ulong()
+            return (not ctypes.windll.kernel32.GetExitCodeProcess(handle, ctypes.byref(code))
+                    or code.value == 259)
+        finally:
+            ctypes.windll.kernel32.CloseHandle(handle)
+    return ctypes.windll.kernel32.GetLastError() != 87
 
 
 @contextlib.contextmanager
@@ -237,10 +399,10 @@ def lock_busy(name):
 
 def recorded_processes():
     records = []
-    for path in (RUNTIME / "supervisor.json", RUNTIME / "controller.json",
-                 RUNTIME / "farm.json", RUNTIME / "rich_b.json", RUNTIME / "practice_part_1.json",
-                 RUNTIME / "night_of_tragedy_a.json", RUNTIME / "universal.json"):
+    for path in [*RUNTIME.glob("*.json"), *RUNTIME.glob("instances/*/*.json")]:
         data = read_json(path)
+        if not isinstance(data, dict):
+            continue
         for key in ("pid", "worker_pid"):
             if type(data.get(key)) is int and data[key] > 0:
                 records.append({"pid": data[key], "pid_identity": data.get(key + "_identity")})
@@ -252,7 +414,7 @@ def recorded_pids():
 
 
 def live_controller_pids(exclude=()):
-    # Legacy records have no identity; account locks still prevent duplicates
+    # Older records have no identity; account locks still prevent duplicates
     # while an older controller is running, without trusting a recycled PID.
     return sorted({record["pid"] for record in recorded_processes()
                    if record["pid"] not in exclude and record_alive(record)})
@@ -262,7 +424,7 @@ def controller_exclusions(stage, supervisor_pid=None, launching_supervisor=False
     """Windows venv launchers remain the parent of the real Python process."""
     own = {os.getpid()}
     claim = read_json(RUNTIME / "supervisor.json")
-    if claim.get("stage", "scrolls-a") != stage:
+    if claim.get("stage", "universal") != stage:
         return own
     if launching_supervisor and claim.get("launching") and claim.get("pid") == os.getppid():
         own.add(os.getppid())
@@ -273,26 +435,19 @@ def controller_exclusions(stage, supervisor_pid=None, launching_supervisor=False
     return own
 
 
-def verify_mode_switch(stage):
-    previous = selected_stage()
-    if previous != stage and 'universal' in {previous, stage}:
-        for previous_stage in (previous, stage):
-            if read_json(load_stage(previous_stage)['progress']).get('pending'):
-                raise RuntimeError('Resolve the existing pending input before switching automation modes')
-
-
-def select_stage(stage):
-    load_stage(stage)
-    with lock("control"):
-        if lock_busy("restart"):
-            raise RuntimeError("Full Restart is underway; stage selection refused")
-        if lock_busy("worker") or lock_busy("supervisor") or live_controller_pids():
-            raise RuntimeError("Farm controller is active; stop and verify it before selecting another stage")
-        verify_mode_switch(stage)
-        if selected_stage() != stage:
-            write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
-        write_json(RUNTIME / "selection.json", {"stage": stage})
-    print(f"Selected {stage}")
+def verify_saved_input(instance=None):
+    if instance is not None and not is_legacy_instance(instance):
+        return  # Pending input and stamina state are isolated by immutable device identity.
+    previous = read_json(RUNTIME / "selection.json").get("stage")
+    if not isinstance(previous, str) or previous == "universal":
+        return
+    for path, progress in progress_records():
+        if path == RUNTIME / "universal.json":
+            continue  # The current worker resumes its own durable latch.
+        if previous and (progress.get("stage") == previous or
+                         path.stem == previous.replace("-", "_") or path.name == "farm.json"):
+            if progress.get("pending"):
+                raise RuntimeError("Resolve the existing saved input before starting")
 
 
 def logger():
@@ -336,11 +491,12 @@ def _loot_call(collector, method, *args, **kwargs):
         return None
 
 
-def _loot_start(stage, supervisor_pid=None):
+def _loot_start(stage, supervisor_pid=None, instance=None):
     try:
         from loot_tracking import Collector, process_identity
         identity, started = process_identity(supervisor_pid or os.getpid())
-        return Collector(ROOT, stage, identity, process_started=started, account="acc1")
+        return Collector(ROOT, stage, identity, process_started=started,
+                         account=instance_account(instance) if instance else "acc1")
     except Exception as exc:
         _loot_tracking_error(exc)
         return None
@@ -393,30 +549,33 @@ class ActionNotDispatched(RuntimeError):
 
 
 class Device:
-    def __init__(self):
+    def __init__(self, instance=None):
+        self.target = instance or effective_instance()
         self.identity = None
 
     def command(self, args, timeout=15):
         if args[:2] in (["shell", "input"], ["shell", "monkey"]) and STOP.exists():
             raise InterruptedError("Stop requested before input")
-        r = subprocess.run([str(ADB), "-s", SERIAL, *args], capture_output=True, timeout=timeout,
+        r = subprocess.run([self.target.adb_path, "-H", "127.0.0.1", "-P", str(_server_port()),
+                            "-s", self.target.endpoint, *args], capture_output=True, timeout=timeout,
                            creationflags=subprocess.CREATE_NO_WINDOW)
         if r.returncode:
             raise RuntimeError(r.stderr.decode(errors="replace").strip()[:500])
         return r.stdout
 
     def verify(self):
-        config = dict(re.findall(r'^([^=]+)="(.*)"$', CONF.read_text(encoding="utf-8"), re.MULTILINE))
-        prefix = "bst.instance.Pie64."
-        if config.get(prefix + "display_name") != "acc1" or config.get(prefix + "adb_port") != "5555":
-            raise RuntimeError("acc1 instance/port mapping changed; refusing input")
+        validate_mapping(self.target)
+        if not self.target.config_path:
+            verify_identity(self.target)  # Manual endpoints must still identify a BlueStacks device.
         identity = self.command(["shell", "settings", "get", "secure", "android_id"]).decode().strip()
-        if not identity or identity != config.get(prefix + "android_id"):
-            raise RuntimeError("Android identity is not acc1; refusing input")
+        if not identity or identity != self.target.android_id:
+            raise RuntimeError("Android device identity mismatch; refusing input")
         self.identity = identity
 
     def connect(self):
-        subprocess.run([str(ADB), "connect", SERIAL], capture_output=True, timeout=15,
+        validate_mapping(self.target)
+        subprocess.run([self.target.adb_path, "-H", "127.0.0.1", "-P", str(_server_port()),
+                        "connect", self.target.endpoint], capture_output=True, timeout=15,
                        creationflags=subprocess.CREATE_NO_WINDOW, check=True)
         self.verify()
 
@@ -466,25 +625,8 @@ class Device:
                 self._input(["shell", "input", "mouse", "tap", str(x), str(y)])
             elif action.get("input_mode") == "adb_tap":
                 self._input(["shell", "input", "tap", str(x), str(y)])
-            elif action["id"] == "select_scrolls":
-                # A fixed script emits DOWN / wait / UP with NO MOVE events.
-                # Never invoke Monkey without -f: random events are prohibited.
-                local = RUNTIME / "fixed_tap.script"
-                local.write_text(f"type= raw events\ncount= 1\nspeed= 1.0\nstart data >>\nTap({x},{y},350)\n", encoding="ascii")
-                self.command(["push", str(local), "/data/local/tmp/nbr_fixed_tap.script"])
-                result = self._input(["shell", "monkey", "-p", PACKAGE, "-f", "/data/local/tmp/nbr_fixed_tap.script", "1"])
-                if b"Events injected: 3" not in result or b"Injection Failed" in result:
-                    raise RuntimeError("Fixed tap outcome uncertain; input latch retained")
             else:
                 self._input(["shell", "input", "swipe", str(x), str(y), str(x), str(y), "350"])
-        elif action["kind"] == "swipe" and action["id"] == "scroll_missions":
-            x1, y1, x2, y2 = action["points"]
-            if not (0 <= x1 < SIZE[0] and 0 <= x2 < SIZE[0] and 330 <= y1 < 1380 and 330 <= y2 < 1380):
-                raise RuntimeError("Swipe outside mission list")
-            duration = action.get("duration", 700)
-            if not 200 <= duration <= 1200:
-                raise RuntimeError("Unsafe swipe duration")
-            self._input(["shell", "input", "swipe", *map(str, [x1, y1, x2, y2]), str(duration)])
         else:
             raise RuntimeError("Unapproved input kind")
 
@@ -545,59 +687,26 @@ class Detector:
     def changed(self):
         return self.file_signature(self.dependencies) != self.signature
 
-    def __init__(self, stage="scrolls-a"):
-        config_paths = [ROOT / "config" / (stage + ".json")]
-        config_signature = self.file_signature(config_paths)
+    def __init__(self, stage="universal"):
         self.stage = load_stage(stage)
         self.catalog = self.stage["catalog"]
+        config_paths = []
+        config_signature = ()
         catalogs = [self.catalog]
-        if stage == "universal":
-            from universal import catalog_paths
-            catalogs.extend(catalog_paths(ROOT))
-        elif stage == "practice-part-1":
-            catalogs.append(ROOT / "assets/patterns/rich_b.json")
         catalog_signature = self.file_signature(catalogs)
-        self.states = read_json(self.catalog, {"states": []})["states"]
-        self.title_guards = []
-        if stage == "universal":
-            from universal import shared_states
-            self.states, self.title_guards = shared_states(ROOT)
-        if self.stage["id"] == "practice-part-1":
-            # Reuse shared controls with captured practice title guards. No OCR
-            # subprocess is needed for routine battle/results polling.
-            title_anchors = {"READY_TO_RETRY": 1, "RESULTS_NEXT": 1,
-                             "REWARD_REVEAL": 0, "READY_TO_START": 1,
-                             "RANK_UP_STAMINA_ACK": 2, "STAMINA_PROMPT": 3}
-            allowed = {*title_anchors, "IN_BATTLE", "MISSION_COMPLETE", "COMMUNICATION_ERROR"}
-            self.states = copy.deepcopy([s for s in self.states if s["name"] in allowed])
-            self.states.extend(copy.deepcopy(s) for s in read_json(ROOT / "assets/patterns/rich_b.json")["states"]
-                               if s["name"] == "STAMINA_PROMPT")
-            for state in self.states:
-                if state["name"] in title_anchors:
-                    start = state["name"] == "READY_TO_START"
-                    region = [190, 395, 735, 461] if start else [190, 182, 735, 247]
-                    template = "assets/patterns/practice_part_1/start_title.png" if start else "assets/patterns/practice_part_1/results_title.png"
-                    if state["name"] in {"STAMINA_PROMPT", "RANK_UP_STAMINA_ACK"}:
-                        template = "assets/patterns/practice_part_1/dialog_title.png"
-                    state["anchors"][title_anchors[state["name"]]] = {
-                        "region": region, "template": template, "correlation": .96, "difference": 12}
-        references = {anchor["template"] for _, _, anchor in self.title_guards}
+        self.states = read_json(self.catalog)['states']
+        references = set()
         for state in self.states:
             for anchor in state["anchors"]:
                 references.update([anchor["template"], *anchor.get("alternatives", [])])
         template_paths = [ROOT / reference for reference in references]
         template_signature = self.file_signature(template_paths)
         self.templates = {}
-        for _, _, anchor in self.title_guards:
-            template = cv2.imread(str(ROOT / anchor["template"]), cv2.IMREAD_GRAYSCALE)
-            if template is None:
-                raise RuntimeError(f"Missing title template: {anchor['template']}")
-            self.templates[anchor["template"]] = template
         for state in self.states:
             if state.get("action") and (state["action"]["id"] not in ALLOWED_ACTIONS or not state.get("verified_safe")):
                 raise RuntimeError("Unverified/unsafe action in catalog")
             if state.get("action"):
-                permitted = "scroll_missions" if state["name"].startswith("EMERGENCY_LIST") else self.stage["state_actions"].get(state["name"])
+                permitted = self.stage["state_actions"].get(state["name"])
                 if state["action"]["id"] != permitted or len(state["anchors"]) < 2:
                     raise RuntimeError("State/action mismatch or insufficient visual guards")
             for anchor in state["anchors"]:
@@ -684,66 +793,52 @@ class Detector:
         priority = max(s.get("priority", 0) for s in matched)
         best = [s for s in matched if s.get("priority", 0) == priority]
         # Shared layout variants may agree on exactly the same guarded action.
-        if self.stage['id'] == 'universal':
-            unique = {(s['name'], json.dumps(s.get('action'), sort_keys=True)) for s in best}
-            if len(unique) == 1:
-                best = best[:1]
+        unique = {(s['name'], json.dumps(s.get('action'), sort_keys=True)) for s in best}
+        if len(unique) == 1:
+            best = best[:1]
         if len(best) != 1:
             return "UNKNOWN", None, scores
-        if self.stage['id'] == 'universal':
-            titles = set()
-            for state_name, mission_id, anchor in self.title_guards:
-                if state_name != best[0]['name']:
-                    continue
-                x1,y1,x2,y2 = anchor['region']
-                crop = gray[y1:y2,x1:x2]
-                template = self.templates[anchor['template']]
-                if template is not None and crop.shape == template.shape:
-                    score = float(cv2.matchTemplate(crop, template, cv2.TM_CCOEFF_NORMED)[0,0])
-                    difference = float(np.abs(crop.astype(np.int16)-template).mean())
-                    if np.isfinite(score) and score >= .96 and difference <= 12:
-                        titles.add(mission_id)
-            if len(titles) == 1:
-                mission_id = titles.pop()
-                best[0]['mission_id'] = mission_id
-                best[0]['mission_name'] = load_stage(mission_id)['name']
         return best[0]["name"], best[0], scores
 
 
 class Engine:
-    def __init__(self, stage="scrolls-a"):
-        self.stage = load_stage(stage)
+    def __init__(self, stage="universal", instance=None):
+        self.device = Device(instance) if instance is not None else Device()
+        self.target = getattr(self.device, "target", None)
+        self.stage = load_stage(stage, self.target)
         self.progress = self.stage["progress"]
-        session = read_json(RUNTIME / "session.json")
+        session = read_json(self.path("session.json"))
         self.mission_verified = session.get("stage") == stage and session.get("mission_verified", False)
-        self.device = Device()
         self.detector = Detector(stage)
         self.data = read_json(self.progress, {})
         self.data["stage"] = stage
-        # Universal waits survive switching to/from legacy modes. Keep the
-        # legacy modes' independent progress files compatible with 1.0.
-        stamina_sources = STAGE_IDS if stage == 'universal' else ('universal',)
         self.data['stamina_until'] = max([self.data.get('stamina_until', 0)] +
-            [read_json(load_stage(s)['progress']).get('stamina_until', 0) for s in stamina_sources if s != stage])
+            [progress.get('stamina_until', 0) for path, progress in progress_records(self.target)
+             if path != self.progress])
         self.data.setdefault("counts", {"started": 0, "completed": 0, "failed": 0, "launches": 0})
         self.last_unknown = 0
         self.unknown_hash = None
         self.device.connect()
 
+    def path(self, name):
+        return state_path(name, getattr(self, "target", None))
+
     def save(self):
         self.data["heartbeat"] = time.time()
         self.data.update(process_claim(os.getpid(), "worker_pid"))
         self.data["manager_controls_version"] = 1
-        write_json(getattr(self, "progress", RUNTIME / "farm.json"), self.data)
+        if getattr(self, "target", None) is not None:
+            self.data["instance"] = instance_dict(self.target)
+        write_json(getattr(self, "progress", RUNTIME / "universal.json"), self.data)
 
     def consume_stamina_request(self):
-        path = RUNTIME / "stamina_request.json"
+        path = self.path("stamina_request.json")
         with lock("stamina-control", wait_seconds=2):
             request = read_json(path)
             if not request:
                 return
             path.unlink(missing_ok=True)
-            stage = getattr(self, "stage", {}).get("id", "scrolls-a")
+            stage = getattr(self, "stage", {}).get("id", "universal")
             if (request.get("worker_pid") != os.getpid() or request.get("stage") != stage
                     or request.get("stamina_until") != self.data.get("stamina_until")
                     or self.data.get("stamina_until", 0) <= time.time()
@@ -751,11 +846,9 @@ class Engine:
                 event("stamina_wait_end_rejected", reason="Wait identity changed or input unresolved")
                 return
             # Imported deadlines must not resurrect a cancelled account wait on reconnect.
-            for other in STAGE_IDS:
-                if other == stage:
+            for progress_path, progress in progress_records(getattr(self, "target", None)):
+                if progress_path == getattr(self, "progress", RUNTIME / "universal.json"):
                     continue
-                progress_path = load_stage(other)["progress"]
-                progress = read_json(progress_path)
                 if 0 < progress.get("stamina_until", 0) <= request["stamina_until"]:
                     progress["stamina_until"] = 0
                     write_json(progress_path, progress)
@@ -765,8 +858,8 @@ class Engine:
             event("stamina_wait_ended", stage=stage, request_id=request["id"])
 
     def evidence(self, frame, name):
-        dest = RUNTIME / "screenshots"
-        dest.mkdir(exist_ok=True)
+        dest = self.path("screenshots")
+        dest.mkdir(parents=True, exist_ok=True)
         signature = hashlib.sha256(cv2.resize(frame, (45, 80)).tobytes()).hexdigest()
         if time.time() - self.last_unknown < 120 or signature == self.unknown_hash:
             return
@@ -788,22 +881,13 @@ class Engine:
         previous_run = self.data.get("run")
         previous = self.data.get("screen")
         if name != previous:
-            event("screen", previous=previous, screen=name, stage=getattr(self, "stage", {}).get("id", "scrolls-a"))
+            event("screen", previous=previous, screen=name, stage=getattr(self, "stage", {}).get("id", "universal"))
         self.data["screen"] = name
-        if getattr(self, 'stage', {}).get('id') == 'universal' and name == 'READY_TO_START':
-            self.data['mission_name'] = (spec or {}).get('mission_name')
-            self.data['mission_id'] = (spec or {}).get('mission_id', 'unknown')
         if name == "UNKNOWN":
             self.evidence(frame, name)
         pending = self.data.get("pending")
-        resumed_from_rank = bool(
-            pending and (pending["id"], pending["source"]) == ("select_rank_b", "RANK_SELECTION")
-            and getattr(self, "stage", {}).get("id") == "rich-b"
-            and getattr(self, "mission_verified", False)
-            and name in {"IN_BATTLE", "MISSION_COMPLETE"}
-        )
         stage_id = getattr(self, "stage", {}).get("id")
-        session = read_json(RUNTIME / "session.json") if pending and pending["id"] == "retry_connection" else {}
+        session = read_json(self.path("session.json")) if pending and pending["id"] == "retry_connection" else {}
         resumed_from_connection = bool(
             pending and (pending["id"], pending["source"]) == ("retry_connection", "COMMUNICATION_ERROR")
             and stage_id in STAGE_IDS and getattr(self, "mission_verified", False)
@@ -813,7 +897,7 @@ class Engine:
         resumed_from_entry = bool(pending and
                                  (pending["id"], pending["source"]) in {
                                      ("title_start", "TITLE_START"), ("retry", "READY_TO_RETRY")
-                                 } and name in {"IN_BATTLE", "MISSION_COMPLETE"}) or resumed_from_rank or resumed_from_connection
+                                 } and name in {"IN_BATTLE", "MISSION_COMPLETE"}) or resumed_from_connection
         advanced_to_rewards = bool(pending and pending["id"] == "advance_completion" and
                                    pending["source"] == "MISSION_COMPLETE" and name == "REWARD_REVEAL")
         if pending and name != pending["source"] and (name in pending["expected"] or (spec and spec.get("recovery")) or resumed_from_entry or advanced_to_rewards):
@@ -831,14 +915,13 @@ class Engine:
                 self.data["counts"]["recovered_missions"] = self.data["counts"].get("recovered_missions", 0) + 1
                 self.data["run"] = {"id": uuid.uuid4().hex, "start": time.time(), "outcome": None,
                                     "origin": {"title_start": "observed_after_title", "retry": "observed_after_retry",
-                                               "select_rank_b": "observed_after_rank_selection",
                                                "retry_connection": "observed_after_connection"}[pending["id"]],
                                     "duration_basis": "since_first_observation"}
         run = self.data.get("run")
         if name == "MISSION_COMPLETE" and run and not run.get("outcome"):
             run["outcome"] = "completed"
             self.data["counts"]["completed"] += 1
-            event("mission_completed", stage=getattr(self, "stage", {}).get("id", "scrolls-a"),
+            event("mission_completed", stage=getattr(self, "stage", {}).get("id", "universal"),
                   run_id=run["id"], seconds=round(time.time()-run["start"], 2),
                   origin=run.get("origin", "runner_started"),
                   duration_basis=run.get("duration_basis", "mission_entry"))
@@ -861,6 +944,7 @@ class Engine:
 
     def _loot_observe(self, frame, name, previous_run=None, spec=None):
         """Reuse the existing results observation; never capture or control input."""
+        self._loot_waiting_for_reveal = False
         collector = getattr(self, "loot_collector", None)
         if collector is None:
             return
@@ -872,16 +956,17 @@ class Engine:
                 and getattr(self, "_loot_evidence_run", None) != run["id"]):
             # The collector accepts only completions durably observed this session;
             # historical farm progress cannot fabricate rewards on attachment.
-            self._loot_evidence_run = run["id"]
-            attribution = {}
-            if getattr(self, 'stage', {}).get('id') == 'universal' and (spec or {}).get('mission_name'):
-                attribution['mission_name'] = spec['mission_name']
-            _loot_call(collector, "evidence", run["id"], frame, **attribution)
+            from item_recognition.reward_layout import has_unrevealed_rewards
+            if has_unrevealed_rewards(frame, ROOT / 'assets/item_recognition'):
+                self._loot_waiting_for_reveal = True
+                return
+            if _loot_call(collector, "evidence", run["id"], frame):
+                self._loot_evidence_run = run["id"]
 
     def halt_loss(self, frame, name, text=""):
         # Persist stop before notification or any further processing of this screen.
         STOP.write_text("Loss detected; manual intervention and explicit start required", encoding="utf-8")
-        path = RUNTIME / f"loss_{int(time.time())}.png"
+        path = self.path(f"loss_{int(time.time())}.png")
         cv2.imwrite(str(path), frame)
         run = self.data.get("run")
         if run and not run.get("outcome"):
@@ -893,7 +978,7 @@ class Engine:
         self.data["evidence"] = str(path)
         record = {"time": time.time(), "screen": name, "evidence": str(path), "text": text,
                   "run_id": run.get("id") if run else None}
-        write_json(RUNTIME / "loss.json", record)
+        write_json(self.path("loss.json"), record)
         self.save()
         event("loss_stop", **record)
         try:
@@ -909,28 +994,14 @@ class Engine:
         if act:
             self.consume_stamina_request()
         if self.detector.changed():
-            self.detector = Detector(getattr(self, "stage", {}).get("id", "scrolls-a"))
+            self.detector = Detector(getattr(self, "stage", {}).get("id", "universal"))
             event("patterns_reloaded")
         foreground = self.device.foreground()
         if foreground in {"com.uncube.launcher3"}:
             self.data["screen"] = "GAME_CLOSED"
-            if getattr(self, 'stage', {}).get('id') == 'universal':
-                self.data['blocked'] = 'Restore the game manually to the current mission Start Mission screen'
-                self.save()
-                return 30
-            if getattr(self, "stage", {}).get("manual_first_battle"):
-                self.data["blocked"] = f"Manually restore {self.stage['name']} and begin its first battle"
-                self.save()
-                return 30
-            if act and (not self.data.get("launch_pending") or time.time()-self.data["launch_pending"] > 120):
-                self.data["launch_pending"] = time.time()
-                self.data["pending"] = None
-                self.save()
-                self.device.launch()
-                self.data["counts"]["launches"] += 1
-                event("game_launch")
+            self.data['blocked'] = 'Restore the game manually to the current mission Start Mission screen'
             self.save()
-            return 10
+            return 30
         if foreground != PACKAGE:
             self.data["screen"] = "OTHER_FOREGROUND"
             self.data["blocked"] = "Unrecognized foreground; no input"
@@ -961,41 +1032,14 @@ class Engine:
         if act and name in {"REVIVAL_PROMPT", "MISSION_FAILED"}:
             return self.halt_loss(frame, name)
         if hasattr(self, "stage"):
-            if self.stage['id'] == 'universal' and not self.mission_verified and name != 'READY_TO_START':
+            if not self.mission_verified and name != 'READY_TO_START':
                 self.update(frame, 'UNKNOWN', None)
                 self.data['blocked'] = 'Prepare any mission Start Mission screen, then Start'
                 self.save()
                 return 10
-            resuming_night_stamina = (
-                self.stage['id'] == 'night-of-tragedy-a' and name == 'STAMINA_PROMPT'
-                and (self.data.get('pending') or {}).get('id') == 'retry'
-                and self.data['pending'].get('source') == 'READY_TO_RETRY'
-            )
-            if self.stage.get("manual_first_battle") and not self.mission_verified:
-                if name == "IN_BATTLE":
-                    # Explicit stage selection plus the user-started battle is
-                    # the entry point; results still require the selected stage title.
-                    self.mission_verified = True
-                    write_json(RUNTIME / "session.json", {"stage": self.stage["id"], "mission_verified": True})
-                    self.data["pending"] = None
-                    self.data["run"] = {"id": uuid.uuid4().hex, "start": time.time(), "outcome": None,
-                                        "origin": "manual_first_battle", "duration_basis": "since_first_observation"}
-                elif name not in {"READY_TO_RETRY", "RESULTS_NEXT", "REWARD_REVEAL", "RANK_UP_STAMINA_ACK"} and not resuming_night_stamina and not (
-                    name == "READY_TO_START" and (self.data.get("pending") or {}).get("id") == "retry"
-                    and self.data["pending"].get("source") == "READY_TO_RETRY"
-                ):
-                    self.update(frame, "UNKNOWN", None)
-                    self.data["blocked"] = "Waiting for the manually started first battle"
-                    self.save()
-                    return 10
-            if name in {"READY_TO_START", "READY_TO_RETRY", "RESULTS_NEXT", "REWARD_REVEAL", "RANK_UP_STAMINA_ACK"} or resuming_night_stamina:
+            if name == 'READY_TO_START':
                 self.mission_verified = True
-                write_json(RUNTIME / "session.json", {"stage": self.stage["id"], "mission_verified": True})
-            if name in {"IN_BATTLE", "MISSION_COMPLETE"} and not self.mission_verified:
-                self.update(frame, "UNKNOWN", None)
-                self.data["blocked"] = "Awaiting a visually verified selected mission title/rank"
-                self.save()
-                return 10
+                write_json(self.path("session.json"), {"stage": self.stage["id"], "mission_verified": True})
         run = self.data.get("run")
         if act and name == "UNKNOWN" and run and not run.get("outcome"):
             try:
@@ -1011,11 +1055,11 @@ class Engine:
             except Exception as exc:
                 event("loss_ocr_error", error=str(exc))
         self.update(frame, name, spec)
-        pending = self.data.get("pending")
-        if pending and name == 'SCROLLS_BANNER' and pending['source'] == name and time.time()-pending['time'] > 120:
-            self.data['blocked'] = 'Mission banner did not advance; observing until a verified transition or manual resolution'
+        if getattr(self, '_loot_waiting_for_reveal', False):
+            self.data['blocked'] = 'Waiting for rewards to finish revealing'
             self.save()
-            return 30
+            return 1
+        pending = self.data.get("pending")
         # Preserve the user's current session. A stalled input remains latched;
         # recovery must never force-stop or reset the application.
         observed_run = self.data.get("run")
@@ -1041,7 +1085,7 @@ class Engine:
                 self.data["pending"]["stamina_wait_seconds"] = stamina_wait_minutes() * 60
                 self.data["stamina_until"] = max(self.data.get("stamina_until", 0), time.time() + self.data["pending"]["stamina_wait_seconds"])
             self.save()  # Persist BEFORE input so interruption cannot replay a click.
-            event("action_attempt", stage=getattr(self, "stage", {}).get("id", "scrolls-a"),
+            event("action_attempt", stage=getattr(self, "stage", {}).get("id", "universal"),
                   screen=name, action=action["id"], point=action.get("point"))
             try:
                 self.device.perform(action)
@@ -1058,33 +1102,51 @@ class Engine:
             except Exception as exc:
                 event("action_uncertain", action=action["id"], error=str(exc))
                 raise
-            event("action_sent", action=action["id"], stage=getattr(self, "stage", {}).get("id", "scrolls-a"))
+            event("action_sent", action=action["id"], stage=getattr(self, "stage", {}).get("id", "universal"))
             return 1
         return 2 if polling_battle else 30 if name == "UNKNOWN" else 2
 
 
-def worker(stage="scrolls-a", supervisor_pid=None):
+def process_target(instance=None, supervisor_pid=None):
+    state = read_json(RUNTIME / "supervisor.json")
+    if supervisor_pid and state.get("pid") == supervisor_pid:
+        pinned = instance_from_dict(state["instance"]) if state.get("instance") else legacy_instance()
+        if instance is not None and instance_dict(instance) != instance_dict(pinned):
+            raise RuntimeError("Worker target does not match its supervisor; refusing input")
+        instance = pinned
+    instance = instance or selected_instance()
+    validate_mapping(instance)
+    return instance
+
+
+def target_arguments(instance):
+    return ["--target", json.dumps(instance_dict(instance), separators=(",", ":"))]
+
+
+def worker(stage="universal", supervisor_pid=None, instance=None):
     # Hold one account-wide input lock for the entire controller lifetime.
     with contextlib.ExitStack() as stack:
         with lock("control", wait_seconds=10):
             state = read_json(RUNTIME / "supervisor.json")
-            if lock_busy("supervisor") and (not supervisor_pid or state.get("pid") != supervisor_pid or state.get("stage", "scrolls-a") != stage):
+            if lock_busy("supervisor") and (not supervisor_pid or state.get("pid") != supervisor_pid or state.get("stage", "universal") != stage):
                 raise RuntimeError("An account supervisor is active; direct worker refused")
             if live_controller_pids(exclude=controller_exclusions(stage, supervisor_pid)):
                 raise RuntimeError("An existing account controller is still alive")
+            instance = process_target(instance, supervisor_pid)
             stack.enter_context(lock("worker"))
-            write_json(RUNTIME / "controller.json", {**process_claim(os.getpid(), "worker_pid"), "stage": stage})
-            session = read_json(RUNTIME / "session.json")
+            write_json(RUNTIME / "controller.json", {**process_claim(os.getpid(), "worker_pid"), "stage": stage,
+                                                   "instance": instance_dict(instance)})
+            session = read_json(state_path("session.json", instance))
             if session.get("stage") != stage:
-                write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
-        collector = _loot_start(stage, supervisor_pid)
+                write_json(state_path("session.json", instance), {"stage": stage, "mission_verified": False})
+        collector = _loot_start(stage, supervisor_pid, instance)
         stack.callback(_loot_call, collector, "close", end_session=not bool(supervisor_pid))
         engine = None
         backoff = 5
         while not STOP.exists():
             try:
                 if engine is None:
-                    engine = Engine(stage)
+                    engine = Engine(stage, instance)
                     engine.loot_collector = collector
                 delay = engine.tick()
                 backoff = 5
@@ -1098,29 +1160,32 @@ def worker(stage="scrolls-a", supervisor_pid=None):
                 backoff = min(backoff * 2, 60)
             deadline = time.monotonic() + delay
             while not STOP.exists() and time.monotonic() < deadline:
-                if engine and (RUNTIME / "stamina_request.json").exists():
+                if engine and state_path("stamina_request.json", instance).exists():
                     break
                 time.sleep(.25)
         event("worker_stopped", stage=stage)
 
 
-def supervise(stage="scrolls-a"):
+def supervise(stage="universal", instance=None):
     with contextlib.ExitStack() as stack:
         with lock("control", wait_seconds=10):
             if lock_busy("worker") or live_controller_pids(exclude=controller_exclusions(stage, launching_supervisor=True)):
                 raise RuntimeError("An existing account controller is still alive")
+            instance = process_target(instance)
             stack.enter_context(lock("supervisor"))
-            write_json(RUNTIME / "supervisor.json", {**process_claim(os.getpid()), "worker_pid": None, "stage": stage})
+            write_json(RUNTIME / "supervisor.json", {**process_claim(os.getpid()), "worker_pid": None, "stage": stage,
+                                                   "instance": instance_dict(instance)})
         event("supervisor_started", pid=os.getpid(), stage=stage)
         child = None
         attempt = 0
         try:
             while not STOP.exists():
-                child = subprocess.Popen([sys.executable, str(ROOT / "src" / "farm.py"), "worker", "--stage", stage, "--supervisor-pid", str(os.getpid())], cwd=ROOT,
+                child = subprocess.Popen([sys.executable, str(ROOT / "src" / "farm.py"), "worker", "--stage", stage, "--supervisor-pid", str(os.getpid()), *target_arguments(instance)], cwd=ROOT,
                                          creationflags=subprocess.CREATE_NO_WINDOW,
                                          stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 write_json(RUNTIME / "supervisor.json", {**process_claim(os.getpid()),
-                           **process_claim(child.pid, "worker_pid"), "started": time.time(), "stage": stage})
+                           **process_claim(child.pid, "worker_pid"), "started": time.time(), "stage": stage,
+                           "instance": instance_dict(instance)})
                 while child.poll() is None and not STOP.exists():
                     time.sleep(.5)
                 if STOP.exists():
@@ -1135,7 +1200,8 @@ def supervise(stage="scrolls-a"):
                 while not STOP.exists() and time.monotonic() < deadline:
                     time.sleep(.25)
         finally:
-            write_json(RUNTIME / "supervisor.json", {"pid": None, "worker_pid": None, "stopped": time.time(), "stage": stage})
+            write_json(RUNTIME / "supervisor.json", {"pid": None, "worker_pid": None, "stopped": time.time(), "stage": stage,
+                                                   "instance": instance_dict(instance)})
             event("supervisor_stopped")
             _loot_end_process()
 
@@ -1149,7 +1215,7 @@ def check_stop_generation(expected):
         raise InterruptedError("A newer Stop request cancelled this launch")
 
 
-def start(stage=None, *, expected_stop=None, restarting=False, requested_generation=None):
+def start(stage=None, *, expected_stop=None, restarting=False, requested_generation=None, instance=None):
     stage = stage or selected_stage()
     load_stage(stage)
     with lock("control"):
@@ -1160,20 +1226,26 @@ def start(stage=None, *, expected_stop=None, restarting=False, requested_generat
             raise InterruptedError("Stop request changed; development restart cancelled")
         state = read_json(RUNTIME / "supervisor.json")
         if record_alive(state):
-            if state.get("stage", "scrolls-a") != stage:
+            if state.get("stage", "universal") != stage:
                 raise RuntimeError("Another stage is running; stop and verify it before switching")
             print("Already running; no duplicate launched.")
             return
-        if lock_busy("worker") or lock_busy("supervisor") or live_controller_pids():
+        if controller_active():
             raise RuntimeError("Existing account controller alive; stop it before restarting")
-        verify_mode_switch(stage)
-        if selected_stage() != stage or load_stage(stage)["manual_first_battle"]:
-            write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
+        instance = process_target(instance)
+        verify_saved_input(instance)
+        if not restarting:
+            Device(instance).connect()
+        preserve_legacy_owner(instance)
+        session = read_json(state_path("session.json", instance))
+        if session.get("stage") != stage:
+            write_json(state_path("session.json", instance), {"stage": stage, "mission_verified": False})
+        write_json(RUNTIME / "instance_selection.json", instance_dict(instance))
         write_json(RUNTIME / "selection.json", {"stage": stage})
         STOP.unlink(missing_ok=True)
         executable = Path(sys.executable).with_name("pythonw.exe")
         env = os.environ.copy()
-        env["NBR_LAUNCH_COMMAND"] = subprocess.list2cmdline([str(executable), str(ROOT / "src" / "farm.py"), "supervise", "--stage", stage])
+        env["NBR_LAUNCH_COMMAND"] = subprocess.list2cmdline([str(executable), str(ROOT / "src" / "farm.py"), "supervise", "--stage", stage, *target_arguments(instance)])
         env["NBR_LAUNCH_DIRECTORY"] = str(ROOT)
         # WMI's provider launches this independently of Codex and the calling shell's job.
         script = "$startup = New-CimInstance -ClassName Win32_ProcessStartup -ClientOnly -Property @{CreateFlags=[uint32]0x01000000; ShowWindow=[uint16]0}; $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{CommandLine=$env:NBR_LAUNCH_COMMAND; CurrentDirectory=$env:NBR_LAUNCH_DIRECTORY; ProcessStartupInformation=$startup}; $r | ConvertTo-Json -Compress"
@@ -1186,7 +1258,7 @@ def start(stage=None, *, expected_stop=None, restarting=False, requested_generat
         published = read_json(RUNTIME / "supervisor.json")
         if published.get("pid") != launch["ProcessId"] or published.get("stage") != stage:
             write_json(RUNTIME / "supervisor.json", {**process_claim(launch["ProcessId"]), "worker_pid": None,
-                                                      "stage": stage, "launching": True})
+                                                      "stage": stage, "launching": True, "instance": instance_dict(instance)})
     # The supervisor must acquire control before it publishes its worker PID.
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
@@ -1222,15 +1294,14 @@ def full_restart(stage=None, shutdown_timeout=35, *, requested_generation=None):
         try:
             with lock("control", wait_seconds=10):
                 check_stop_generation(requested_generation)
-                current = read_json(RUNTIME / "supervisor.json")
-                old_processes = [record for record in recorded_processes() if record_alive(record)]
-                running = bool(live_controller_pids()) or lock_busy("worker") or lock_busy("supervisor")
-                stage = current.get("stage", selected_stage()) if running else (stage or selected_stage())
+                old_processes = [record for record in recorded_processes() if process_may_be_alive(record)]
+                stage = stage or selected_stage()
                 load_stage(stage)
+                instance = effective_instance()
                 STOP.write_text(token, encoding="utf-8")
             event("full_restart_stop_requested", stage=stage)
             deadline = time.monotonic() + shutdown_timeout
-            while (any(record_alive(record) for record in old_processes) or live_controller_pids()
+            while (any(process_may_be_alive(record) for record in old_processes) or live_controller_pids()
                    or lock_busy("worker") or lock_busy("supervisor")):
                 if time.monotonic() >= deadline:
                     raise RuntimeError("Full Restart shutdown failed: old controller still active; no new process launched")
@@ -1239,22 +1310,23 @@ def full_restart(stage=None, shutdown_timeout=35, *, requested_generation=None):
             with lock("control", wait_seconds=10):
                 if not STOP.exists() or STOP.read_text(encoding="utf-8") != token:
                     raise InterruptedError("Stop request changed; Full Restart cancelled")
-                if (any(record_alive(record) for record in old_processes) or live_controller_pids()
+                if (any(process_may_be_alive(record) for record in old_processes) or controller_active()
                         or lock_busy("worker") or lock_busy("supervisor")):
                     raise RuntimeError("Controller became active during restart; no new process launched")
-                progress_path = load_stage(stage)["progress"]
+                verify_saved_input(instance)
+                progress_path = load_stage(stage, instance)["progress"]
                 progress = read_json(progress_path)
                 for key in ("worker_pid", "worker_pid_identity", "heartbeat", "blocked", "screen"):
                     progress.pop(key, None)
                 write_json(progress_path, progress)
-                write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
-                (RUNTIME / "stamina_request.json").unlink(missing_ok=True)
+                write_json(state_path("session.json", instance), {"stage": stage, "mission_verified": False})
+                state_path("stamina_request.json", instance).unlink(missing_ok=True)
             event("full_restart_temporary_state_reset", stage=stage, pending_preserved=bool(progress.get("pending")))
             event("full_restart_connection_check", stage=stage)
-            Device().connect()
+            Device(instance).connect()
             event("full_restart_identity_verified", stage=stage)
             event("full_restart_relaunch", stage=stage, safeguard="Existing worker ADB connection and device identity validation")
-            start(stage, expected_stop=token, restarting=True, requested_generation=requested_generation)
+            start(stage, expected_stop=token, restarting=True, requested_generation=requested_generation, instance=instance)
             event("full_restart_completed", stage=stage)
         except Exception as exc:
             event("full_restart_failed", stage=stage, error=str(exc))
@@ -1264,11 +1336,31 @@ def full_restart(stage=None, shutdown_timeout=35, *, requested_generation=None):
 def status(stage=None):
     stage = stage or selected_stage()
     state = read_json(RUNTIME / "supervisor.json")
-    farm = read_json(load_stage(stage)["progress"])
+    instance, instance_error = None, ""
+    try:
+        instance = effective_instance()
+    except (OSError, ValueError, RuntimeError) as exc:
+        instance_error = str(exc)
+        if not controller_active():
+            try:
+                saved = read_json(RUNTIME / "instance_selection.json")
+                if saved:
+                    instance = instance_from_dict(saved)
+            except (OSError, ValueError, RuntimeError):
+                pass
+    farm = read_json(load_stage(stage, instance)["progress"]) if instance else {}
     print(json.dumps({"selected_stage": selected_stage(), "stage": stage,
-                      "running": bool(live_controller_pids()) or lock_busy("worker") or lock_busy("supervisor"),
+                      "running": controller_active(),
                       "active_pids": live_controller_pids(), "stop_requested": STOP.exists(),
                       "supervisor": state, "farm": farm,
+                      "instance": instance_dict(instance) if instance else None,
+                      "instance_account": instance_account(instance) if instance else None,
+                      "instance_error": instance_error,
+                      "instance_selection_required": instance is None or bool(instance_error) or
+                          (not controller_active() and not (RUNTIME / "instance_selection.json").exists()),
+                      "instance_locked": instance_locked(),
+                      "progress_path": str(load_stage(stage, instance)["progress"]) if instance else None,
+                      "session_path": str(state_path("session.json", instance)) if instance else None,
                       "stamina_status": stamina_status(farm),
                       "stamina_wait_minutes": stamina_wait_minutes(),
                       "stamina_wait_interruptible": farm.get("manager_controls_version") == 1,
@@ -1277,24 +1369,38 @@ def status(stage=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["select", "start", "stop", "status", "supervise", "worker", "observe", "step", "replay", "restart", "end-stamina-wait", "stamina-duration"])
+    parser.add_argument("command", choices=["start", "stop", "status", "supervise", "worker", "observe", "step", "replay", "restart", "end-stamina-wait", "stamina-duration", "select-instance"])
+    parser.add_argument("--instance-key")
+    parser.add_argument("--instance-name")
+    parser.add_argument("--endpoint", default="")
     parser.add_argument("--minutes", type=int, choices=STAMINA_MINUTES)
     parser.add_argument("--image")
     parser.add_argument("--brief", action="store_true")
     parser.add_argument("--stage", choices=STAGE_IDS)
     parser.add_argument("--supervisor-pid", type=int, help=argparse.SUPPRESS)
     parser.add_argument("--stop-generation", help=argparse.SUPPRESS)
+    parser.add_argument("--target", help=argparse.SUPPRESS)
     args = parser.parse_args()
     stage = args.stage or selected_stage()
-    if args.command == "select": select_stage(stage)
-    elif args.command == "start": start(stage, requested_generation=args.stop_generation)
+    if args.command == "start": start(stage, requested_generation=args.stop_generation)
     elif args.command == "stop": stop()
     elif args.command == "restart": full_restart(args.stage, requested_generation=args.stop_generation)
     elif args.command == "end-stamina-wait": end_stamina_wait()
     elif args.command == "stamina-duration": set_stamina_duration(args.minutes)
     elif args.command == "status": status(stage)
-    elif args.command == "supervise": supervise(stage)
-    elif args.command == "worker": worker(stage, args.supervisor_pid)
+    elif args.command == "supervise": supervise(stage, instance_from_dict(json.loads(args.target)) if args.target else None)
+    elif args.command == "worker": worker(stage, args.supervisor_pid, instance_from_dict(json.loads(args.target)) if args.target else None)
+    elif args.command == "select-instance":
+        if bool(args.instance_key) == bool(args.instance_name):
+            raise ValueError("Provide an instance selection or a manual instance name")
+        if args.instance_key:
+            matches = [item for item in discover()["instances"] if item.key == args.instance_key]
+            if len(matches) != 1:
+                raise RuntimeError("The selected instance is no longer uniquely available; refresh instances")
+            instance = matches[0]
+        else:
+            instance = resolve_manual(args.instance_name, args.endpoint)
+        print(json.dumps(instance_dict(select_instance(instance))))
     elif args.command == "replay":
         name, _, scores = Detector(stage).classify(cv2.imread(args.image))
         print(json.dumps({"screen": name, "scores": scores}, indent=2))
@@ -1306,20 +1412,22 @@ def main():
         path = RUNTIME / "current.png"
         path.parent.mkdir(exist_ok=True)
         cv2.imwrite(str(path), frame)
-        result = {"screen": name, "image": str(path), "pending": read_json(load_stage(stage)["progress"]).get("pending")}
+        result = {"screen": name, "image": str(path),
+                  "pending": read_json(load_stage(stage, device.target)["progress"]).get("pending")}
         if not args.brief:
             result["scores"] = scores
         print(json.dumps(result, indent=2))
     else:
         with contextlib.ExitStack() as stack:
             with lock("control"):
-                if lock_busy("supervisor") or live_controller_pids():
+                if controller_active() or lock_busy("restart"):
                     raise RuntimeError("An account controller is active; development step refused")
+                instance = process_target()
                 stack.enter_context(lock("worker"))
-                session = read_json(RUNTIME / "session.json")
+                session = read_json(state_path("session.json", instance))
                 if session.get("stage") != stage:
-                    write_json(RUNTIME / "session.json", {"stage": stage, "mission_verified": False})
-            engine = Engine(stage)
+                    write_json(state_path("session.json", instance), {"stage": stage, "mission_verified": False})
+            engine = Engine(stage, instance)
             if args.command == "step":
                 if STOP.exists():
                     raise RuntimeError("Stop flag set; use start to resume")

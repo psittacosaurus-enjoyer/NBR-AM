@@ -18,21 +18,6 @@ import uuid
 from process_state import process_identity
 
 
-_MISSION_STAGES = {
-    'All Scrolls [A]': 'scrolls-a',
-    'Getting Rich Quick! [B]': 'rich-b',
-    'Practice Training [Part 1]': 'practice-part-1',
-    'Night of Tragedy [A]': 'night-of-tragedy-a',
-}
-
-
-def _mission_stage(name):
-    if not isinstance(name, str):
-        return 'unknown'
-    name = name.strip()
-    return _MISSION_STAGES.get(name, name if name in _MISSION_STAGES.values() else 'unknown')
-
-
 def _atomic_json(path, value):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -153,14 +138,18 @@ class LootStore:
             return _dashboard(db, session_id, limit, offset)
 
 
-def _dashboard(db, session_id=None, limit=100, offset=0):
+def _dashboard(db, session_id=None, limit=100, offset=0, *, account=None):
     # A single read transaction keeps totals and history consistent during writes.
     db.execute("BEGIN")
-    sessions = [dict(row) for row in db.execute("SELECT * FROM sessions ORDER BY tracking_started DESC")]
+    sessions = [dict(row) for row in db.execute(
+        "SELECT * FROM sessions ORDER BY tracking_started DESC" if account is None else
+        "SELECT * FROM sessions WHERE account=? ORDER BY tracking_started DESC",
+        () if account is None else (account,))]
     session = next((s for s in sessions if s['session_id'] == session_id), None) if session_id else next(iter(sessions), None)
     answer = dict(status="Tracking Unavailable", detail="No instrumented farming session recorded.",
                   session=session, sessions=sessions, completed_runs=0, recognized_icons=0, unknown_icons=0,
-                  ambiguous_icons=0, recognition_failures=0, failures=0, confirmed_quantities={}, items=[], runs=[],
+                  ambiguous_icons=0, recognition_failures=0, failures=0, total_drops=0, unidentified_drops=0, drop_counts={},
+                  confirmed_quantities={}, items=[], runs=[],
                   history_offset=max(0, int(offset)), history_limit=max(1, min(int(limit), 1000)))
     if not session:
         return answer
@@ -170,35 +159,40 @@ def _dashboard(db, session_id=None, limit=100, offset=0):
         run = dict(row)
         run.update(account=session['account'], stage=session['stage'])
         result = json.loads(run.pop('result_json'))
-        if session['stage'] == 'universal':
-            # Universal is the automation mode, not the mission's identity. Each
-            # result owns its visual attribution so later runs cannot relabel it.
-            run['automation_stage'] = 'universal'
-            detected = result.get('stage')
-            run['stage'] = detected if isinstance(detected, str) and detected and detected != 'universal' else 'unknown'
-        run['warnings'] = json.loads(run.pop('warnings_json'))
+        run['warnings'] = [warning for warning in json.loads(run.pop('warnings_json'))
+                           if warning != 'Unknown quantities are excluded from numerical totals. Stars indicate rarity, not quantity.']
         entries = result.get('rewards', []) + result.get('unknown_rewards', [])
         run['rewards'] = entries
-        run['unknown_icons'] = run['ambiguous_icons'] = 0
+        run['unknown_icons'] = run['ambiguous_icons'] = run['drop_count'] = 0
         answer['completed_runs'] += 1
         if run['status'] not in ('recognized', 'uncertain', 'awaiting_evidence'):
             answer['recognition_failures'] += 1
         for reward in entries:
             if reward.get('reward_scope') != 'acquired':
                 continue
+            visible_icon = reward.get('visual_state', 'icon') == 'icon'
+            reward['drop_count'] = int(visible_icon)
+            if visible_icon:
+                run['drop_count'] += 1
+                answer['total_drops'] += 1
             identity = reward.get('identity_status')
-            if identity == 'matched' and reward.get('item_id') and reward.get('item_name'):
+            identified = visible_icon and identity == 'matched' and reward.get('item_id') and reward.get('item_name')
+            if visible_icon and not identified:
+                answer['unidentified_drops'] += 1
+            if identified:
                 answer['recognized_icons'] += 1
                 item = items.setdefault(reward['item_id'], dict(item_id=reward['item_id'], item_name=reward['item_name'],
-                                       observed_icons=0, confirmed_acquired=None, unknown_quantities=0,
+                                       observed_icons=0, drop_count=0, confirmed_acquired=0, unknown_quantities=0,
+                                       count_basis='one_drop_per_acquired_icon',
+                                       last_drop_at=run['completed_at'], last_drop_sequence=run['run_sequence'],
                                        record_type=reward.get('record_type', 'item'), rarity=reward.get('rarity'), element=reward.get('element')))
                 item['observed_icons'] += 1
-                qty = reward.get('quantity')
-                if reward.get('quantity_status') == 'verified' and isinstance(qty, int) and not isinstance(qty, bool) and qty >= 0:
-                    item['confirmed_acquired'] = (item['confirmed_acquired'] or 0) + qty
-                    answer['confirmed_quantities'][reward['item_id']] = item['confirmed_acquired']
-                else:
-                    item['unknown_quantities'] += 1
+                item['drop_count'] += 1
+                # The game's acquired grid represents one drop per icon. Text
+                # numbers, rarity stars and condition cards cannot multiply it.
+                item['confirmed_acquired'] = item['drop_count']
+                answer['drop_counts'][reward['item_id']] = item['drop_count']
+                answer['confirmed_quantities'][reward['item_id']] = item['drop_count']
             elif identity in ('candidate', 'ambiguous'):
                 run['ambiguous_icons'] += 1
                 answer['ambiguous_icons'] += 1
@@ -211,7 +205,7 @@ def _dashboard(db, session_id=None, limit=100, offset=0):
     answer['items'] = sorted(items.values(), key=lambda item: item['item_name'])
     answer['status'] = ('Session Ended' if session['ended_at'] else 'Recognition Error' if answer['recognition_failures']
                         else 'Tracking Active' if answer['completed_runs'] else 'Waiting for First Completion')
-    answer['detail'] = "Quantities without verified acquired evidence remain Unknown."
+    answer['detail'] = "Each acquired icon counts as one drop. Unidentified drops remain separate."
     return answer
 
 
@@ -225,7 +219,9 @@ def _recognition_revision(root):
     root = Path(root)
     database = root / 'runtime' / 'library' / 'data' / 'library.sqlite3'
     paths = [database, database.with_name(database.name + '-wal'),
-             root / 'assets' / 'item_recognition' / 'calibration.json']
+             root / 'assets' / 'item_recognition' / 'calibration.json',
+             root / 'assets' / 'item_recognition' / 'profiles.json',
+             root / 'assets' / 'item_recognition' / 'reviewed_rewards.json']
     revision = []
     for path in paths:
         try:
@@ -423,8 +419,8 @@ class Collector:
             self._error(exc)
             return None
 
-    def evidence(self, run_id, frame, mission_name=None):
-        """Save results evidence; optional title must come from verified results UI."""
+    def evidence(self, run_id, frame):
+        """Save acquired-reward evidence for this completion."""
         try:
             with self._lock:
                 value = self._events.get(self._completion_id(run_id))
@@ -437,10 +433,6 @@ class Collector:
                 with screenshot.open('r+b') as stream:
                     os.fsync(stream.fileno())
                 value['screenshot'] = str(screenshot.resolve())
-                if value['stage'] == 'universal' and mission_name is not None:
-                    # Store attribution with this event, never with mutable session
-                    # state or a title inherited from an earlier Start screen.
-                    value['mission_name'] = mission_name if _mission_stage(mission_name) != 'unknown' else None
                 value['state'] = 'ready' if self._ready_count < self.max_pending else 'backlog_limit'
                 if value['state'] == 'ready':
                     self._ready_count += 1
@@ -503,24 +495,7 @@ class Collector:
                             raise RuntimeError('Recognition inputs changed while references loaded; retry on the next completion.')
                         self.recognizer = replacement
                         self._recognizer_revision = revision
-                    # An explicit stage overrides visual inference in the existing
-                    # recognizer. Universal runs must leave that inference open;
-                    # replay uses the event's mode rather than the current worker.
-                    recognition_stage = 'unknown' if value['stage'] == 'universal' else value['stage']
-                    result = self.recognizer.analyze_screenshot(screenshot_path=source, stage=recognition_stage)
-                    if value['stage'] == 'universal':
-                        title_stage = _mission_stage(value.get('mission_name'))
-                        visual_stage = result.get('stage') or 'unknown'
-                        if visual_stage == 'universal':
-                            visual_stage = 'unknown'
-                        visual_identity = _mission_stage(visual_stage)
-                        if title_stage != 'unknown' and visual_stage != 'unknown' and visual_identity != title_stage:
-                            result['stage'] = 'unknown'
-                            warnings.append('Results title and loot visual stage disagree; mission identity remains unknown.')
-                        else:
-                            title_name = next((name for name, identity in _MISSION_STAGES.items()
-                                               if identity == title_stage), 'unknown')
-                            result['stage'] = title_name if visual_stage == 'unknown' else visual_stage
+                    result = self.recognizer.analyze_screenshot(screenshot_path=source)
                     warnings.extend(result.get('warnings', []))
                     entries = result.get('rewards', []) + result.get('unknown_rewards', [])
                     if result.get('status') == 'error':
@@ -685,12 +660,13 @@ def read_dashboard(root, snapshot, session_id=None, limit=100, offset=0):
                   if snapshot.get('running') else 'Tracking starts with the next instrumented farming process.')
         return dict(status='Tracking Unavailable', detail=detail,
                     session=None, sessions=[], completed_runs=0, recognized_icons=0, unknown_icons=0, ambiguous_icons=0,
-                    recognition_failures=0, failures=0, confirmed_quantities={}, items=[], runs=[],
+                    recognition_failures=0, failures=0, total_drops=0, unidentified_drops=0, drop_counts={},
+                    confirmed_quantities={}, items=[], runs=[],
                     history_offset=max(0, int(offset)), history_limit=max(1, min(int(limit), 1000)))
     LootStore(root).reconcile_ended()
     with closing(sqlite3.connect(path.resolve().as_uri() + '?mode=ro', uri=True, timeout=.1)) as db:
         db.row_factory = sqlite3.Row
-        data = _dashboard(db, session_id, limit, offset)
+        data = _dashboard(db, session_id, limit, offset, account=snapshot.get('instance_account'))
     session = data['session']
     if session_id is None and snapshot.get('running'):
         pid = snapshot.get('supervisor', {}).get('pid') or snapshot.get('farm', {}).get('worker_pid')
@@ -699,7 +675,8 @@ def read_dashboard(root, snapshot, session_id=None, limit=100, offset=0):
         if not matching:
             data.update(status='Tracking Unavailable', detail='This running process lacks loot instrumentation; next natural start required.',
                         session=None, completed_runs=0, recognized_icons=0, unknown_icons=0, ambiguous_icons=0,
-                        recognition_failures=0, failures=0, confirmed_quantities={}, items=[], runs=[])
+                        recognition_failures=0, failures=0, total_drops=0, unidentified_drops=0, drop_counts={},
+                        confirmed_quantities={}, items=[], runs=[])
         elif not session or session['session_id'] != matching['session_id']:
             return read_dashboard(root, snapshot, matching['session_id'], limit, offset)
     if data['session'] and not data['session']['ended_at'] and time.time() - (data['session']['heartbeat'] or 0) > 30:

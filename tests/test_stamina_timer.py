@@ -29,7 +29,7 @@ class StaminaTimerTests(unittest.TestCase):
             'READY_TO_RETRY': {'action': {'id': 'retry', 'kind': 'tap',
                                         'point': [450, 1524], 'expected': ['READY_TO_START']}},
         }
-        farm.write_json(self.runtime / 'session.json', {'stage': 'rich-b', 'mission_verified': True})
+        farm.write_json(self.runtime / 'session.json', {'stage': 'universal', 'mission_verified': True})
 
     def tearDown(self):
         for item in reversed(self.patches):
@@ -39,7 +39,7 @@ class StaminaTimerTests(unittest.TestCase):
     def engine(self):
         device = FakeDevice(self.frame)
         with patch.object(farm, 'Device', return_value=device):
-            engine = farm.Engine('rich-b')
+            engine = farm.Engine('universal')
         engine.observe = lambda: (self.frame, self.screen, copy.deepcopy(self.specs.get(self.screen)), {})
         return engine
 
@@ -87,7 +87,7 @@ class StaminaTimerTests(unittest.TestCase):
         engine = self.engine()
         before_input = []
         def inspect_saved(action):
-            before_input.append(farm.read_json(self.runtime / 'rich_b.json'))
+            before_input.append(farm.read_json(self.runtime / 'universal.json'))
             engine.device.actions.append(action['id'])
         engine.device.perform = inspect_saved
         engine.tick()

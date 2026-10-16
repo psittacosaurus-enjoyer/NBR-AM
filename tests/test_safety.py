@@ -9,6 +9,7 @@ from unittest.mock import patch
 import cv2
 import numpy as np
 import farm
+from bluestacks import Instance
 
 
 class FakeDevice:
@@ -49,11 +50,15 @@ class SafetyTests(unittest.TestCase):
         engine.unknown_hash = None
         return engine
 
-    def test_both_results_variants_and_wrong_mission(self):
+    def test_results_titles_are_optional_and_buttons_are_required(self):
         for path in ["assets/reference_images/starting_point.png", "assets/reference_images/starting_point_lucky_drop.png"]:
             image = self.image(path)
             self.assertEqual(self.detector.classify(image)[0], "READY_TO_RETRY")
             image[182:247, 300:649] = 0
+            name, spec, _ = self.detector.classify(image)
+            self.assertEqual(name, "READY_TO_RETRY")
+            x1, y1, x2, y2 = spec['anchors'][-1]['region']
+            image[y1:y2, x1:x2] = 0
             self.assertEqual(self.detector.classify(image)[0], "UNKNOWN")
 
     def test_dark_modal_does_not_click_underlying_retry(self):
@@ -91,7 +96,7 @@ class SafetyTests(unittest.TestCase):
         engine.tick()
         self.assertEqual(engine.device.actions, ["retry"])
         resumed = self.engine(image)
-        resumed.data = farm.read_json(self.runtime / "farm.json")
+        resumed.data = farm.read_json(self.runtime / "universal.json")
         resumed.tick()
         self.assertEqual(resumed.device.actions, [])
 
@@ -201,14 +206,6 @@ class SafetyTests(unittest.TestCase):
         for text in ['Mission Failed','GAME OVER','Use a Ninja Pearl to continue?','Revive with Ninja Pearls?']:
             self.assertTrue(farm.loss_text(text),text)
 
-    def test_target_banner_moves_and_tap_follows_artwork(self):
-        image = self.image("tests/fixtures/scrolls_banner.png")
-        moved = image.copy()
-        moved[330:1380] = 0
-        moved[798:992,80:812] = image[648:842,80:812]
-        name,spec,_ = self.detector.classify(moved)
-        self.assertEqual(name,"SCROLLS_BANNER")
-        self.assertEqual(spec['action']['point'],[451,921])
 
     def test_stalled_menu_preserves_app_without_another_click(self):
         engine = self.engine(self.image("tests/fixtures/home.png"))
@@ -217,13 +214,6 @@ class SafetyTests(unittest.TestCase):
         self.assertEqual(engine.device.actions,[])
         self.assertEqual(engine.device.commands,[])
 
-    def test_stalled_target_banner_holds_without_relaunch(self):
-        engine = self.engine(self.image("tests/fixtures/scrolls_banner.png"))
-        engine.data['pending'] = {'id':'select_scrolls','source':'SCROLLS_BANNER','expected':['RANK_SELECTION'],'time':0}
-        engine.tick()
-        self.assertEqual(engine.device.actions,[])
-        self.assertEqual(engine.device.commands,[])
-        self.assertIn('Mission banner did not advance',engine.data['blocked'])
 
     def test_unknown_with_old_pending_action_never_resets(self):
         engine = self.engine(np.zeros((1600,900,3),np.uint8))
@@ -237,7 +227,7 @@ class SafetyTests(unittest.TestCase):
         engine.data["stamina_until"] = farm.time.time() + 899
         engine.save()
         resumed = self.engine(engine.device.image)
-        resumed.data = farm.read_json(self.runtime / "farm.json")
+        resumed.data = farm.read_json(self.runtime / "universal.json")
         resumed.tick()
         self.assertEqual(resumed.device.actions, [])
         self.assertGreater(resumed.data["stamina_until"], farm.time.time() + 895)
@@ -251,21 +241,11 @@ class SafetyTests(unittest.TestCase):
     def test_wrong_android_identity_rejected(self):
         conf = self.runtime / "bluestacks.conf"
         conf.write_text('bst.instance.Pie64.display_name="acc1"\nbst.instance.Pie64.adb_port="5555"\nbst.instance.Pie64.android_id="expected"\n')
-        with patch.object(farm, "CONF", conf), patch.object(farm.Device, "command", return_value=b"wrong\n"):
-            with self.assertRaisesRegex(RuntimeError, "not acc1"):
-                farm.Device().verify()
-
-    def test_fixed_tap_script_is_one_deterministic_touch(self):
-        device = farm.Device()
-        calls = []
-        def fake_command(args, timeout=15):
-            calls.append(args)
-            return b'Events injected: 3\n'
-        with patch.object(device,'verify'),patch.object(device,'foreground',return_value=farm.PACKAGE),patch.object(device,'command',side_effect=fake_command):
-            device.perform({'id':'select_scrolls','kind':'tap','point':[450,700]})
-        self.assertEqual(calls[-1],['shell','monkey','-p',farm.PACKAGE,'-f','/data/local/tmp/nbr_fixed_tap.script','1'])
-        text=(self.runtime/'fixed_tap.script').read_text()
-        self.assertEqual(text.split('start data >>\n')[1],'Tap(450,700,350)\n')
+        target = Instance(str(conf), "Pie64", "acc1", "fixture-adb.exe",
+                          "127.0.0.1:5555", "expected")
+        with patch.object(farm, "validate_mapping"), patch.object(farm.Device, "command", return_value=b"wrong\n"):
+            with self.assertRaisesRegex(RuntimeError, "identity mismatch"):
+                farm.Device(target).verify()
 
 
 if __name__ == "__main__": unittest.main(verbosity=2)

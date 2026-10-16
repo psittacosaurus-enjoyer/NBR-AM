@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch
 
 import farm
 from test_stages import FakeDevice
-from universal import TITLE_INDEX
+from instance_fixtures import legacy_target
 
 
 LAYOUTS = {
@@ -23,6 +23,8 @@ class UniversalTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.runtime = Path(self.temp.name)
         self.patches = [patch.object(farm, 'RUNTIME', self.runtime),
+                        patch.object(farm, 'selected_instance', return_value=legacy_target()),
+                        patch.object(farm, 'validate_mapping'),
                         patch.object(farm, 'STOP', self.runtime / 'STOP'),
                         patch.object(farm, 'event'), patch.object(farm.time, 'sleep'),
                         patch.object(farm, 'ocr_text', return_value='')]
@@ -46,9 +48,12 @@ class UniversalTests(unittest.TestCase):
         frame = self.image(path)
         if unfamiliar:
             screen = SCREENS[filename]
-            source = farm.read_json(farm.load_stage(stage)['catalog'])
+            catalogs = {'scrolls-a': 'catalog.json', 'rich-b': 'rich_b.json',
+                        'night-of-tragedy-a': 'night_of_tragedy_a.json'}
+            source = farm.read_json(farm.ROOT / 'assets/patterns' / catalogs[stage])
             state = next(s for s in source['states'] if s['name'] == screen)
-            x1, y1, x2, y2 = state['anchors'][TITLE_INDEX[screen]]['region']
+            index = 0 if screen == 'REWARD_REVEAL' else 1
+            x1, y1, x2, y2 = state['anchors'][index]['region']
             frame[y1:y2, x1:x2] = 0
         return frame
 
@@ -67,15 +72,11 @@ class UniversalTests(unittest.TestCase):
                         self.assertEqual(name, screen)
                         self.assertEqual(spec['action']['id'],
                                          farm.load_stage('universal')['state_actions'][screen])
-                        if unfamiliar:
-                            self.assertNotIn('mission_id', spec)
-                        else:
-                            self.assertEqual(spec.get('mission_id'), stage)
+                        self.assertNotIn('mission_id', spec)
+                        self.assertNotIn('mission_name', spec)
 
     def test_actual_unconfigured_mission_frames_need_no_stage_configuration(self):
         universal = farm.Detector('universal')
-        legacy = {stage: farm.Detector(stage) for stage in farm.STAGE_IDS
-                  if stage != 'universal'}
         for filename, expected in [('unconfigured_start.png', 'READY_TO_START'),
                                    ('unconfigured_results.png', 'READY_TO_RETRY')]:
             with self.subTest(filename=filename):
@@ -84,9 +85,6 @@ class UniversalTests(unittest.TestCase):
                 self.assertEqual(name, expected)
                 self.assertNotIn('mission_id', spec)
                 self.assertNotIn('mission_name', spec)
-                for stage, detector in legacy.items():
-                    with self.subTest(legacy_stage=stage):
-                        self.assertEqual(detector.classify(frame)[0], 'UNKNOWN')
 
     def test_trial_coin_summary_is_guarded_without_title_or_reward_totals(self):
         detector = farm.Detector('universal')
@@ -157,28 +155,30 @@ class UniversalTests(unittest.TestCase):
                         engine.tick()
                         self.assertEqual(engine.device.actions, [])
 
-    def test_mode_switch_preserves_pending_and_stop(self):
-        legacy = {'pending': {'id': 'retry', 'source': 'READY_TO_RETRY',
-                              'expected': ['READY_TO_START'], 'time': 0}}
-        farm.write_json(self.runtime / 'selection.json', {'stage': 'rich-b'})
-        farm.write_json(self.runtime / 'rich_b.json', legacy)
+
+    def test_saved_pending_input_blocks_start_and_preserves_stop(self):
+        saved = {'stage': 'retired-choice', 'pending': {'id': 'retry', 'source': 'READY_TO_RETRY',
+                  'expected': ['READY_TO_START'], 'time': 0}}
+        farm.write_json(self.runtime / 'selection.json', {'stage': 'retired-choice'})
+        farm.write_json(self.runtime / 'retired_choice.json', saved)
         farm.STOP.write_text('Intentional stop', encoding='utf-8')
-        with self.assertRaises(RuntimeError):
-            farm.select_stage('universal')
-        with patch.object(farm, 'alive', return_value=False), \
-                patch.object(farm, 'lock_busy', return_value=False), \
-                patch.object(farm, 'live_controller_pids', return_value=[]):
-            with self.assertRaises(RuntimeError):
-                farm.start('universal')
-        self.assertEqual(farm.read_json(self.runtime / 'rich_b.json'), legacy)
+        with patch.object(farm, 'lock_busy', return_value=False), \
+             patch.object(farm, 'live_controller_pids', return_value=[]), \
+             patch.object(farm.subprocess, 'run') as launch:
+            with self.assertRaisesRegex(RuntimeError, 'existing saved input'):
+                farm.start()
+        launch.assert_not_called()
+        self.assertEqual(farm.read_json(self.runtime / 'retired_choice.json'), saved)
         self.assertEqual(farm.STOP.read_text(encoding='utf-8'), 'Intentional stop')
-        farm.write_json(self.runtime / 'rich_b.json', {})
+
+    def test_unrelated_saved_progress_remains_untouched(self):
+        saved = {'stage': 'unrelated', 'pending': {'id': 'retry'}, 'counts': {'started': 8}}
+        farm.write_json(self.runtime / 'unrelated.json', saved)
+        farm.write_json(self.runtime / 'farm.json', saved)
         farm.write_json(self.runtime / 'selection.json', {'stage': 'universal'})
-        farm.write_json(self.runtime / 'universal.json', legacy)
-        with self.assertRaises(RuntimeError):
-            farm.select_stage('rich-b')
-        self.assertEqual(farm.read_json(self.runtime / 'universal.json'), legacy)
-        self.assertEqual(farm.STOP.read_text(encoding='utf-8'), 'Intentional stop')
+        farm.verify_saved_input()
+        self.assertEqual(farm.read_json(self.runtime / 'unrelated.json'), saved)
+        self.assertEqual(farm.read_json(self.runtime / 'farm.json'), saved)
 
     def test_two_full_loops_count_once_and_reuse_loot_collection(self):
         for unfamiliar in (False, True):
@@ -191,7 +191,7 @@ class UniversalTests(unittest.TestCase):
                 engine.tick()
                 engine.tick()
                 self.assertEqual(engine.device.actions, ['start_mission'])
-                self.assertEqual(engine.data['mission_id'], 'unknown' if unfamiliar else 'rich-b')
+                self.assertNotIn('mission_id', engine.data)
                 expected = ['start_mission']
                 run_ids = []
                 for cycle in (1, 2):
@@ -221,8 +221,7 @@ class UniversalTests(unittest.TestCase):
                 self.assertEqual(len(set(run_ids)), 2)
                 self.assertEqual([c.args[0] for c in collector.completed.call_args_list], run_ids)
                 self.assertEqual([c.args[0] for c in collector.evidence.call_args_list], run_ids)
-                expected = {} if unfamiliar else {'mission_name': 'Getting Rich Quick! [B]'}
-                self.assertTrue(all(call.kwargs == expected for call in collector.evidence.call_args_list))
+                self.assertTrue(all(call.kwargs == {} for call in collector.evidence.call_args_list))
                 self.assertEqual(engine.device.commands, [])
 
     def test_stamina_no_latch_persists_and_wait_ends_at_deadline(self):
@@ -254,7 +253,7 @@ class UniversalTests(unittest.TestCase):
         persisted = farm.read_json(self.runtime / 'universal.json')
         self.assertEqual(persisted['pending']['id'], 'retry')
 
-    def test_account_stamina_wait_survives_mode_change(self):
+    def test_saved_account_stamina_wait_survives_upgrade(self):
         farm.write_json(self.runtime / 'rich_b.json', {'stamina_until': 2000})
         engine = self.engine(self.frame('scrolls-a', 'ready_to_start'))
         with patch.object(farm.time, 'time', return_value=1999):
@@ -265,36 +264,6 @@ class UniversalTests(unittest.TestCase):
             engine.tick()
             self.assertEqual(engine.device.actions, ['start_mission'])
 
-    def test_universal_stamina_deadline_is_inherited_by_legacy_mode(self):
-        farm.write_json(self.runtime / 'universal.json', {'stamina_until': 2000})
-        device = FakeDevice(self.frame('rich-b', 'ready_to_start'))
-        with patch.object(farm, 'Device', return_value=device):
-            engine = farm.Engine('rich-b')
-        with patch.object(farm.time, 'time', return_value=1999):
-            engine.tick()
-            self.assertEqual(device.actions, [])
-            self.assertEqual(engine.data['stamina_until'], 2000)
-        with patch.object(farm.time, 'time', return_value=2000):
-            engine.tick()
-            self.assertEqual(device.actions, ['start_mission'])
-
-    def test_unrelated_legacy_latch_does_not_block_current_mode_switch(self):
-        progress = self.runtime / 'practice_part_1.json'
-        legacy = {'pending': {'id': 'retry', 'source': 'READY_TO_RETRY',
-                              'expected': ['READY_TO_START'], 'time': 0},
-                  'counts': {'started': 8, 'completed': 7}}
-        farm.write_json(progress, legacy)
-        original_bytes = progress.read_bytes()
-        farm.write_json(self.runtime / 'selection.json', {'stage': 'night-of-tragedy-a'})
-        farm.write_json(self.runtime / 'night_of_tragedy_a.json', {'pending': None})
-        farm.STOP.write_text('Intentional stop', encoding='utf-8')
-        with patch.object(farm, 'alive', return_value=False), \
-                patch.object(farm, 'lock_busy', return_value=False), \
-                patch.object(farm, 'live_controller_pids', return_value=[]):
-            farm.select_stage('universal')
-        self.assertEqual(farm.selected_stage(), 'universal')
-        self.assertEqual(progress.read_bytes(), original_bytes)
-        self.assertEqual(farm.STOP.read_text(encoding='utf-8'), 'Intentional stop')
 
     def test_initial_results_and_battle_require_start_screen(self):
         paths = ['tests/fixtures/battle.png', 'tests/fixtures/mission_complete.png',

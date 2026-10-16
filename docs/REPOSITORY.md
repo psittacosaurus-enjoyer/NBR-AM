@@ -1,10 +1,10 @@
 # Repository review and publication
 
-Source lives in `src/`, required recognition/browser assets in `assets/`, stage definitions in `config/`, tests and saved regression fixtures in `tests/`, Windows/maintenance tools in `scripts/`, and documentation in `docs/`. Runtime storage is separate from source.
+Source lives in `src/`, required recognition/browser assets in `assets/`, tests and saved regression fixtures in `tests/`, Windows/maintenance tools in `scripts/`, and documentation in `docs/`. Runtime storage is separate from source.
 
 ## Local data and Git boundaries
 
-`runtime/` retains device/account state, stop/latch/session records, loot histories, diagnostic evidence, downloaded library data, annotations, generated exports and recognition output. `.venv/`, Python caches, process records, secrets and local configuration overrides are ignored. Required stage JSON, calibration, templates, labeled ground truth and saved test images remain eligible for source control.
+`runtime/` retains device/account state, stop/latch/session records, loot histories, diagnostic evidence, downloaded library data, annotations, generated exports and recognition output. `.venv/`, Python caches, process records, secrets and local configuration overrides are ignored. Required recognition catalogs, calibration, templates, labeled ground truth and saved test images remain eligible for source control.
 
 `runtime/NBR-AM/` is an independent pre-existing Git repository. It stays ignored locally to preserve its Git history; it is not an application source directory. The root repository's history is preserved. No commit, remote creation or push is part of this cleanup.
 

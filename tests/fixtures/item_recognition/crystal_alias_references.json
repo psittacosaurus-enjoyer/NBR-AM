@@ -1,0 +1,256 @@
+{
+  "records": [
+    {
+      "id": "item_eefc62d8f7bf053966c6efc6",
+      "record_type": "item",
+      "source_key": "limit break crystal \"skill crystal\"|None|Skill",
+      "display_name": "Limit Break Crystal \"Skill Crystal\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/trial-skill",
+      "game_id": "948",
+      "category": "item",
+      "element": "Skill",
+      "rarity": "4",
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Limit Break Crystal \"Skill Crystal\"",
+          "icon": "/naruto-blazing/missions/card-0948.webp",
+          "kind": "item"
+        }
+      },
+      "assets": [
+        {
+          "id": "asset_f692f2f5e771f70f8b1d5fbe",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/5/50/Card-0948.png/revision/latest?cb=20161104230714",
+          "sha256": "8f25dc27fd10982b09d4f3bcf1b9edce2477dfbf1c4002b322d4a17c38c8d67c",
+          "role": "card",
+          "file": "crystal_alias_refs/8f25dc27fd10982b09d4f3bcf1b9edce2477dfbf1c4002b322d4a17c38c8d67c.png"
+        },
+        {
+          "id": "asset_7623bfbe2be8b62927dd2024",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0948.webp",
+          "sha256": "7a7e6d813a71e20f613bcb93b8e726a5e6089dece6ea3210d154ac19b35f1e12",
+          "role": "icon",
+          "file": "crystal_alias_refs/7a7e6d813a71e20f613bcb93b8e726a5e6089dece6ea3210d154ac19b35f1e12.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_d1ad38aa0a569a91e4d5ffc6",
+      "record_type": "item",
+      "source_key": "skill crystal|None|Skill",
+      "display_name": "Skill Crystal",
+      "source_url": "https://gachawiki.net/naruto-blazing",
+      "game_id": null,
+      "category": "crystal",
+      "element": "Skill",
+      "rarity": null,
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Skill Crystal",
+          "kind": "crystal",
+          "element": "Skill",
+          "icon": "/naruto-blazing/lb/card-0948.webp",
+          "label_source": "Public Naruto module pr() names elemental crystals, books, own5/own6 and ultimate.",
+          "trial": "Cultivation of Skill"
+        }
+      },
+      "assets": [
+        {
+          "id": "asset_0280690abbb651c99586a8e4",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/lb/card-0948.webp",
+          "sha256": "7a7e6d813a71e20f613bcb93b8e726a5e6089dece6ea3210d154ac19b35f1e12",
+          "role": "icon",
+          "file": "crystal_alias_refs/7a7e6d813a71e20f613bcb93b8e726a5e6089dece6ea3210d154ac19b35f1e12.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_4e52f1f09cb115b6cdbd1316",
+      "record_type": "item",
+      "source_key": "limit break crystal \"wisdom crystal\"|None|Wisdom",
+      "display_name": "Limit Break Crystal \"Wisdom Crystal\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/emergency/trial-wisdom",
+      "game_id": null,
+      "category": "item",
+      "element": "Wisdom",
+      "rarity": null,
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Limit Break Crystal \"Wisdom Crystal\"",
+          "icon": "/naruto-blazing/missions/card-0951.webp",
+          "kind": "item"
+        }
+      },
+      "assets": [
+        {
+          "id": "asset_a874fe135273c635dc7f8138",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-0951.webp",
+          "sha256": "9cfd286099c9329f4f2796607f4edf376ab7218e0a1a15f999c27011f5f04c8f",
+          "role": "icon",
+          "file": "crystal_alias_refs/9cfd286099c9329f4f2796607f4edf376ab7218e0a1a15f999c27011f5f04c8f.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_aa35f180c5b73ba780c2ccc7",
+      "record_type": "item",
+      "source_key": "wisdom crystal|None|Wisdom",
+      "display_name": "Wisdom Crystal",
+      "source_url": "https://gachawiki.net/naruto-blazing",
+      "game_id": null,
+      "category": "crystal",
+      "element": "Wisdom",
+      "rarity": null,
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Wisdom Crystal",
+          "kind": "crystal",
+          "element": "Wisdom",
+          "icon": "/naruto-blazing/lb/card-0951.webp",
+          "label_source": "Public Naruto module pr() names elemental crystals, books, own5/own6 and ultimate.",
+          "trial": "Accumulation of Wisdom"
+        }
+      },
+      "assets": [
+        {
+          "id": "asset_32a84fda90aec5274ada73fa",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/lb/card-0951.webp",
+          "sha256": "9cfd286099c9329f4f2796607f4edf376ab7218e0a1a15f999c27011f5f04c8f",
+          "role": "icon",
+          "file": "crystal_alias_refs/9cfd286099c9329f4f2796607f4edf376ab7218e0a1a15f999c27011f5f04c8f.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_d5325e6515a52b82be215874",
+      "record_type": "item",
+      "source_key": "limit break crystal \"ultimate crystal\"|None|None",
+      "display_name": "Limit Break Crystal \"Ultimate Crystal\"",
+      "source_url": "https://gachawiki.net/naruto-blazing/missions/ninja-trial",
+      "game_id": "1142",
+      "category": "item",
+      "element": "Bravery",
+      "rarity": "6",
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Limit Break Crystal \"Ultimate Crystal\"",
+          "kind": "item",
+          "icon": "/naruto-blazing/missions/card-1142.webp"
+        }
+      },
+      "assets": [
+        {
+          "id": "asset_e3f37e186b2d7cfe5158cbf8",
+          "source_image_url": "https://static.wikia.nocookie.net/naruto-shippuden-ultimate-ninja-blazing/images/4/4b/Card-1142.png/revision/latest?cb=20180522160821",
+          "sha256": "fdadae4a9488585b47779f99436521264577e3bb434e15db8978ac4426c682a7",
+          "role": "card",
+          "file": "crystal_alias_refs/fdadae4a9488585b47779f99436521264577e3bb434e15db8978ac4426c682a7.png"
+        },
+        {
+          "id": "asset_8058418d03c1ea017bc3e700",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/missions/card-1142.webp",
+          "sha256": "8ac3d08b0b62072342fa29862f558eca65ee1913c15e42020c892e23deea6195",
+          "role": "icon",
+          "file": "crystal_alias_refs/8ac3d08b0b62072342fa29862f558eca65ee1913c15e42020c892e23deea6195.webp"
+        }
+      ]
+    },
+    {
+      "id": "item_907aca4139cfff37133dbada",
+      "record_type": "item",
+      "source_key": "ultimate crystal|None|None",
+      "display_name": "Ultimate Crystal",
+      "source_url": "https://gachawiki.net/naruto-blazing",
+      "game_id": null,
+      "category": "crystal",
+      "element": null,
+      "rarity": null,
+      "verification_status": "source_verified",
+      "metadata": {
+        "original": {
+          "name": "Ultimate Crystal",
+          "kind": "crystal",
+          "icon": "/naruto-blazing/lb/card-1142.webp",
+          "label_source": "Public Naruto module pr() names elemental crystals, books, own5/own6 and ultimate."
+        }
+      },
+      "assets": [
+        {
+          "id": "asset_8c6b600ac00fbfa76dbf9f48",
+          "source_image_url": "https://gachawiki.net/naruto-blazing/lb/card-1142.webp",
+          "sha256": "8ac3d08b0b62072342fa29862f558eca65ee1913c15e42020c892e23deea6195",
+          "role": "icon",
+          "file": "crystal_alias_refs/8ac3d08b0b62072342fa29862f558eca65ee1913c15e42020c892e23deea6195.webp"
+        }
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "canonical_item_id": "item_eefc62d8f7bf053966c6efc6",
+      "member_ids": [
+        "item_eefc62d8f7bf053966c6efc6",
+        "item_d1ad38aa0a569a91e4d5ffc6"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "948",
+      "evidence": {
+        "basis": "Full-library source-card audit: each record explicitly references the same /missions/ or /lb/ card number; known type, element, rarity, game ID and material category are compatible. Shared artwork alone was not used. Unseen identities remain uncalibrated.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-0948.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-0948.webp"
+        ]
+      }
+    },
+    {
+      "canonical_item_id": "item_4e52f1f09cb115b6cdbd1316",
+      "member_ids": [
+        "item_4e52f1f09cb115b6cdbd1316",
+        "item_aa35f180c5b73ba780c2ccc7"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "951",
+      "evidence": {
+        "basis": "Full-library source-card audit: each record explicitly references the same /missions/ or /lb/ card number; known type, element, rarity, game ID and material category are compatible. Shared artwork alone was not used. Unseen identities remain uncalibrated.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-0951.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-0951.webp"
+        ]
+      }
+    },
+    {
+      "canonical_item_id": "item_d5325e6515a52b82be215874",
+      "member_ids": [
+        "item_d5325e6515a52b82be215874",
+        "item_907aca4139cfff37133dbada"
+      ],
+      "allow_alternate_names": true,
+      "source_card_id": "1142",
+      "evidence": {
+        "basis": "Full-library source-card audit: each record explicitly references the same /missions/ or /lb/ card number; known type, element, rarity, game ID and material category are compatible. Shared artwork alone was not used. Unseen identities remain uncalibrated.",
+        "source_urls": [
+          "https://gachawiki.net/naruto-blazing/lb/card-1142.webp",
+          "https://gachawiki.net/naruto-blazing/missions/card-1142.webp"
+        ]
+      }
+    }
+  ],
+  "skill_canonical": "item_eefc62d8f7bf053966c6efc6",
+  "screenshots": [
+    {
+      "file": "skill_crystal_results.png",
+      "sha256": "cd15600151055708b824826c00fbfb081b2295fd7437bcd54b42ad2a8adaac92",
+      "icons": 2
+    },
+    {
+      "file": "skill_crystal_three_results.png",
+      "sha256": "409944b999d660e601d90c9fe3119787009fc8baba9baba13aa339861d310281",
+      "icons": 3
+    }
+  ]
+}

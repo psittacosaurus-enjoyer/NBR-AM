@@ -1,0 +1,1336 @@
+{
+  "version": 1,
+  "states": [
+    {
+      "name": "READY_TO_RETRY",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/ready_to_retry/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            337,
+            1501,
+            556,
+            1549
+          ],
+          "template": "assets/patterns/ready_to_retry/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "action": {
+        "id": "retry",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_START",
+          "STAMINA_PROMPT",
+          "HELPER_SELECTION"
+        ],
+        "point": [
+          450,
+          1524
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "IN_BATTLE",
+      "anchors": [
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 0,
+      "verified_safe": false
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60
+        },
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "RESULTS_NEXT",
+          "READY_TO_RETRY",
+          "REWARD_REVEAL"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "RESULTS_NEXT",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/results_next/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            246,
+            310,
+            665,
+            346
+          ],
+          "template": "assets/patterns/results_next/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            348,
+            1500,
+            565,
+            1549
+          ],
+          "template": "assets/patterns/results_next/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "action": {
+        "id": "next",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_RETRY",
+          "REWARD_REVEAL",
+          "TRIAL_COINS_NEXT"
+        ],
+        "point": [
+          455,
+          1525
+        ]
+      }
+    },
+    {
+      "name": "REWARD_REVEAL",
+      "anchors": [
+        {
+          "region": [
+            243,
+            286,
+            660,
+            328
+          ],
+          "template": "assets/patterns/reward_reveal/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            310,
+            1200,
+            624,
+            1239
+          ],
+          "template": "assets/patterns/reward_reveal/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            324,
+            1491,
+            577,
+            1548
+          ],
+          "template": "assets/patterns/reward_reveal/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            396,
+            780,
+            500,
+            826
+          ],
+          "template": "assets/patterns/reward_reveal/4.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "action": {
+        "id": "reveal_rewards",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_RETRY",
+          "LUCKY_REWARD"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "COMMUNICATION_ERROR",
+      "anchors": [
+        {
+          "region": [
+            121,
+            614,
+            777,
+            671
+          ],
+          "template": "assets/patterns/communication_error/0.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        },
+        {
+          "region": [
+            151,
+            731,
+            750,
+            853
+          ],
+          "template": "assets/patterns/communication_error/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        },
+        {
+          "region": [
+            374,
+            906,
+            523,
+            946
+          ],
+          "template": "assets/patterns/communication_error/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        }
+      ],
+      "priority": 30,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "retry_connection",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_START",
+          "READY_TO_RETRY",
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "IN_BATTLE",
+          "MISSION_COMPLETE"
+        ],
+        "point": [
+          448,
+          925
+        ],
+        "point_anchor": 2
+      }
+    },
+    {
+      "name": "READY_TO_START",
+      "anchors": [
+        {
+          "region": [
+            176,
+            239,
+            561,
+            308
+          ],
+          "template": "assets/patterns/ready_to_start/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            278,
+            1250,
+            614,
+            1301
+          ],
+          "template": "assets/patterns/ready_to_start/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            307,
+            1311,
+            419,
+            1361
+          ],
+          "template": "assets/patterns/ready_to_start/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            498,
+            1324,
+            524,
+            1354
+          ],
+          "template": "assets/patterns/ready_to_start/4.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "start_mission",
+        "kind": "tap",
+        "expected": [
+          "IN_BATTLE",
+          "MISSION_COMPLETE",
+          "REVIVAL_PROMPT",
+          "STAMINA_PROMPT"
+        ],
+        "point": [
+          450,
+          1305
+        ]
+      }
+    },
+    {
+      "name": "RANK_UP_STAMINA_ACK",
+      "anchors": [
+        {
+          "region": [
+            182,
+            695,
+            722,
+            779
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            343,
+            856,
+            548,
+            935
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 40,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "expected": [
+          "RANK_UP_RESULTS",
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ],
+        "point": [
+          446,
+          896
+        ]
+      }
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/rich_b/mission_complete/00_0.png",
+            "assets/patterns/rich_b/mission_complete/05_0.png",
+            "assets/patterns/rich_b/mission_complete/06_0.png",
+            "assets/patterns/rich_b/mission_complete/15_0.png"
+          ]
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/rich_b/mission_complete/00_1.png",
+            "assets/patterns/rich_b/mission_complete/05_1.png",
+            "assets/patterns/rich_b/mission_complete/06_1.png",
+            "assets/patterns/rich_b/mission_complete/15_1.png"
+          ]
+        },
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "RESULTS_NEXT",
+          "READY_TO_RETRY",
+          "REWARD_REVEAL"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "READY_TO_START",
+      "anchors": [
+        {
+          "region": [
+            176,
+            239,
+            561,
+            308
+          ],
+          "template": "assets/patterns/rich_b/ready_to_start/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            278,
+            1250,
+            614,
+            1301
+          ],
+          "template": "assets/patterns/rich_b/ready_to_start/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            307,
+            1311,
+            419,
+            1361
+          ],
+          "template": "assets/patterns/rich_b/ready_to_start/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            498,
+            1324,
+            524,
+            1354
+          ],
+          "template": "assets/patterns/rich_b/ready_to_start/4.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "start_mission",
+        "kind": "tap",
+        "point": [
+          450,
+          1305
+        ],
+        "expected": [
+          "IN_BATTLE",
+          "MISSION_COMPLETE",
+          "REVIVAL_PROMPT",
+          "STAMINA_PROMPT"
+        ]
+      }
+    },
+    {
+      "name": "RESULTS_NEXT",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/rich_b/results_next/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            246,
+            310,
+            665,
+            346
+          ],
+          "template": "assets/patterns/rich_b/results_next/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            348,
+            1500,
+            565,
+            1549
+          ],
+          "template": "assets/patterns/rich_b/results_next/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "next",
+        "kind": "tap",
+        "point": [
+          455,
+          1525
+        ],
+        "expected": [
+          "READY_TO_RETRY",
+          "REWARD_REVEAL",
+          "TRIAL_COINS_NEXT"
+        ]
+      }
+    },
+    {
+      "name": "REWARD_REVEAL",
+      "anchors": [
+        {
+          "region": [
+            235,
+            289,
+            664,
+            333
+          ],
+          "template": "assets/patterns/rich_b/reward_reveal/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            213,
+            1200,
+            695,
+            1238
+          ],
+          "template": "assets/patterns/rich_b/reward_reveal/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            310,
+            1500,
+            624,
+            1550
+          ],
+          "template": "assets/patterns/rich_b/reward_reveal/3.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "reveal_rewards",
+        "kind": "tap",
+        "point": [
+          450,
+          800
+        ],
+        "expected": [
+          "READY_TO_RETRY",
+          "LUCKY_REWARD"
+        ]
+      }
+    },
+    {
+      "name": "READY_TO_RETRY",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/rich_b/ready_to_retry/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            337,
+            1501,
+            556,
+            1549
+          ],
+          "template": "assets/patterns/rich_b/ready_to_retry/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "retry",
+        "kind": "tap",
+        "point": [
+          450,
+          1524
+        ],
+        "expected": [
+          "READY_TO_START",
+          "STAMINA_PROMPT",
+          "HELPER_SELECTION"
+        ]
+      }
+    },
+    {
+      "name": "RANK_UP_STAMINA_ACK",
+      "anchors": [
+        {
+          "region": [
+            182,
+            695,
+            722,
+            779
+          ],
+          "template": "assets/patterns/rich_b/rank_up_stamina_ack/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            343,
+            856,
+            548,
+            935
+          ],
+          "template": "assets/patterns/rich_b/rank_up_stamina_ack/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 40,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "point": [
+          446,
+          896
+        ],
+        "expected": [
+          "RANK_UP_RESULTS",
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ]
+      }
+    },
+    {
+      "name": "STAMINA_PROMPT",
+      "anchors": [
+        {
+          "region": [
+            121,
+            510,
+            778,
+            586
+          ],
+          "template": "assets/patterns/rich_b/stamina_prompt/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            114,
+            630,
+            795,
+            899
+          ],
+          "template": "assets/patterns/rich_b/stamina_prompt/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            200,
+            982,
+            399,
+            1054
+          ],
+          "template": "assets/patterns/rich_b/stamina_prompt/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 50,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_stamina",
+        "kind": "tap",
+        "point": [
+          300,
+          1017
+        ],
+        "point_anchor": 2,
+        "expected": [
+          "READY_TO_RETRY",
+          "READY_TO_START"
+        ]
+      }
+    },
+    {
+      "name": "READY_TO_START",
+      "anchors": [
+        {
+          "region": [
+            176,
+            239,
+            561,
+            308
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            278,
+            1250,
+            614,
+            1301
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            307,
+            1311,
+            419,
+            1361
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            498,
+            1324,
+            524,
+            1354
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/4.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "start_mission",
+        "kind": "tap",
+        "expected": [
+          "IN_BATTLE",
+          "MISSION_COMPLETE",
+          "REVIVAL_PROMPT",
+          "STAMINA_PROMPT"
+        ],
+        "point": [
+          450,
+          1305
+        ]
+      }
+    },
+    {
+      "name": "RESULTS_NEXT",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/results_next/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            246,
+            310,
+            665,
+            346
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/results_next/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            348,
+            1500,
+            565,
+            1549
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/results_next/3.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "action": {
+        "id": "next",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_RETRY",
+          "REWARD_REVEAL",
+          "TRIAL_COINS_NEXT"
+        ],
+        "point": [
+          455,
+          1525
+        ]
+      }
+    },
+    {
+      "name": "REWARD_REVEAL",
+      "anchors": [
+        {
+          "region": [
+            243,
+            286,
+            660,
+            328
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/reward_reveal/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            310,
+            1200,
+            624,
+            1239
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/reward_reveal/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            324,
+            1491,
+            577,
+            1548
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/reward_reveal/3.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            396,
+            780,
+            500,
+            826
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/reward_reveal/4.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "action": {
+        "id": "reveal_rewards",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_RETRY",
+          "LUCKY_REWARD"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_04_0.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_00_0.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_03_0.png"
+          ]
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_04_1.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_00_1.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_03_1.png"
+          ]
+        },
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "RESULTS_NEXT",
+          "READY_TO_RETRY",
+          "REWARD_REVEAL"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      }
+    },
+    {
+      "name": "IN_BATTLE",
+      "anchors": [
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 0,
+      "verified_safe": false
+    },
+    {
+      "name": "READY_TO_RETRY",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/ready_to_retry/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            337,
+            1501,
+            556,
+            1549
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/ready_to_retry/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 0,
+      "verified_safe": true,
+      "action": {
+        "id": "retry",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_START",
+          "STAMINA_PROMPT",
+          "HELPER_SELECTION"
+        ],
+        "point": [
+          450,
+          1524
+        ]
+      },
+      "recovery": true
+    },
+    {
+      "name": "RANK_UP_STAMINA_ACK",
+      "anchors": [
+        {
+          "region": [
+            182,
+            695,
+            722,
+            779
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/rank_up_stamina_ack/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            343,
+            856,
+            548,
+            935
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/rank_up_stamina_ack/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 40,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "expected": [
+          "RANK_UP_RESULTS",
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ],
+        "point": [
+          446,
+          896
+        ]
+      }
+    },
+    {
+      "name": "STAMINA_PROMPT",
+      "anchors": [
+        {
+          "region": [
+            121,
+            510,
+            778,
+            586
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/stamina_prompt/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            114,
+            630,
+            795,
+            899
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/stamina_prompt/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            200,
+            982,
+            399,
+            1054
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/stamina_prompt/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 50,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_stamina",
+        "kind": "tap",
+        "point": [
+          300,
+          1017
+        ],
+        "point_anchor": 2,
+        "expected": [
+          "READY_TO_RETRY",
+          "READY_TO_START"
+        ]
+      }
+    },
+    {
+      "name": "TRIAL_COINS_NEXT",
+      "anchors": [
+        {
+          "region": [
+            30,
+            33,
+            525,
+            102
+          ],
+          "template": "assets/patterns/universal_results/header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            72,
+            289,
+            829,
+            337
+          ],
+          "template": "assets/patterns/universal_results/rare_map_header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            174,
+            668,
+            729,
+            724
+          ],
+          "template": "assets/patterns/universal_results/coins_header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            310,
+            1195,
+            623,
+            1248
+          ],
+          "template": "assets/patterns/universal_results/final_header.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            324,
+            1486,
+            591,
+            1567
+          ],
+          "template": "assets/patterns/universal_results/next.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 5,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "next",
+        "kind": "tap",
+        "point": [
+          457,
+          1526
+        ],
+        "point_anchor": 4,
+        "expected": [
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ]
+      }
+    }
+  ]
+}
