@@ -1,0 +1,158 @@
+{
+  "boss": {
+    "region": [
+      119,
+      108,
+      236,
+      153
+    ],
+    "template": "assets/patterns/ninja_road/boss_swap/boss.png"
+  },
+  "auto_on": {
+    "region": [
+      549,
+      29,
+      700,
+      81
+    ],
+    "template": "assets/patterns/ninja_road/nr_combat/0.png"
+  },
+  "auto_off": {
+    "region": [
+      549,
+      29,
+      700,
+      81
+    ],
+    "template": "assets/patterns/ninja_road/nr_combat_auto_off/0.png"
+  },
+  "early_exit_map": {
+    "region": [
+      278,
+      8,
+      345,
+      46
+    ],
+    "template": "assets/patterns/ninja_road/boss_swap/map_11.png"
+  },
+  "map_region": [
+    275,
+    8,
+    348,
+    46
+  ],
+  "gold_min": [
+    15,
+    80,
+    200
+  ],
+  "gold_max": [
+    35,
+    255,
+    255
+  ],
+  "active_min_pixels": 200,
+  "active_regions": [
+    [
+      105,
+      1294,
+      285,
+      1317
+    ],
+    [
+      400,
+      1294,
+      580,
+      1317
+    ],
+    [
+      695,
+      1294,
+      875,
+      1317
+    ]
+  ],
+  "portraits": [
+    [
+      132,
+      1384,
+      217,
+      1461
+    ],
+    [
+      427,
+      1384,
+      512,
+      1461
+    ],
+    [
+      722,
+      1384,
+      807,
+      1461
+    ]
+  ],
+  "swipes": [
+    {
+      "id": "nr_boss_swap",
+      "kind": "swipe",
+      "start": [
+        180,
+        1418
+      ],
+      "end": [
+        68,
+        1490
+      ],
+      "duration": 350
+    },
+    {
+      "id": "nr_boss_swap",
+      "kind": "swipe",
+      "start": [
+        475,
+        1418
+      ],
+      "end": [
+        363,
+        1490
+      ],
+      "duration": 350
+    },
+    {
+      "id": "nr_boss_swap",
+      "kind": "swipe",
+      "start": [
+        770,
+        1418
+      ],
+      "end": [
+        658,
+        1490
+      ],
+      "duration": 350
+    }
+  ],
+  "ready_map_5": {
+    "region": [
+      278,
+      8,
+      345,
+      46
+    ],
+    "template": "assets/patterns/ninja_road/boss_swap/ready_map_5.png"
+  },
+  "ready_map_10": {
+    "region": [
+      278,
+      8,
+      345,
+      46
+    ],
+    "template": "assets/patterns/ninja_road/boss_swap/ready_map_10.png"
+  },
+  "boss_ready_maps": [
+    "ready_map_5",
+    "ready_map_10"
+  ]
+}

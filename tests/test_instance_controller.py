@@ -219,6 +219,20 @@ class InstanceControllerTests(unittest.TestCase):
         self.assertEqual(farm.read_json(engine.progress)["instance"]["key"], self.second.key)
         self.assertEqual(farm.read_json(self.runtime / "universal.json")["stamina_until"], 5000)
 
+    def test_stage_switch_checks_pending_input_in_its_own_device_namespace(self):
+        own = farm.load_stage('ninja_road', self.first)['progress']
+        other = farm.load_stage('ninja_road', self.second)['progress']
+        legacy = self.runtime / 'ninja_road.json'
+        for path in (other, legacy):
+            farm.write_json(path, {'stage': 'ninja_road', 'pending': {'id': 'nr_start'}})
+        farm.verify_saved_input(self.first, 'universal')
+        farm.write_json(own, {'stage': 'ninja_road', 'pending': {'id': 'nr_start'}})
+        before = own.read_bytes()
+        with self.assertRaisesRegex(RuntimeError, 'existing saved input'):
+            farm.verify_saved_input(self.first, 'universal')
+        farm.verify_saved_input(self.first, 'ninja_road')
+        self.assertEqual(own.read_bytes(), before)
+
     def test_device_commands_and_reconnect_stay_frozen_after_selection_changes(self):
         device = farm.Device(self.first)
         farm.write_json(self.runtime / "instance_selection.json", self.second.to_dict())

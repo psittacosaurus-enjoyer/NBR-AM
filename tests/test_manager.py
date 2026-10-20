@@ -50,7 +50,8 @@ class BackendTests(unittest.TestCase):
 
     def test_stage_catalog_matches_existing_controller(self):
         self.assertEqual(self.backend.stages(), [
-            {"id": "universal", "name": "Universal — current mission"}])
+            {"id": "universal", "name": "Universal — current mission"},
+            {"id": "ninja_road", "name": "Ninja Road"}])
 
     def test_start_and_account_stop_use_existing_cli_only(self):
         result = subprocess.CompletedProcess([], 0, "Success\n", "")

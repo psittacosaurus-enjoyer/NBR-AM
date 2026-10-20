@@ -1,0 +1,43 @@
+{
+  "region": [
+    245,
+    8,
+    348,
+    46
+  ],
+  "correlation": 0.96,
+  "difference": 12,
+  "references": {
+    "2": [
+      "assets/patterns/ninja_road/maps/2.png"
+    ],
+    "3": [
+      "assets/patterns/ninja_road/maps/3.png"
+    ],
+    "4": [
+      "assets/patterns/ninja_road/maps/4.png"
+    ],
+    "5": [
+      "assets/patterns/ninja_road/maps/5.png"
+    ],
+    "6": [
+      "assets/patterns/ninja_road/maps/6.png"
+    ],
+    "7": [
+      "assets/patterns/ninja_road/maps/7.png"
+    ],
+    "8": [
+      "assets/patterns/ninja_road/maps/8.png"
+    ],
+    "9": [
+      "assets/patterns/ninja_road/maps/9.png"
+    ],
+    "10": [
+      "assets/patterns/ninja_road/maps/10.png"
+    ],
+    "11": [
+      "assets/patterns/ninja_road/maps/11.png",
+      "assets/patterns/ninja_road/maps/11_after_boss_ready.png"
+    ]
+  }
+}

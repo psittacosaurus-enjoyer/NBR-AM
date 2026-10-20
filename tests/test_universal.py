@@ -187,6 +187,7 @@ class UniversalTests(unittest.TestCase):
                 (self.runtime / 'session.json').unlink(missing_ok=True)
                 engine = self.engine(self.frame('rich-b', 'ready_to_start', unfamiliar))
                 collector = Mock()
+                collector.completed.side_effect = lambda run_id, **kwargs: 'job_' + run_id
                 engine.loot_collector = collector
                 engine.tick()
                 engine.tick()
@@ -221,7 +222,8 @@ class UniversalTests(unittest.TestCase):
                 self.assertEqual(len(set(run_ids)), 2)
                 self.assertEqual([c.args[0] for c in collector.completed.call_args_list], run_ids)
                 self.assertEqual([c.args[0] for c in collector.evidence.call_args_list], run_ids)
-                self.assertTrue(all(call.kwargs == {} for call in collector.evidence.call_args_list))
+                self.assertEqual([call.kwargs for call in collector.evidence.call_args_list],
+                                 [{'completion_id': 'job_' + run_id} for run_id in run_ids])
                 self.assertEqual(engine.device.commands, [])
 
     def test_stamina_no_latch_persists_and_wait_ends_at_deadline(self):

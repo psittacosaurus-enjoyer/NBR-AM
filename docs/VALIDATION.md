@@ -1,6 +1,21 @@
 # Validation scope
 
-This document consolidates previous manager, controller, second-stage, library and recognition reports. Historical observations below were recorded on October 11–12, 2026; they were not repeated during repository restructuring.
+This document retains earlier manager, controller, stage, library and recognition evidence. Each dated section describes its own scope; historical live observations were not repeated during the 1.25 repository cleanup.
+
+## Version 1.25 cleanup (October 17, 2026)
+
+The application and automation source have been reorganized into named packages, with compatibility modules and root launchers preserving existing entry points. Runtime state, logs, pending evidence, the local library, account mappings and active farming processes remain in place. Recognition catalogs and reusable regression tests are retained. See the [cleanup report](CLEANUP-1.25.md) for the complete move/retention inventory and rollback reference.
+
+Static resource inspection confirmed all **266** pattern template/alternative references resolve, covering **137** unique files. Syntax checks passed for 44 source/entry-point files, and dependency/resource roots resolve. Canonical and legacy module aliases, PowerShell syntax, CMD paths and root CLI help from another working directory were checked. Runtime/environment paths are ignored and no disposable outputs are tracked.
+
+| Offline verification | Tests | Result | Seconds |
+| --- | ---: | --- | ---: |
+| Controller/GUI discovery suite | 395 | Passed | 160.633 |
+| Game library discovery suite | 63 | Passed | 6.569 |
+| Focused structure/entry-point suite | 7 | Passed | 4.543 |
+| Recognition discovery suite | 94 | Passed | 22.047 |
+
+Six of the seven structure tests are also included in the 395-test discovery run; the seventh was added after correcting the legacy GUI shim's exit status. Together these runs cover 553 distinct tests, with no failures or skips. Offscreen GUI tests use fake controller operations. Runtime settings, state and lock file hashes matched before and after the final suites. No live farming, GUI Start/Stop/Restart operation, ADB input or BlueStacks modification is part of this validation.
 
 ## Historical evidence
 
@@ -14,6 +29,62 @@ This document consolidates previous manager, controller, second-stage, library a
 The inspected reference snapshot had 185 eligible items (229 images) and 283 characters (306 card/portrait images), 535 decoded references with no errors. Loading references does not validate all identities. Calibrated aliases require reviewed evidence or explicit compatible game identifiers; five-star Sakura card 380 remains separate from four-star card 379.
 
 ## Current verification
+
+### Interrupted screenshot capture (October 20, 2026)
+
+The acc1 worker stopped after sending `reveal_rewards` and before observing `READY_TO_RETRY`. Its next session observed Start Mission, leaving one registered completion awaiting a screenshot that was no longer available. Capture attempts were zero; no PNG or recoverable reward screenshot existed for that job. This was an interrupted capture, not a disk write failure.
+
+The controller was stopped, and the original completion was explicitly resolved through `resolve-missing-evidence` after its device and two fresh Start Mission observations were verified. Its receipt and SQLite history retain `missing_screenshot` with an empty recognition result. Counters remained 894 starts, 885 completions and zero failures, and the pending backlog cleared. Original progress, pending metadata and process/health records were backed up under `runtime/recovery/screenshot-persistence-20261020-163756/`.
+
+Worker shutdown now provides a bounded read-only capture window for a matching registered Universal completion. Two fresh fully revealed results observations and fresh device/foreground checks are required; no game inputs are sent. Failed or unavailable captures preserve the original transaction and input latch. Returning to Start Mission with unsaved evidence now gives explicit recovery instructions, and explicit resolution removes the stale progress health snapshot. Forced process termination or leaving results before capture can still make reward evidence unavailable; those completions remain visible without fabricated reward credits.
+
+The final controller/Manager discovery run executed 528 tests: 527 passed and one canonical-import subprocess exceeded its 30-second timeout. All seven structure/import tests passed immediately when rerun alone in 3.10 seconds; the formerly timed-out test completed in 0.69 seconds. The shutdown regressions cover reveal/unknown/revealed transitions, placeholder waits, shared deadlines, identity and foreground mismatches, unavailable collectors, capture and acknowledgement failures, stale health rollback, preserved Stop/input/counters, and callback order before collector close. A separate earlier recording/recovery run passed 67 tests. `git diff --check` reported no whitespace errors.
+
+The existing acc1 supervisor was resumed with the updated worker. It passed Start Mission into battle, advancing starts to 895 with completions still 885 and failures zero. Collector health and disk backlog both showed zero capture-pending jobs. The game reported Auto off, so a fresh live reward screenshot and the new shutdown capture were not verified live; the worker remains paused in battle pending Auto being enabled.
+
+### Missing reward evidence recovery (October 17, 2026)
+
+The live acc1 controller was running at Start Mission but blocked by a completed transaction still awaiting its reward screenshot. Earlier logs recorded OpenCV memory/decode errors and an ADB interruption; the old results were no longer visible. Explicit `resolve-missing-evidence --reason` now preserves that completion as `missing_screenshot` with zero reward credits, after stopped-controller, target identity, pending-input, fresh Start Mission and durable acknowledgement checks. Archived latches from unrelated stages remain untouched.
+
+Offline validation passed 79 collector/recording/control tests, 15 focused controller recovery tests and 13 offscreen loot GUI tests. The focused durability tests cover write failure, orphan screenshots, identity conflicts, replay, SQLite outage and separation of missing-evidence acknowledgements from screenshot acknowledgements. Independent review found no actionable issues in the new recovery paths.
+
+One fresh production-supervisor run of **Getting Rich Quick [B]** then passed Start Mission, battle, completion, results, reward reveal and saved screenshot accounting. Auto was observed off and explicitly enabled once; a later live capture and controller state verified it on. Counters advanced from 832 starts / 824 completions to 833 / 825, with no failures. The new completion was `recognized` with nine acquired icons, while the interrupted completion remained `missing_screenshot` with an empty result. Local evidence is retained under `runtime/validation/live-recovery-20261017/`, including the saved rewards and `verified-completion.json`. The independent supervisor and worker remained running in their normal natural-stamina wait. This is one verified live cycle, not an unattended soak test.
+
+### Version 1.24 (October 16, 2026)
+
+**NBR-AM v1.24 — Loot Recording Reliability Update** preserves the Universal farming engine, stage catalogs, account/device isolation and independent controller. Release fixes address the supplied descriptions of audit findings **F01–F05 and F11**:
+
+- **F01:** verified completion state and original timestamp are persisted before registration or results input. Registration returns a durable job acknowledgement and retries under the same identity; unsuccessful persistence pauses progression.
+- **F02:** screenshot writes use a temporary PNG, flush/fsync, decode/checksum verification and atomic replacement. Automatic Retry waits for saved evidence and its persisted farmer acknowledgement. Bounded capture failures show operator attention while safe retries continue.
+- **F03:** the disk outbox survives SQLite outages and processing limits. Memory capacity no longer discards excess work; transient failures retry with bounded exponential backoff without a terminal attempt count.
+- **F04:** collector initialization retries within the existing worker, including during device recovery. Health and pending failures are visible without opening Recognition details.
+- **F05:** account/device/stage/run identities and durable receipts recover outstanding transactions across process restarts without duplicate item credits. Matching legacy pending jobs can be adopted from persisted progress; unrelated results cannot register historical completions.
+- **F11:** temporary screenshot/reference/supplement access and recognition infrastructure failures retain evidence for retry. Partially loaded references caused by temporary access errors are not installed. Retained operator-attention jobs can be retried under their original accounting ID. Matching thresholds and reference coverage are unchanged.
+
+Final validation used isolated temporary databases/runtime directories, saved-screen fixtures, fake devices, mocked controller operations and offscreen Qt. Suites ran sequentially:
+
+| Final command (using `.venv/Scripts/python.exe -B -m unittest`) | Tests | Result | Seconds |
+| --- | ---: | --- | ---: |
+| `discover -s tests -p 'test_*.py' -q` | 329 | Passed | 144.296 |
+| `discover -s tests/game_library -p 'test_*.py' -q` | 63 | Passed | 6.846 |
+| `discover -s tests/item_recognition -p 'test_*.py' -q` | 94 | Passed | 23.413 |
+
+**486 tests passed; no failures or skips.** `PYTHONPATH` included `src` (and `tests` for focused module runs); `QT_QPA_PLATFORM=offscreen` was used for the controller/manager suite. The available optional local-library integration ran successfully using read-only library inputs. Source syntax and `git diff --check` also passed. Earlier focused runs and the initial 323-test full run passed; the final 329-test run includes the last legacy migration and recognition-classification regressions.
+
+New regression files:
+
+- `tests/test_recording_recovery.py` (18): registration/capture retries and backoff, repeated failure pause/recovery, persisted timestamps, transaction-write failures, Stop, collector startup recovery, identity mismatch rejection, session verification recovery, legacy job adoption and the CLI step recording gate.
+- `tests/test_loot_durability.py` (12): atomic/partial/corrupt PNG recovery, durable IDs/receipts, SQLite outages beyond the old retry limit, disk backlog beyond memory capacity, restart before capture, storage refusal without eviction, retained-job reprocessing, and real recognizer error classification.
+- `tests/test_recording_dashboard.py` (5): passive backlog visibility without SQLite, deduplicated counts, account/device isolation and malformed metadata handling.
+- `tests/test_recording_integration.py` (1): real Engine/Collector restart with fake device/recognizer, original completion identity/session/time, Retry while recognition is blocked, and exactly one reward credit.
+
+Existing tests changed in `tests/test_loot_tracking.py`, `tests/test_loot_gui.py` and `tests/test_universal.py`: terminal loss/overflow expectations now assert recoverability, farmer hooks require durable acknowledgements, and compact health visibility remains compatible with both appearances.
+
+Application file manifest: `src/farm.py`, `src/loot_tracking.py`, `src/item_recognition/recognizer.py`, `src/manager_backend.py`, `src/manager_gui.py`, `src/manager_loot.py`, and `src/manager_theme.py`. Documentation updated after implementation and final testing: `README.md`, `docs/MANAGER.md`, and this release/validation history. The seven test files listed above complete the changed/added file manifest. No mission catalogs or combat/navigation rules changed.
+
+Compatibility: the existing SQLite tables/history remain intact; new job metadata and recording states are additive, with legacy spool replay supported. Existing running processes keep their loaded code until a later user-controlled start. Storage limits preserve pending evidence and pause new recording rather than deleting it; see [pipeline, retention and troubleshooting](MANAGER.md#recording-pipeline-and-recovery).
+
+Limits: these tests establish offline behavior, not fresh live-device reliability. No BlueStacks inputs, live Start/Stop/Restart commands, or reset of the existing acc1 session were performed. No physical disk/power-loss or native window interaction testing was performed. A later explicitly authorized controlled run should verify capture-failure visibility, restart recovery and normal mission/stamina/Stop behavior on the intended device. Audit report files were not available; findings beyond the supplied F01–F05/F11 scope were not evaluated or claimed resolved. Broader recognition coverage and the historical live-testing limits below remain unchanged.
 
 ### Version 1.23 (October 15, 2026)
 

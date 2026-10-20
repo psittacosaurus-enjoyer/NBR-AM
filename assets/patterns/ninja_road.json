@@ -1,0 +1,1266 @@
+{
+  "version": 1,
+  "states": [
+    {
+      "name": "NR_HOME",
+      "anchors": [
+        {
+          "region": [
+            765,
+            1074,
+            854,
+            1104
+          ],
+          "template": "assets/patterns/ninja_road/home_available_label.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            158,
+            1566,
+            284,
+            1595
+          ],
+          "template": "assets/patterns/ninja_road/home_navigation_label.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "home",
+      "action": {
+        "id": "nr_available",
+        "kind": "tap",
+        "point": [
+          806,
+          1079
+        ],
+        "expected": [
+          "NR_AVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": "NR_AVAILABLE",
+      "anchors": [
+        {
+          "region": [
+            175,
+            1292,
+            703,
+            1395
+          ],
+          "template": "assets/patterns/ninja_road/nr_available/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            158,
+            1566,
+            284,
+            1595
+          ],
+          "template": "assets/patterns/ninja_road/home_navigation_label.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "entry",
+      "action": {
+        "id": "nr_select",
+        "kind": "tap",
+        "point": [
+          436,
+          1303
+        ],
+        "expected": [
+          "NR_ENTRY"
+        ]
+      },
+      "priority": 1
+    },
+    {
+      "name": "NR_ENTRY",
+      "anchors": [
+        {
+          "region": [
+            173,
+            239,
+            525,
+            309
+          ],
+          "template": "assets/patterns/ninja_road/nr_entry/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            278,
+            1204,
+            640,
+            1282
+          ],
+          "template": "assets/patterns/ninja_road/nr_entry/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "entry",
+      "action": {
+        "id": "nr_enter",
+        "kind": "tap",
+        "point": [
+          451,
+          1277
+        ],
+        "expected": [
+          "NR_START"
+        ]
+      }
+    },
+    {
+      "name": "NR_START",
+      "anchors": [
+        {
+          "region": [
+            269,
+            1196,
+            622,
+            1242
+          ],
+          "template": "assets/patterns/ninja_road/nr_start/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            309,
+            1343,
+            600,
+            1366
+          ],
+          "template": "assets/patterns/ninja_road/nr_start/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "start",
+      "attempt_start": true,
+      "on_confirm": {
+        "begin_attempt": true
+      },
+      "action": {
+        "id": "nr_start",
+        "kind": "tap",
+        "point": [
+          444,
+          1257
+        ],
+        "expected": [
+          "NR_TEAM_SELECT",
+          "STAMINA_PROMPT"
+        ]
+      },
+      "require_team_slots": true,
+      "team_slots": [
+        {
+          "index": 1,
+          "anchors": [
+            {
+              "region": [
+                72,
+                386,
+                328,
+                440
+              ],
+              "template": "assets/patterns/ninja_road/team_slots/1.png",
+              "correlation": 0.96,
+              "difference": 12
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "anchors": [
+            {
+              "region": [
+                72,
+                622,
+                328,
+                674
+              ],
+              "template": "assets/patterns/ninja_road/team_slots/2.png",
+              "correlation": 0.96,
+              "difference": 12
+            }
+          ]
+        },
+        {
+          "index": 3,
+          "anchors": [
+            {
+              "region": [
+                72,
+                854,
+                328,
+                906
+              ],
+              "template": "assets/patterns/ninja_road/team_slots/3.png",
+              "correlation": 0.96,
+              "difference": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "NR_COMBAT_AUTO_OFF",
+      "anchors": [
+        {
+          "region": [
+            549,
+            29,
+            700,
+            81
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat_auto_off/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            725,
+            31,
+            866,
+            82
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat_auto_off/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "combat",
+      "auto_enabled": false,
+      "enable_setting": "auto",
+      "action": {
+        "id": "nr_auto",
+        "kind": "tap",
+        "point": [
+          623,
+          56
+        ],
+        "expected": [
+          "NR_COMBAT",
+          "NR_COMBAT_NINJUTSU_OFF"
+        ]
+      }
+    },
+    {
+      "name": "NR_COMBAT",
+      "anchors": [
+        {
+          "region": [
+            549,
+            29,
+            700,
+            81
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            48,
+            1382,
+            281,
+            1438
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "combat",
+      "auto_enabled": true,
+      "ninjutsu_enabled": true,
+      "adopt_team": 1,
+      "priority": 1
+    },
+    {
+      "name": "NR_TEAM_SELECT",
+      "anchors": [
+        {
+          "region": [
+            288,
+            1546,
+            615,
+            1578
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            454,
+            1170,
+            509,
+            1248
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            558,
+            1190,
+            625,
+            1224
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select/enabled_glyph.png",
+          "correlation": 0.95,
+          "difference": 22
+        }
+      ],
+      "verified_safe": true,
+      "phase": "team_select",
+      "priority": 3,
+      "action": {
+        "id": "nr_team",
+        "kind": "tap",
+        "point": [
+          655,
+          1208
+        ],
+        "expected": [
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_COMBAT_NINJUTSU_OFF"
+        ]
+      },
+      "notes": "Eight live enabled glyph samples: correlation 0.9566..1.0000, difference 0.51..20.35. Disabled glyph: 0.9492 / 60.34."
+    },
+    {
+      "name": "NR_TEAM_SELECT",
+      "anchors": [
+        {
+          "region": [
+            288,
+            1546,
+            615,
+            1578
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            454,
+            1170,
+            509,
+            1248
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            558,
+            1190,
+            625,
+            1224
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select/enabled_pulse_glyph.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "team_select",
+      "priority": 3,
+      "action": {
+        "id": "nr_team",
+        "kind": "tap",
+        "point": [
+          655,
+          1208
+        ],
+        "expected": [
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_COMBAT_NINJUTSU_OFF"
+        ]
+      },
+      "notes": "Observed enabled Ready glow phase: all 13 saved Map 5 stall observations and independent Map 9/10 Ready frames match this glyph. Disabled Ready shares the outline but differs by MAE 68.02, above the unchanged 12 guard. Other positive layout guards and action are identical."
+    },
+    {
+      "name": "NR_TEAM_SELECT",
+      "anchors": [
+        {
+          "region": [
+            288,
+            1546,
+            615,
+            1578
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select_initial/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            243,
+            1170,
+            299,
+            1248
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_select_initial/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "team_select",
+      "team_index": 1,
+      "priority": 3,
+      "action": {
+        "id": "nr_team",
+        "kind": "tap",
+        "point": [
+          448,
+          1207
+        ],
+        "expected": [
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_COMBAT_NINJUTSU_OFF"
+        ]
+      }
+    },
+    {
+      "name": "NR_TEAM_DEFEATED",
+      "anchors": [
+        {
+          "region": [
+            690,
+            1268,
+            707,
+            1290
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_defeated/0.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            650,
+            1268,
+            735,
+            1290
+          ]
+        },
+        {
+          "region": [
+            288,
+            1546,
+            615,
+            1578
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_defeated/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            558,
+            1190,
+            625,
+            1224
+          ],
+          "template": "assets/patterns/ninja_road/nr_team_defeated/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "team_defeated",
+      "team_defeated": true,
+      "priority": 5,
+      "team_choices": [
+        {
+          "index": 2,
+          "action": {
+            "id": "nr_team",
+            "kind": "tap",
+            "point": [
+              878,
+              1286
+            ],
+            "expected": [
+              "NR_TEAM_SELECT"
+            ]
+          }
+        },
+        {
+          "index": 3,
+          "action": {
+            "id": "nr_team",
+            "kind": "tap",
+            "point": [
+              878,
+              1286
+            ],
+            "expected": [
+              "NR_TEAM_SELECT"
+            ]
+          }
+        }
+      ],
+      "action": {
+        "id": "nr_team",
+        "kind": "tap",
+        "point": [
+          878,
+          1286
+        ],
+        "expected": [
+          "NR_TEAM_SELECT"
+        ]
+      },
+      "rejects_pending": {
+        "id": "nr_team",
+        "source": "NR_TEAM_SELECT"
+      }
+    },
+    {
+      "name": "NR_COMBAT_NINJUTSU_OFF",
+      "phase": "combat",
+      "auto_enabled": true,
+      "ninjutsu_enabled": false,
+      "enable_setting": "ninjutsu",
+      "verified_safe": true,
+      "priority": 2,
+      "anchors": [
+        {
+          "region": [
+            549,
+            29,
+            700,
+            81
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat_ninjutsu_off/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            48,
+            1382,
+            281,
+            1438
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat_ninjutsu_off/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            60,
+            1397,
+            92,
+            1429
+          ],
+          "template": "assets/patterns/ninja_road/nr_combat_ninjutsu_off/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "action": {
+        "id": "nr_ninjutsu",
+        "kind": "tap",
+        "point": [
+          159,
+          1415
+        ],
+        "expected": [
+          "NR_COMBAT"
+        ]
+      }
+    },
+    {
+      "name": "NR_ALL_DEFEATED",
+      "anchors": [
+        {
+          "region": [
+            261,
+            450,
+            646,
+            487
+          ],
+          "template": "assets/patterns/ninja_road/nr_all_defeated/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            216,
+            590,
+            690,
+            673
+          ],
+          "template": "assets/patterns/ninja_road/nr_all_defeated/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            418,
+            785,
+            474,
+            819
+          ],
+          "template": "assets/patterns/ninja_road/nr_all_defeated/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "all_defeated",
+      "priority": 10,
+      "action": {
+        "id": "nr_finish",
+        "kind": "tap",
+        "point": [
+          446,
+          806
+        ],
+        "expected": [
+          "NR_RESULTS",
+          "NR_RETURN",
+          "NR_ENTRY",
+          "NR_COMPLETE"
+        ]
+      }
+    },
+    {
+      "name": "NR_RETURN",
+      "anchors": [
+        {
+          "region": [
+            285,
+            290,
+            621,
+            335
+          ],
+          "template": "assets/patterns/ninja_road/nr_return/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            169,
+            393,
+            732,
+            428
+          ],
+          "template": "assets/patterns/ninja_road/nr_return/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            416,
+            1504,
+            498,
+            1538
+          ],
+          "template": "assets/patterns/ninja_road/nr_return/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "results",
+      "priority": 11,
+      "action": {
+        "id": "nr_return",
+        "kind": "tap",
+        "point": [
+          454,
+          1524
+        ],
+        "expected": [
+          "NR_ENTRY",
+          "NR_HOME",
+          "NR_AVAILABLE",
+          "NR_START",
+          "NR_RESULTS"
+        ]
+      }
+    },
+    {
+      "name": "NR_RESULTS",
+      "anchors": [
+        {
+          "region": [
+            81,
+            289,
+            816,
+            333
+          ],
+          "template": "assets/patterns/ninja_road/nr_results/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            332,
+            1202,
+            581,
+            1235
+          ],
+          "template": "assets/patterns/ninja_road/nr_results/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            416,
+            1504,
+            498,
+            1538
+          ],
+          "template": "assets/patterns/ninja_road/nr_results/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "results",
+      "priority": 12,
+      "action": {
+        "id": "nr_next",
+        "kind": "tap",
+        "point": [
+          454,
+          1524
+        ],
+        "expected": [
+          "NR_ENTRY",
+          "NR_HOME",
+          "NR_AVAILABLE",
+          "NR_START"
+        ]
+      }
+    },
+    {
+      "name": "NR_RESULTS",
+      "anchors": [
+        {
+          "region": [
+            34,
+            33,
+            530,
+            96
+          ],
+          "template": "assets/patterns/ninja_road/nr_results_summary/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            334,
+            186,
+            579,
+            231
+          ],
+          "template": "assets/patterns/ninja_road/nr_results_summary/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            416,
+            1504,
+            498,
+            1538
+          ],
+          "template": "assets/patterns/ninja_road/nr_results_summary/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "results",
+      "priority": 10,
+      "action": {
+        "id": "nr_next",
+        "kind": "tap",
+        "point": [
+          454,
+          1524
+        ],
+        "expected": [
+          "NR_RETURN",
+          "NR_ENTRY",
+          "NR_START"
+        ]
+      }
+    },
+    {
+      "name": "STAMINA_PROMPT",
+      "anchors": [
+        {
+          "region": [
+            121,
+            510,
+            778,
+            586
+          ],
+          "template": "assets/patterns/rich_b/stamina_prompt/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            114,
+            630,
+            795,
+            899
+          ],
+          "template": "assets/patterns/rich_b/stamina_prompt/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            200,
+            982,
+            399,
+            1054
+          ],
+          "template": "assets/patterns/rich_b/stamina_prompt/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 50,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_stamina",
+        "kind": "tap",
+        "point": [
+          300,
+          1017
+        ],
+        "point_anchor": 2,
+        "expected": [
+          "NR_START"
+        ]
+      },
+      "phase": "stamina"
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60
+        },
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "NR_RESULTS",
+          "NR_RETURN"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      },
+      "phase": "complete"
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/rich_b/mission_complete/00_0.png",
+            "assets/patterns/rich_b/mission_complete/05_0.png",
+            "assets/patterns/rich_b/mission_complete/06_0.png",
+            "assets/patterns/rich_b/mission_complete/15_0.png"
+          ]
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/rich_b/mission_complete/00_1.png",
+            "assets/patterns/rich_b/mission_complete/05_1.png",
+            "assets/patterns/rich_b/mission_complete/06_1.png",
+            "assets/patterns/rich_b/mission_complete/15_1.png"
+          ]
+        },
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "NR_RESULTS",
+          "NR_RETURN"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      },
+      "phase": "complete"
+    },
+    {
+      "name": "MISSION_COMPLETE",
+      "anchors": [
+        {
+          "region": [
+            125,
+            530,
+            551,
+            626
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/mission_complete/0.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_04_0.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_00_0.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_03_0.png"
+          ]
+        },
+        {
+          "region": [
+            330,
+            722,
+            739,
+            787
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/mission_complete/1.png",
+          "correlation": 0.97,
+          "difference": 60,
+          "alternatives": [
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_04_1.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_00_1.png",
+            "assets/patterns/night_of_tragedy_a/mission_complete/variant_03_1.png"
+          ]
+        },
+        {
+          "region": [
+            593,
+            42,
+            683,
+            69
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/in_battle/0.png",
+          "correlation": 0.96,
+          "difference": 16
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/night_of_tragedy_a/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 10,
+      "verified_safe": true,
+      "action": {
+        "id": "advance_completion",
+        "kind": "tap",
+        "expected": [
+          "NR_RESULTS",
+          "NR_RETURN"
+        ],
+        "point": [
+          450,
+          800
+        ]
+      },
+      "phase": "complete"
+    },
+    {
+      "name": "COMMUNICATION_ERROR",
+      "anchors": [
+        {
+          "region": [
+            121,
+            614,
+            777,
+            671
+          ],
+          "template": "assets/patterns/communication_error/0.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        },
+        {
+          "region": [
+            151,
+            731,
+            750,
+            853
+          ],
+          "template": "assets/patterns/communication_error/1.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        },
+        {
+          "region": [
+            374,
+            906,
+            523,
+            946
+          ],
+          "template": "assets/patterns/communication_error/2.png",
+          "correlation": 0.96,
+          "difference": 12,
+          "search_region": [
+            80,
+            440,
+            820,
+            1140
+          ]
+        }
+      ],
+      "priority": 30,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "retry_connection",
+        "kind": "tap",
+        "expected": [
+          "NR_START",
+          "NR_TEAM_SELECT",
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_COMBAT_NINJUTSU_OFF",
+          "NR_ENTRY",
+          "NR_HOME"
+        ],
+        "point": [
+          448,
+          925
+        ],
+        "point_anchor": 2
+      },
+      "phase": "connection_error"
+    },
+    {
+      "name": "NR_RETREAT_CONFIRM",
+      "anchors": [
+        {
+          "region": [
+            360,
+            425,
+            544,
+            466
+          ],
+          "template": "assets/patterns/ninja_road/nr_retreat_confirm/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            86,
+            532,
+            814,
+            619
+          ],
+          "template": "assets/patterns/ninja_road/nr_retreat_confirm/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            588,
+            765,
+            677,
+            803
+          ],
+          "template": "assets/patterns/ninja_road/nr_retreat_confirm/2.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "early_exit",
+      "priority": 20,
+      "on_confirm": {
+        "early_exit_completed": true
+      },
+      "action": {
+        "id": "nr_retreat_confirm",
+        "kind": "tap",
+        "point": [
+          637,
+          785
+        ],
+        "expected": [
+          "NR_RESULTS",
+          "NR_RETURN",
+          "NR_ENTRY"
+        ]
+      }
+    },
+    {
+      "name": "NR_CHARACTER_INFO",
+      "anchors": [
+        {
+          "region": [
+            779,
+            191,
+            850,
+            262
+          ],
+          "template": "assets/patterns/ninja_road/nr_character_info/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            243,
+            509,
+            432,
+            558
+          ],
+          "template": "assets/patterns/ninja_road/nr_character_info/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "character_info",
+      "priority": 40,
+      "action": {
+        "id": "nr_close_info",
+        "kind": "tap",
+        "point": [
+          814,
+          226
+        ],
+        "expected": [
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_TEAM_SELECT"
+        ]
+      }
+    }
+  ]
+}

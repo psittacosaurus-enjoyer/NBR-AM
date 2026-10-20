@@ -88,6 +88,14 @@ class LootTrackingTests(unittest.TestCase):
     def dashboard(self, collector):
         return loot.LootStore(self.root).dashboard(collector.session_id)
 
+    def wait_for(self, predicate, timeout=4):
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if predicate():
+                return True
+            time.sleep(.02)
+        return False
+
     def test_identical_images_in_distinct_runs_have_unique_durable_ids(self):
         collector, fake = self.collector()
         first = self.observe(collector, 1)
@@ -150,7 +158,7 @@ class LootTrackingTests(unittest.TestCase):
         wal.write_bytes(b'new image variant')
         self.assertNotEqual(database, loot._recognition_revision(self.root))
 
-    def test_failed_reference_refresh_is_recorded_and_next_run_retries(self):
+    def test_failed_reference_configuration_retains_evidence_for_explicit_retry(self):
         original, expanded = FakeRecognizer(), FakeRecognizer()
         with patch.object(loot, '_recognizer', side_effect=[original, ValueError('invalid revision'), expanded]):
             collector = loot.Collector(self.root, 'scrolls-a', 'fixture:refresh-retry')
@@ -159,15 +167,21 @@ class LootTrackingTests(unittest.TestCase):
             calibration = self.root / 'assets/item_recognition/calibration.json'
             calibration.parent.mkdir(parents=True)
             calibration.write_text('{}', encoding='utf-8')
-            self.observe(collector, 2)
+            failed_job = collector.completed(2)
+            self.assertTrue(collector.evidence(2, self.frame))
+            self.assertTrue(self.wait_for(lambda: collector.health()['attention_required'] == 1))
             self.assertIs(collector.recognizer, original)
             self.assertEqual(len(original.calls), 1)
-            self.observe(collector, 3)
+            collector.completed(3)
+            self.assertTrue(collector.evidence(3, self.frame))
+            self.assertTrue(self.wait_for(lambda: collector.recognizer is expanded))
+            self.assertTrue(collector.retry(failed_job))
+            self.assertTrue(collector.wait_idle(10))
             self.assertIs(collector.recognizer, expanded)
             data = self.dashboard(collector)
             self.assertEqual(data['completed_runs'], 3)
-            self.assertEqual(data['recognition_failures'], 1)
-            self.assertEqual(data['recognized_icons'], 2)
+            self.assertEqual(data['recognition_failures'], 0)
+            self.assertEqual(data['recognized_icons'], 3)
 
     def test_changed_inputs_during_refresh_never_replace_stable_snapshot(self):
         stable = FakeRecognizer()
@@ -183,12 +197,18 @@ class LootTrackingTests(unittest.TestCase):
         calibration.parent.mkdir(parents=True)
         calibration.write_text('{}', encoding='utf-8')
         with patch.object(loot, '_recognizer', side_effect=changing_factory):
-            self.observe(collector, 2)
+            failed_job = collector.completed(2)
+            self.assertTrue(collector.evidence(2, self.frame))
+            self.assertTrue(self.wait_for(lambda: collector.health()['recording_states'].get('retryable_failure')))
         self.assertIs(collector.recognizer, stable)
         self.assertEqual(len(stable.calls), 1)
         data = self.dashboard(collector)
-        self.assertEqual(data['recognition_failures'], 1)
+        self.assertEqual(data['outstanding_jobs'], 1)
         self.assertTrue(any('inputs changed' in warning for warning in data['runs'][0]['warnings']))
+        with patch.object(loot, '_recognizer', return_value=stable):
+            self.assertTrue(collector.retry(failed_job))
+            self.assertTrue(collector.wait_idle(10))
+        self.assertEqual(self.dashboard(collector)['recognized_icons'], 2)
 
     def test_duplicate_completion_evidence_and_collector_reopen_do_not_inflate(self):
         collector, fake = self.collector()
@@ -349,13 +369,18 @@ class LootTrackingTests(unittest.TestCase):
         fake = FakeRecognizer(error=RuntimeError("fixture recognition failure"))
         collector = loot.Collector(self.root, "rich-b", "fixture:error", recognizer_factory=lambda: fake)
         self.collectors.append(collector)
-        self.observe(collector)
+        collector.completed(1)
+        self.assertTrue(collector.evidence(1, self.frame))
+        self.assertTrue(self.wait_for(lambda: collector.health()['recording_states'].get('retryable_failure')))
         data = self.dashboard(collector)
         self.assertEqual(data["completed_runs"], 1)
-        self.assertEqual(data["failures"], 1)
+        self.assertEqual(data["outstanding_jobs"], 1)
         self.assertEqual(data["recognized_icons"], 0)
         self.assertTrue(Path(data["runs"][0]["screenshot_path"]).is_file())
         self.assertIn("fixture recognition failure", str(data["runs"][0]))
+        fake.error = None
+        self.assertTrue(collector.wait_idle(10))
+        self.assertEqual(self.dashboard(collector)['recognized_icons'], 1)
 
     def test_missing_evidence_is_recorded_and_does_not_invent_rewards(self):
         collector, fake = self.collector()
@@ -390,7 +415,7 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(data["runs"][0]["status"], "incomplete_results")
         self.assertTrue(Path(data["runs"][0]["screenshot_path"]).is_file())
 
-    def test_bounded_queue_does_not_block_completion_and_records_overflow(self):
+    def test_bounded_queue_does_not_block_completion_and_processes_disk_backlog(self):
         entered, release = threading.Event(), threading.Event()
         fake = FakeRecognizer(entered=entered, release=release)
         collector = loot.Collector(self.root, "scrolls-a", "fixture:slow", max_pending=1,
@@ -410,8 +435,8 @@ class LootTrackingTests(unittest.TestCase):
         self.assertTrue(collector.wait_idle(10))
         data = self.dashboard(collector)
         self.assertEqual(data["completed_runs"], 6)
-        self.assertGreater(data["failures"], 0)
-        self.assertLessEqual(len(fake.calls), 2)
+        self.assertEqual(data["failures"], 0)
+        self.assertEqual(len(fake.calls), 6)
 
     def test_persistence_failure_does_not_escape_farmer_calls(self):
         collector, _ = self.collector()
@@ -432,7 +457,7 @@ class LootTrackingTests(unittest.TestCase):
             self.assertEqual(len(list(spool.glob("*.json"))), 20)
             self.assertEqual(len(list(spool.glob("*.png"))), 20)
             queued = [json.loads(path.read_text('utf-8')) for path in spool.glob('*.json')]
-            self.assertLessEqual(sum(event['state'] == 'ready' for event in queued), collector.max_pending)
+            self.assertTrue(all(event.get('screenshot') for event in queued))
         self.assertTrue(collector.wait_idle(10))
         data = self.dashboard(collector)
         self.assertEqual(data["completed_runs"], 20)
@@ -492,7 +517,7 @@ class LootTrackingTests(unittest.TestCase):
         self.assertEqual(data["completed_runs"], 1)
         self.assertEqual(data["items"][0]["confirmed_acquired"], 1)
         self.assertIn(reopened.completed("restart-replay"), (None, completion_id))
-        self.assertFalse(reopened.evidence("restart-replay", self.frame))
+        self.assertTrue(reopened.evidence("restart-replay", self.frame))
         self.assertEqual(self.dashboard(reopened)["items"][0]["confirmed_acquired"], 1)
 
     def test_new_process_replays_saved_prior_session_evidence_into_prior_session_only(self):
@@ -605,14 +630,16 @@ class FarmerLootHookTests(unittest.TestCase):
         engine.mission_verified = True
         engine.detector = farm.Detector()
         engine.device = FakeDevice(cv2.imread(str(ROOT / 'tests/fixtures/item_recognition/bravery_lucky_unrevealed.png')))
-        engine.data = dict(screen='READY_TO_RETRY', pending=None, stamina_until=0,
-                           run=dict(id='fixture-lucky', start=time.time(), outcome='completed'),
-                           counts=dict(started=1, completed=1, failed=0))
+        engine.data = dict(screen='IN_BATTLE', pending=None, stamina_until=0,
+                           run=dict(id='fixture-lucky', start=time.time(), outcome=None),
+                           counts=dict(started=1, completed=0, failed=0))
         engine.save = Mock()
         engine.loot_collector = Mock()
+        engine.loot_collector.completed.return_value = 'fixture-lucky-completion'
         engine.loot_collector.evidence.return_value = True
         with patch.object(farm, 'event'), patch.object(farm.time, 'sleep'), \
              patch.object(farm, 'STOP', runtime / 'STOP'), patch.object(farm, 'RUNTIME', runtime):
+            engine.update(engine.device.image, 'MISSION_COMPLETE', {})
             self.assertEqual(engine.tick(), 1)
             self.assertEqual(engine.device.actions, [])
             engine.loot_collector.evidence.assert_not_called()
@@ -638,6 +665,8 @@ class FarmerLootHookTests(unittest.TestCase):
                                "counts": {"completed": 0, "failed": 0}}
                 engine.save = Mock()
                 engine.loot_collector = Mock()
+                engine.loot_collector.completed.return_value = 'fixture-completion-id'
+                engine.loot_collector.evidence.return_value = True
                 frame = np.zeros((32, 32, 3), dtype=np.uint8)
                 with patch.object(farm, "event"), patch.object(farm, "Device", side_effect=AssertionError("No device access")):
                     engine.update(frame, "MISSION_COMPLETE", {})
@@ -647,9 +676,10 @@ class FarmerLootHookTests(unittest.TestCase):
                 self.assertEqual(engine.data["counts"]["completed"], 1)
                 engine.loot_collector.completed.assert_called_once()
                 self.assertEqual(engine.loot_collector.completed.call_args.args, ("fixture-completed",))
-                engine.loot_collector.evidence.assert_called_once_with("fixture-completed", frame)
+                engine.loot_collector.evidence.assert_called_once_with(
+                    "fixture-completed", frame, completion_id='fixture-completion-id')
 
-    def test_loot_exception_does_not_change_successful_farming_update(self):
+    def test_loot_exception_keeps_verified_completion_pending_for_retry(self):
         import farm
         engine = farm.Engine.__new__(farm.Engine)
         engine.stage = {"id": "rich-b"}
@@ -663,7 +693,11 @@ class FarmerLootHookTests(unittest.TestCase):
             engine.update(np.zeros((32, 32, 3), dtype=np.uint8), "MISSION_COMPLETE", {})
         self.assertEqual(engine.data["run"]["outcome"], "completed")
         self.assertEqual(engine.data["counts"]["completed"], 1)
-        engine.save.assert_called_once()
+        self.assertEqual(engine.data['run']['recording']['state'], 'retryable_failure')
+        self.assertEqual(engine.data['run']['recording']['retry_phase'], 'registration')
+        self.assertTrue(engine.data['run']['recording']['error'])
+        self.assertTrue(engine.data['blocked'])
+        engine.save.assert_called()
 
 
 if __name__ == "__main__":

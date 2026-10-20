@@ -132,7 +132,11 @@ class ItemRecognizer:
         if not self.calibration or not calibration_file_hash or path is None: return empty,None
         path=DEFAULT_TEMPLATES/'reviewed_rewards.json' if path=='auto' else Path(path)
         try:
-            raw=path.read_bytes(); reviewed=json.loads(raw)
+            raw=path.read_bytes()
+        except FileNotFoundError:
+            return empty,None  # The reviewed supplement is optional.
+        try:
+            reviewed=json.loads(raw)
             if (not isinstance(reviewed,dict) or reviewed.get('schema_version')!=1
                     or reviewed.get('library_sha256')!=file_hash(self.db_path)
                     or reviewed.get('base_calibration_sha256')!=calibration_file_hash): return empty,None
@@ -159,7 +163,7 @@ class ItemRecognizer:
                     valid.append(group)
             if not valid: return empty,None
             return {'canonical_groups':valid,'supported_item_ids':supported},hashlib.sha256(raw).hexdigest()
-        except (OSError,ValueError,TypeError): return empty,None
+        except (ValueError,TypeError): return empty,None
 
     def _load_reference(self,record):
         paths=list(dict.fromkeys(str((self.library_root/a['local_image_path']).resolve()) for a in record['assets'] if a['status']=='ok' and a['local_image_path']))
@@ -185,7 +189,8 @@ class ItemRecognizer:
                 mask=cv2.resize(alpha,(64,64),interpolation=cv2.INTER_AREA).astype(np.float32)/255
                 self._images.append(dict(item_id=record['id'],item_name=record['display_name'],record_type=record['record_type'],path=path,pixels=pixels,mask=mask,original=rgb,transparent=bool(np.any(alpha<255)),width=rgb.shape[1],height=rgb.shape[0]))
             except (OSError,ValueError,UnidentifiedImageError) as e:
-                self.reference_errors.append({'path':path,'record_id':record['id'],'error':str(e)})
+                self.reference_errors.append({'path':path,'record_id':record['id'],'error':str(e),
+                    'retryable':isinstance(e,OSError) and not isinstance(e,UnidentifiedImageError)})
 
     def reference_report(self):
         hashes={file_hash(r['path']) for r in self._images}
@@ -339,7 +344,12 @@ class ItemRecognizer:
         try:
             raw=path.read_bytes(); result['screenshot_sha256']=hashlib.sha256(raw).hexdigest()
             with Image.open(io.BytesIO(raw)) as im: rgb=np.asarray(im.convert('RGB'))
-        except (OSError,ValueError,UnidentifiedImageError) as e:
+        except UnidentifiedImageError as e:
+            result['warnings'].append('Cannot load screenshot: '+str(e)); return result
+        except OSError as e:
+            result['retryable']=True
+            result['warnings'].append('Screenshot temporarily unavailable: '+str(e)); return result
+        except ValueError as e:
             result['warnings'].append('Cannot load screenshot: '+str(e)); return result
         context=self.detect_reward_region(rgb) if reward_region is None and icon_boxes is None else None
         work=rgb; sx=sy=1.0; proposals=[]

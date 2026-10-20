@@ -24,6 +24,8 @@ class ControlsBackend(fixtures.FakeBackend):
                 self.state["stamina_status"] = "UNKNOWN"  # Rechecking game.
             elif action == "restart":
                 self.state = fixtures.running_snapshot(stage or self.state["stage"])
+            elif action in {"boss-swap", "early-exit"}:
+                self.state["ninja_boss_swap" if action == "boss-swap" else "ninja_early_exit"] = stage
         return result
 
 
@@ -33,6 +35,26 @@ class ManagerControlsTests(unittest.TestCase):
     tearDown = fixtures.GuiTests.tearDown
     wait_until = fixtures.GuiTests.wait_until
     window = fixtures.GuiTests.window
+
+    def test_ninja_options_persist_in_both_appearances(self):
+        window, backend = self.window(ControlsBackend(fixtures.stopped_snapshot("ninja_road")))
+        window.stage_combo.addItem("Ninja Road", "ninja_road")
+        window.stage_combo.setCurrentIndex(window.stage_combo.findData("ninja_road"))
+        window.apply_snapshot(backend.snapshot())
+        for appearance in ("original", "retro98"):
+            window.set_appearance(appearance)
+            for control, action, key in ((window.boss_swap_check, "boss-swap", "ninja_boss_swap"),
+                                         (window.early_exit_check, "early-exit", "ninja_early_exit")):
+                self.assertTrue(control.isVisible())
+                for value in (True, False):
+                    control.click()
+                    self.wait_until(lambda: window._pending_action is None and not window._awaiting_verification)
+                    self.assertEqual(backend.commands[-1], (action, value))
+                    self.assertIs(backend.state[key], value)
+                    self.assertEqual(control.isChecked(), value)
+        window.stage_combo.setCurrentIndex(0)
+        self.assertFalse(window.boss_swap_check.isVisible())
+        self.assertFalse(window.early_exit_check.isVisible())
 
     def waiting_window(self):
         state = fixtures.running_snapshot()
@@ -121,6 +143,18 @@ class ManagerControlsTests(unittest.TestCase):
 
 
 class BackendControlsTests(unittest.TestCase):
+    def test_ninja_options_use_explicit_enabled_cli_flag(self):
+        backend = manager_backend.ControllerBackend()
+        result = subprocess.CompletedProcess([], 0, "Saved", "")
+        with patch.object(manager_backend.subprocess, "run", return_value=result) as run:
+            for action in ("boss-swap", "early-exit"):
+                for value in (True, False):
+                    backend.command(action, value)
+                    self.assertEqual(run.call_args.args[0][-3:], [action, "--enabled", "on" if value else "off"])
+                for invalid in (None, "on", 1):
+                    with self.assertRaises(ValueError):
+                        backend.command(action, invalid)
+
     def test_controls_use_correct_cli_arguments_and_restart_timeout(self):
         backend = manager_backend.ControllerBackend()
         result = subprocess.CompletedProcess([], 0, "Completed", "")

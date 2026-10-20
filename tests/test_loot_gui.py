@@ -5,6 +5,7 @@ import copy
 import threading
 import tempfile
 import unittest
+from unittest.mock import patch
 from PySide6.QtCore import QTimer
 from PySide6.QtTest import QTest
 
@@ -114,6 +115,44 @@ class LootGuiTests(unittest.TestCase):
         self.assertIsNone(unknown.item.get('item_id'))
         self.assertEqual(unknown.icon_label.text(), '?')
         self.assertEqual(len(window._loot_data['items']), 2)
+        self.assertEqual(backend.commands, [])
+
+    def test_recording_failures_and_outstanding_capture_work_are_visible_in_both_themes(self):
+        window, backend = self.ready()
+        backend.loot.update(status='Retryable Recording Failure', outstanding_jobs=3,
+                            capture_pending=1, attention_required=1,
+                            collector_health={'status': 'retryable_failure',
+                                              'error': 'SQLite is temporarily unavailable'},
+                            farm_recording_health={'state': 'operator_attention',
+                                                   'error': 'Screenshot could not be saved; free disk space and resume.'})
+        backend.loot['runs'][0].update(recording_state='screenshot_capture_pending',
+                                       error='Screenshot write failed', next_retry_at=400)
+        window.refresh_loot()
+        self.wait_until(lambda: '3 outstanding' in window.loot_status_label.text())
+        for appearance in ('original', 'retro98'):
+            window.set_appearance(appearance)
+            self.app.processEvents()
+            self.assertTrue(window.loot_status_label.isVisible())
+            self.assertIn('Operator Attention Required', window.loot_status_label.text())
+            self.assertIn('1 capture pending', window.loot_status_label.text())
+            self.assertIn('1 need attention', window.loot_status_label.text())
+            self.assertIn('free disk space', window.loot_status_label.toolTip())
+            self.assertIn('SQLite is temporarily unavailable', window.loot_detail_label.text())
+        run = window.loot_run_tree.topLevelItem(0)
+        self.assertEqual(run.text(2), 'Screenshot Capture Pending')
+        rows = [run.child(index).text(0) for index in range(run.childCount())]
+        self.assertIn('Recording error', rows)
+        self.assertIn('Next recording retry', rows)
+        self.assertEqual(backend.commands, [])
+
+    def test_collector_initialization_retry_is_visible_before_any_completion_exists(self):
+        window, backend = self.ready()
+        backend.loot.update(status='Tracking Unavailable', completed_runs=0, runs=[],
+                            farm_recording_health={'status': 'collector_initialization_retry',
+                                                   'error': 'Collector database is locked; initialization will retry.'})
+        window.refresh_loot()
+        self.wait_until(lambda: window.loot_status_label.text() == 'Collector Initialization Retrying')
+        self.assertIn('initialization will retry', window.loot_status_label.toolTip())
         self.assertEqual(backend.commands, [])
 
     def test_history_expansion_survives_automatic_persisted_record_updates(self):
@@ -246,6 +285,26 @@ class LootGuiTests(unittest.TestCase):
             self.wait_until(lambda: window.loot_status_label.text() == "Session Ended")
             self.assertEqual(backend.commands, [])
             window.close()
+
+
+class RecordingHealthBackendTests(unittest.TestCase):
+    def test_current_process_health_never_leaks_into_historical_sessions(self):
+        from manager_backend import ControllerBackend
+        with tempfile.TemporaryDirectory() as directory:
+            backend = ControllerBackend(directory)
+            snapshot = manager_test.running_snapshot()
+            snapshot['farm']['recording_health'] = {'state': 'completion_registration_pending',
+                                                    'error': 'Disk is temporarily unavailable'}
+            snapshot['farm']['run'] = {'recording': {'state': 'operator_attention',
+                                                     'error': 'Screenshot could not be persisted'}}
+            with patch('loot_tracking.read_dashboard', side_effect=lambda *args, **kwargs: {'items': []}):
+                current = backend.loot_snapshot(snapshot)
+                historical = backend.loot_snapshot(snapshot, session_id='previous-session')
+                stopped = backend.loot_snapshot({**snapshot, 'running': False})
+        self.assertEqual(current['farm_recording_health']['state'], 'operator_attention')
+        self.assertEqual(current['farm_recording_health']['error'], 'Screenshot could not be persisted')
+        self.assertNotIn('farm_recording_health', historical)
+        self.assertNotIn('farm_recording_health', stopped)
 
 
 if __name__ == "__main__":

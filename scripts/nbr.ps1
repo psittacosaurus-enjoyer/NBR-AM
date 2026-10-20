@@ -1,6 +1,6 @@
 param(
     [ValidateSet('start','stop','status','observe')][string]$Command = 'status',
-    [ValidateSet('universal')][string]$Stage
+    [ValidateSet('universal','ninja_road')][string]$Stage
 )
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $farmArgs = @($Command)

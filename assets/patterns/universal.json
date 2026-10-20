@@ -71,7 +71,38 @@
         }
       ],
       "priority": 0,
-      "verified_safe": false
+      "verified_safe": false,
+      "battle_auto_enabled": true
+    },
+    {
+      "name": "IN_BATTLE",
+      "anchors": [
+        {
+          "region": [
+            556,
+            37,
+            685,
+            73
+          ],
+          "template": "assets/patterns/in_battle_auto_off/0.png",
+          "correlation": 0.97,
+          "difference": 12
+        },
+        {
+          "region": [
+            747,
+            42,
+            852,
+            69
+          ],
+          "template": "assets/patterns/in_battle/1.png",
+          "correlation": 0.96,
+          "difference": 16
+        }
+      ],
+      "priority": 0,
+      "verified_safe": false,
+      "battle_auto_enabled": false
     },
     {
       "name": "MISSION_COMPLETE",
@@ -250,6 +281,59 @@
         "point": [
           450,
           800
+        ]
+      }
+    },
+    {
+      "name": "MAINTENANCE_PROMPT",
+      "anchors": [
+        {
+          "region": [
+            204,
+            530,
+            701,
+            609
+          ],
+          "template": "assets/patterns/maintenance_prompt/0.png",
+          "correlation": 0.97,
+          "difference": 12
+        },
+        {
+          "region": [
+            122,
+            650,
+            786,
+            894
+          ],
+          "template": "assets/patterns/maintenance_prompt/1.png",
+          "correlation": 0.97,
+          "difference": 12
+        },
+        {
+          "region": [
+            343,
+            953,
+            553,
+            1039
+          ],
+          "template": "assets/patterns/maintenance_prompt/2.png",
+          "correlation": 0.97,
+          "difference": 12
+        }
+      ],
+      "priority": 60,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "expected": [
+          "READY_TO_START",
+          "READY_TO_RETRY"
+        ],
+        "point": [
+          448,
+          996
         ]
       }
     },
@@ -436,6 +520,50 @@
         "point": [
           446,
           896
+        ]
+      }
+    },
+    {
+      "name": "RANK_UP_STAMINA_ACK",
+      "anchors": [
+        {
+          "region": [
+            182,
+            604,
+            722,
+            688
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/0.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            343,
+            947,
+            548,
+            1026
+          ],
+          "template": "assets/patterns/rank_up_stamina_ack/1.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "priority": 40,
+      "verified_safe": true,
+      "recovery": true,
+      "action": {
+        "id": "dismiss_known_popup",
+        "kind": "tap",
+        "expected": [
+          "RANK_UP_RESULTS",
+          "RESULTS_NEXT",
+          "REWARD_REVEAL",
+          "READY_TO_RETRY"
+        ],
+        "point": [
+          446,
+          987
         ]
       }
     },
@@ -1112,7 +1240,8 @@
         }
       ],
       "priority": 0,
-      "verified_safe": false
+      "verified_safe": false,
+      "battle_auto_enabled": true
     },
     {
       "name": "READY_TO_RETRY",

@@ -56,15 +56,73 @@ class StageTests(unittest.TestCase):
             return farm.Engine(stage)
 
 
-    def test_only_shared_automation_is_supported(self):
-        self.assertEqual(farm.STAGE_IDS, ('universal',))
+    def test_supported_stages_preserve_universal_and_isolate_ninja_road(self):
+        self.assertEqual(farm.STAGE_IDS, ('universal', 'ninja_road'))
         self.assertEqual(farm.load_stage()['progress'], self.runtime / 'universal.json')
+        self.assertEqual(farm.load_stage('ninja_road')['progress'], self.runtime / 'ninja_road.json')
+        self.assertEqual(farm.load_stage('ninja_road')['name'], 'Ninja Road')
         for mission in ('scrolls-a', 'rich-b', 'practice-part-1', 'night-of-tragedy-a', '../universal'):
             with self.subTest(mission=mission), self.assertRaises(ValueError):
                 farm.load_stage(mission)
         farm.write_json(self.runtime / 'selection.json', {'stage': 'retired-choice'})
         self.assertEqual(farm.selected_stage(), 'universal')
         self.assertEqual(farm.read_json(self.runtime / 'selection.json')['stage'], 'retired-choice')
+
+    def test_other_stage_pending_input_blocks_switch_in_both_directions(self):
+        for source, destination in (('universal', 'ninja_road'), ('ninja_road', 'universal')):
+            with self.subTest(source=source, destination=destination):
+                source_path = farm.load_stage(source)['progress']
+                farm.write_json(self.runtime / 'selection.json', {'stage': source})
+                farm.write_json(source_path, {'stage': source, 'pending': {'id': 'uncertain'}})
+                with self.assertRaisesRegex(RuntimeError, 'existing saved input'):
+                    farm.verify_saved_input(stage=destination)
+                farm.STOP.write_text('Intentional stop', encoding='utf-8')
+                with patch.object(farm, 'Device') as device, patch.object(farm.subprocess, 'run') as launch:
+                    with self.assertRaisesRegex(RuntimeError, 'existing saved input'):
+                        farm.start(destination)
+                    device.assert_not_called()
+                    launch.assert_not_called()
+                self.assertEqual(farm.read_json(source_path)['pending'], {'id': 'uncertain'})
+                self.assertEqual(farm.selected_stage(), source)
+                self.assertEqual(farm.STOP.read_text(encoding='utf-8'), 'Intentional stop')
+                source_path.unlink()
+
+    def test_same_stage_pending_input_can_resume_without_mutation(self):
+        for stage in farm.STAGE_IDS:
+            with self.subTest(stage=stage):
+                path = farm.load_stage(stage)['progress']
+                farm.write_json(path, {'stage': stage, 'pending': {'id': 'uncertain'}})
+                before = path.read_bytes()
+                farm.verify_saved_input(stage=stage)
+                self.assertEqual(path.read_bytes(), before)
+                path.unlink()
+
+    def test_suspended_ninja_connection_input_blocks_switch_and_allows_resume(self):
+        path = farm.load_stage('ninja_road')['progress']
+        farm.write_json(path, {'stage': 'ninja_road',
+                              'connection_pending': {'id': 'nr_start', 'source': 'NR_START'}})
+        before = path.read_bytes()
+        with self.assertRaisesRegex(RuntimeError, 'existing saved input'):
+            farm.verify_saved_input(stage='universal')
+        farm.verify_saved_input(stage='ninja_road')
+        self.assertEqual(path.read_bytes(), before)
+
+    def test_inactive_retired_stage_pending_remains_untouched(self):
+        farm.write_json(self.runtime / 'selection.json', {'stage': 'universal'})
+        path = self.runtime / 'retired_stage.json'
+        farm.write_json(path, {'pending': {'id': 'uncertain'}})
+        before = path.read_bytes()
+        for stage in farm.STAGE_IDS:
+            with self.subTest(stage=stage):
+                farm.verify_saved_input(stage=stage)
+                self.assertEqual(path.read_bytes(), before)
+
+    def test_selected_retired_stage_pending_still_blocks_start(self):
+        farm.write_json(self.runtime / 'selection.json', {'stage': 'retired-stage'})
+        farm.write_json(self.runtime / 'retired_stage.json', {'pending': {'id': 'uncertain'}})
+        for stage in farm.STAGE_IDS:
+            with self.subTest(stage=stage), self.assertRaisesRegex(RuntimeError, 'existing saved input'):
+                farm.verify_saved_input(stage=stage)
 
     def test_worker_lock_rejects_second_controller(self):
         for lock_name in ('worker', 'supervisor'):

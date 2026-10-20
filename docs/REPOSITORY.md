@@ -1,37 +1,15 @@
-# Repository review and publication
+# Repository and local data
 
-Source lives in `src/`, required recognition/browser assets in `assets/`, tests and saved regression fixtures in `tests/`, Windows/maintenance tools in `scripts/`, and documentation in `docs/`. Runtime storage is separate from source.
+Application source lives in `src/app/`, the farming controller and BlueStacks integration in `src/automation/`, and library/recognition packages alongside them in `src/`. Required assets belong in `assets/`, regression tests and saved fixtures in `tests/`, reusable Windows tools in `scripts/`, and documentation in `docs/`. Root Python, PowerShell and CMD launchers provide convenient entry points. Existing source-level entry points remain compatible.
 
-## Local data and Git boundaries
+`runtime/` holds local account/device state, locks, stop and input latches, sessions, logs, loot histories and pending evidence, downloaded library data, annotations, generated reports and diagnostic captures. These paths are deliberately unchanged so loaded controllers and persisted references remain valid. Preserve pending jobs and evidence when recovering failures; see [manager retention](MANAGER.md#limits-storage-and-upgrade-behavior).
 
-`runtime/` retains device/account state, stop/latch/session records, loot histories, diagnostic evidence, downloaded library data, annotations, generated exports and recognition output. `.venv/`, Python caches, process records, secrets and local configuration overrides are ignored. Required recognition catalogs, calibration, templates, labeled ground truth and saved test images remain eligible for source control.
+`.gitignore` excludes runtime storage, local environments, bytecode, caches, process records, credentials and local configuration overrides. `.gitattributes` keeps Python/docs/config text in LF, Windows launchers in CRLF, and images/databases binary. Required catalogs, calibration, templates, ground truth and regression fixtures remain tracked. Ignore rules do not remove files already tracked: inspect `git ls-files` and `git status --short --untracked-files=all` before publishing.
 
-`runtime/NBR-AM/` is an independent pre-existing Git repository. It stays ignored locally to preserve its Git history; it is not an application source directory. The root repository's history is preserved. No commit, remote creation or push is part of this cleanup.
+`runtime/NBR-AM/` contains an independent pre-existing Git repository. It stays ignored and untouched to preserve its history and existing local changes. It is not application source. Do not use recursive cleanup commands against runtime storage.
 
-`.gitattributes` normalizes text with LF for Python/docs/config and CRLF for PowerShell/CMD launchers, and marks images/databases binary. `.gitignore` never substitutes for reviewing already tracked files. Check the prospective file list and staged diff before publication.
+User annotations, account mappings, session histories and pending loot are unique local data requiring separate backups. Downloaded library resources can be rebuilt, but upstream availability and database hashes can change; a rebuilt library may need reviewed recalibration. Retained screenshots and third-party game assets need appropriate privacy, provenance and redistribution review before publication.
 
-Downloaded library resources can be rebuilt from public sources, but upstream availability and database hashes can change. User annotations, session histories and account identity are unique local data requiring backups. Calibration is gated by database SHA-256; a new library may require reviewed revalidation. The fixed BlueStacks paths, acc1/Pie64 mapping and portrait resolution remain deployment constraints.
+For 1.25, the working branch is `codex/v1.25-cleanup`. The pre-cleanup snapshot is retained at `refs/cleanup-backups/v1.25-before` (`ebfdf94e38245934033b6e5eb11b44d568cb9743`), including the working changes present when cleanup began. The nested repository remains independent. See [the cleanup report](CLEANUP-1.25.md) for deferred removals and the external probe archive.
 
-Retained reference screenshots and game assets require a privacy/provenance/redistribution review. No license grant is assumed or invented. Credentials and machine-specific identifiers belong in ignored local configuration; the source includes only implementation defaults required for the supported deployment.
-
-## Owner review, commit and push
-
-These commands are recommendations only. They have not been executed. From the cleaned repository root:
-
-```powershell
-Set-Location D:\NBR
-git status --short --untracked-files=all
-git ls-files --others --exclude-standard
-git diff --check
-git add -- .
-git diff --cached --stat
-git diff --cached --check
-git diff --cached
-git commit -m "Clean and reorganize NBR automation manager"
-git remote -v  # Existing origin: https://github.com/psittacosaurus-enjoyer/NBR-AM.git
-git push -u origin main
-```
-
-The existing origin already points to the NBR-AM repository. Review that destination before pushing; change it deliberately with `git remote set-url origin <URL>` only if desired. Configure author name/email if Git requests them. If the destination already has commits, reconcile that history before pushing; do not overwrite it with a force push. The ignored nested repository's history is independent.
-
-Run [the README's offline tests](../README.md) before committing. The restructuring completion report records actual verification and cleanup counts; [validation scope](VALIDATION.md) distinguishes earlier live evidence from current offline checks. Installing into a fresh environment and natural gameplay were not necessary to validate file relocation and must not be claimed unless independently performed.
+Run [the README's offline checks](../README.md#offline-verification-and-limits), review the complete diff, then stage/commit only intended source changes. The working branch has no new release commit and has not been pushed; the snapshot commit lives under the backup reference without rewriting existing history.
