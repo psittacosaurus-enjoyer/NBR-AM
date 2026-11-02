@@ -7,7 +7,7 @@ import unittest
 
 from PySide6.QtTest import QTest
 
-from manager_gui import ManagerWindow
+from app.gui.window import ManagerWindow
 import test_manager as fixtures
 
 

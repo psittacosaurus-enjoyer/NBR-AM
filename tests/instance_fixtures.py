@@ -1,6 +1,6 @@
 """Synthetic legacy target for offline controller compatibility tests."""
-from bluestacks import Instance
-import farm
+from automation.adb import Instance
+from automation import controller as farm
 
 
 def legacy_target():

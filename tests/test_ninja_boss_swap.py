@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import Mock, patch
 
-import farm
+from automation import controller as farm
 from automation.ninja_boss_swap import BossSwap
 from automation.ninja_road import NinjaRoadEngine
 from fixture_images import load_fixture
@@ -408,6 +408,75 @@ class BossSwapTests(unittest.TestCase):
         self.assertEqual(state["pending"], pending)
         self.assertEqual(state["done"], [])
         self.assertEqual([a["kind"] for a in self.actions], ["swipe"])
+
+    def _live_intermediate_scale_pending(self):
+        fixtures = farm.ROOT / "tests/fixtures/ninja_boss_swap"
+        frame = self.frame("identical_scale_live")
+        before = load_fixture(fixtures / "identical_scale_before.png", 0)
+        reserve_before = load_fixture(fixtures / "identical_scale_reserve_before.png", 0)
+        evidence = farm.read_json(fixtures / "identical_scale_provenance.json")
+        state = {
+            "phase": "enter", "team_key": ["attempt", 1],
+            "boss_map": self.boss.pack(self.boss.crop(frame, self.boss.config["map_region"])),
+            "swapped": [0, 1], "done": [0, 1],
+            "original": {"2": self.boss.pack(before)},
+            "pending": {"purpose": "swipe", "time": 0, "column": 2,
+                        "before": self.boss.pack(before),
+                        "reserve_before": self.boss.pack(reserve_before),
+                        "elements_before": evidence["elements_before"], "returned": True}}
+        self.engine.data["boss_swap"] = state
+        self.engine.data["blocked"] = "Boss Swap: portrait change not verified; swipe remains latched"
+        return frame, state, before, reserve_before
+
+    def test_live_intermediate_scale_resumes_saved_identical_pair_once(self):
+        frame, state, before, reserve_before = self._live_intermediate_scale_pending()
+        front = self.boss.crop(frame, self.boss.config["portraits"][2])
+        reserve = self.boss.reserve(frame, 2)
+        # Both observations fail the former two-percent sampling. The same
+        # strict .93/20 identity guard succeeds with the missing .63 size.
+        for face, back in ((before, reserve_before), (front, reserve)):
+            old_correlations = []
+            for scale in (.60, .62, .64, .66, .68, .70):
+                reduced = farm.cv2.resize(face, None, fx=scale, fy=scale,
+                                          interpolation=farm.cv2.INTER_AREA)
+                old_correlations.append(float(farm.cv2.matchTemplate(
+                    back, reduced, farm.cv2.TM_CCOEFF_NORMED).max()))
+            self.assertLess(max(old_correlations), .93)
+            self.assertTrue(self.boss.face_in_reserve(face, back, .93, 20))
+        self.assertFalse(self.boss.matches(reserve, reserve_before))
+        self.tick(frame)
+        self.assertEqual(state["done"], [0, 1, 2])
+        self.assertEqual(state["indistinguishable"], [2])
+        self.assertIsNone(self.engine.data["blocked"])
+        self.assertEqual(state["pending"]["purpose"], "resume_auto")
+        self.assertEqual([action["kind"] for action in self.actions], ["tap"])
+        self.tick(frame)
+        self.tick(self.engine.device.capture.return_value, "NR_COMBAT")
+        self.assertEqual(state["phase"], "boss")
+        self.assertEqual([action["kind"] for action in self.actions], ["tap"])
+
+    def test_live_intermediate_scale_keeps_uncertain_or_wrong_art_latched(self):
+        for case in ("unreturned", "wrong_current_reserve", "wrong_saved_reserve"):
+            with self.subTest(case=case):
+                frame, state, _, _ = self._live_intermediate_scale_pending()
+                pending = state["pending"]
+                self.actions.clear()
+                if case == "unreturned":
+                    pending.pop("returned")
+                else:
+                    wrong = self.boss.crop(frame, self.boss.config["portraits"][0])
+                    wrong = farm.cv2.resize(wrong, (110, 85))
+                    if case == "wrong_current_reserve":
+                        frame[1450:1535, 610:720] = farm.cv2.cvtColor(wrong, farm.cv2.COLOR_GRAY2BGR)
+                    else:
+                        pending["reserve_before"] = self.boss.pack(wrong)
+                saved_pending = copy.deepcopy(pending)
+                self.tick(frame)
+                self.tick(frame)
+                self.assertEqual(state["pending"], saved_pending)
+                self.assertEqual(state["done"], [0, 1])
+                self.assertEqual(self.actions, [])
+                self.assertIn("portrait change not verified", self.engine.data["blocked"])
 
     def test_charged_identical_portraits_attempt_once_and_restore_without_stalling(self):
         frame = self._identical_pair_frame("identical_charge")

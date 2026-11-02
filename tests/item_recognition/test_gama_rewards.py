@@ -10,7 +10,7 @@ import unittest
 from PIL import Image
 from game_library import library
 from item_recognition.recognizer import ItemRecognizer
-from loot_tracking import LootStore
+from app.backend.loot import LootStore
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = ROOT / 'tests/fixtures/item_recognition'

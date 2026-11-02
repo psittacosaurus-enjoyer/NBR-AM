@@ -95,8 +95,8 @@ class ManagerPresentation:
     NAMES = (
         "target_name_label", "connection_label", "instance_label", "status_label", "runtime_label",
         "retreated_ninja_roads_label",
-        "stage_combo", "boss_swap_check", "early_exit_check", "start_button", "stop_button", "exit_stop_button",
-        "restart_button", "stamina_status_label", "stamina_remaining_label",
+        "stage_combo", "ninja_mode_combo", "boss_swap_check", "early_exit_check", "start_button", "stop_button", "exit_stop_button",
+        "restart_button", "resolve_input_button", "stamina_status_label", "stamina_remaining_label",
         "stamina_duration_combo", "end_stamina_wait_button", "detail_label", "error_label",
         "loot_status_label", "loot_grid", "loot_summary_label", "loot_detail_label",
         "loot_history", "loot_item_table", "log_caption", "log_view", "footer_label",
@@ -296,6 +296,7 @@ class ManagerPresentation:
         right.addWidget(self.scroll, 1)
         controls, area = self._panel("", "start")
         self._place("stage_combo", area)
+        self._place("ninja_mode_combo", area)
         self._place("boss_swap_check", area)
         self._place("early_exit_check", area)
         row = QHBoxLayout()
@@ -303,6 +304,7 @@ class ManagerPresentation:
         for name in ("start_button", "stop_button", "restart_button"):
             self._place(name, row, 1)
         area.addLayout(row)
+        self._place("resolve_input_button", area)
         self._place("exit_stop_button", area)
         right.addWidget(controls)
         log, area = self._panel("", "log")
@@ -407,6 +409,7 @@ class ManagerPresentation:
                 widget.setIcon(pixel_icon(name.replace("_button", "").replace("end_stamina_wait", "hourglass")))
                 widget.setMinimumHeight(29)
             window.restart_button.setObjectName("restart")
+            window.resolve_input_button.setMinimumHeight(29)
             window.runtime_label.setFixedHeight(39)
             window.status_label.setMaximumHeight(64)
             window.loot_grid.setMinimumSize(0, 260)

@@ -100,7 +100,11 @@ class BossSwap:
         if float(front.std()) < 12:
             return (-1, float("inf"))
         best = (-1, float("inf"))
-        for scale in (.60, .62, .64, .66, .68, .70):
+        # A one-percent size change can move this small face by a pixel and
+        # defeat the strict identity threshold. Include the intervening sizes
+        # rather than relaxing the portrait correlation/difference guards.
+        for percent in range(60, 71):
+            scale = percent / 100
             reduced = farm.cv2.resize(front, None, fx=scale, fy=scale,
                                       interpolation=farm.cv2.INTER_AREA)
             scores = farm.cv2.matchTemplate(reserve, reduced, farm.cv2.TM_CCOEFF_NORMED)
@@ -221,7 +225,7 @@ class BossSwap:
                 candidates.append(column)
         return candidates[0] if len(candidates) == 1 else None
 
-    def complete(self, state, column, swapped=True):
+    def complete(self, state, column, swapped=True, frame=None):
         state["done"].append(column)
         if state["phase"] == "enter" and swapped:
             state["swapped"].append(column)
@@ -229,6 +233,10 @@ class BossSwap:
         state["advance"] = len(state["done"]) < len(state.get("targets", [0, 1, 2]))
         state["advance_from"] = column
         state["wait_since"] = time.time()
+        strategy = getattr(self.engine, "_stage15_controller", None)
+        if (state["phase"] == "enter" and swapped and state.get("stage15_sequence")
+                and strategy is not None and frame is not None):
+            strategy.record_back_role(frame, column)
 
     def settled_active(self, frame):
         column = self.active(frame)
@@ -347,14 +355,14 @@ class BossSwap:
                                 and (not original_elements or self.same_elements(elements, original_elements))))
                 if (auto is False and self._known_indistinguishable_restore(
                         state, pending, frame, column, portrait, before, elements)):
-                    self.complete(state, column)
+                    self.complete(state, column, frame=frame)
                     self.data["blocked"] = None
                     farm.event("ninja_boss_swap_visually_indistinguishable", column=column + 1,
                                phase=state["phase"], legacy_guard=False, proof="persisted_roles")
                 elif (auto is False and restored and (self.changed_portrait(portrait, before)
                         or self.inverted_elements(elements, pending.get("elements_before"))
                         or self.inverted_pair(frame, column, portrait, before, pending, elements))):
-                    self.complete(state, column)
+                    self.complete(state, column, frame=frame)
                     farm.event("ninja_boss_swap_verified", column=column + 1, phase=state["phase"])
                 elif (auto is False and restored and pending.get("returned") and self.matches(portrait, before)
                       and (not pending.get("elements_before")
@@ -368,7 +376,7 @@ class BossSwap:
                     # returned swipe was attempted, but its effect is visually
                     # indistinguishable. Never replay it; require one matching
                     # restoration attempt instead of skipping on face identity.
-                    self.complete(state, column)
+                    self.complete(state, column, frame=frame)
                     if column not in state.setdefault("indistinguishable", []):
                         state["indistinguishable"].append(column)
                     self.data["blocked"] = None

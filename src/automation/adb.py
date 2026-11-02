@@ -2,7 +2,8 @@
 
 Monitoring talks only to an already running local ADB server. It never invokes
 ADB, opens an emulator transport, or changes BlueStacks configuration. Only an
-explicit ``verify_identity(..., connect=True)`` may connect an ADB transport.
+explicit ``verify_identity(..., connect=True)`` may start the local ADB server
+or connect an ADB transport.
 """
 from __future__ import annotations
 
@@ -238,7 +239,11 @@ def _send_service(sock, service):
 def _adb_request(service, endpoint=None):
     # Socket access cannot auto-start ADB, unlike `adb devices` / `adb shell`.
     try:
-        with socket.create_connection(("127.0.0.1", _server_port()), timeout=1.5) as sock:
+        # Windows can take about two seconds to refuse an unused loopback
+        # port. A shorter deadline masks that refusal as a timeout, preventing
+        # explicit connection from safely identifying an absent ADB server.
+        with socket.create_connection(("127.0.0.1", _server_port()), timeout=3) as sock:
+            sock.settimeout(1.5)
             if endpoint:
                 _send_service(sock, "host:transport:" + _normal_endpoint(endpoint))
             _send_service(sock, service)
@@ -415,13 +420,35 @@ def validate_mapping(instance):
             raise RuntimeError("Multiple BlueStacks configurations map to the selected ADB endpoint")
 
 
+def _start_local_server(instance):
+    # ADB 1.0.36 treats -H as a remote server and refuses to auto-start it.
+    # Omit -H only for this explicit local bootstrap. Environment overrides
+    # must not redirect that command to another host or server socket.
+    env = os.environ.copy()
+    for name in ("ADB_SERVER_SOCKET", "ANDROID_ADB_SERVER_ADDRESS"):
+        env.pop(name, None)
+    try:
+        result = subprocess.run([instance.adb_path, "-P", str(_server_port()), "start-server"],
+                                capture_output=True, timeout=15, env=env,
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"Cannot start the local ADB server: {exc}") from exc
+    if result.returncode:
+        raise RuntimeError("ADB could not start the local server")
+
+
 def verify_identity(instance, connect=False):
     """Verify pinned configuration and Android ID before controller input."""
     validate_mapping(instance)
     if connect:
         try:
             online = _device_states().get(instance.endpoint) == "device"
-        except RuntimeError:
+        except RuntimeError as exc:
+            # Only a refused socket proves the local server is absent. A
+            # protocol error or timeout from an existing server must never
+            # trigger start-server, which can replace an incompatible daemon.
+            if isinstance(exc.__cause__, ConnectionRefusedError):
+                _start_local_server(instance)
             online = False
         if not online:
             try:

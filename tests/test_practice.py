@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import farm
+from automation import controller as farm
 from test_stages import FakeDevice
 
 

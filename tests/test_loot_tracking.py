@@ -17,7 +17,7 @@ from unittest.mock import Mock, patch
 import cv2
 import numpy as np
 
-import loot_tracking as loot
+from app.backend import loot
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -620,7 +620,7 @@ class LootTrackingTests(unittest.TestCase):
 
 class FarmerLootHookTests(unittest.TestCase):
     def test_retry_waits_for_lucky_reveal_and_records_the_final_three_icons_once(self):
-        import farm
+        from automation import controller as farm
         from test_safety import FakeDevice
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -655,7 +655,7 @@ class FarmerLootHookTests(unittest.TestCase):
         self.assertEqual(engine.data['counts']['completed'], 1)
 
     def test_verified_completion_generates_one_event_and_reuses_results_frame_both_stages(self):
-        import farm
+        from automation import controller as farm
         for stage in ("scrolls-a", "rich-b"):
             with self.subTest(stage=stage):
                 engine = farm.Engine.__new__(farm.Engine)
@@ -680,7 +680,7 @@ class FarmerLootHookTests(unittest.TestCase):
                     "fixture-completed", frame, completion_id='fixture-completion-id')
 
     def test_loot_exception_keeps_verified_completion_pending_for_retry(self):
-        import farm
+        from automation import controller as farm
         engine = farm.Engine.__new__(farm.Engine)
         engine.stage = {"id": "rich-b"}
         engine.data = {"screen": "IN_BATTLE", "pending": None, "stamina_until": 0,

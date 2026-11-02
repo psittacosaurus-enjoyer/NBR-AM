@@ -11,8 +11,8 @@ from unittest.mock import patch
 
 import numpy as np
 
-import farm
-import loot_tracking as loot
+from automation import controller as farm
+from app.backend import loot
 from test_loot_tracking import FakeRecognizer, result, reward
 from test_stages import FakeDevice
 from instance_fixtures import legacy_target

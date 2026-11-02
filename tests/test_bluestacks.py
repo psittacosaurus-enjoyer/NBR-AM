@@ -2,11 +2,12 @@
 from dataclasses import replace
 import os
 from pathlib import Path
+import subprocess
 import tempfile
 import unittest
 from unittest.mock import patch
 
-import bluestacks
+from automation import adb as bluestacks
 
 
 class DiscoveryTests(unittest.TestCase):
@@ -225,11 +226,134 @@ class DiscoveryTests(unittest.TestCase):
             self.assertEqual(self.instance().status, "stopped")
 
 
+class ConnectionTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.conf = self.root / "bluestacks.conf"
+        self.adb = self.root / "HD-Adb.exe"
+        self.adb.touch()
+        self.conf.write_text('\n'.join([
+            'bst.instance.PieCustom.display_name="Chosen account"',
+            'bst.instance.PieCustom.adb_port="6101"',
+            'bst.instance.PieCustom.android_id="id-one"',
+        ]), encoding="utf-8")
+        self.target = bluestacks.Instance(str(self.conf), "PieCustom", "Chosen account", str(self.adb),
+                                           "127.0.0.1:6101", "id-one")
+        self.online = {self.target.endpoint: "device"}
+        self.refused = RuntimeError("Local ADB connection unavailable")
+        self.refused.__cause__ = ConnectionRefusedError("No local server")
+        self.addCleanup(patch.stopall)
+        patch.object(bluestacks, "_configuration_sources", return_value=[(str(self.conf), str(self.adb))]).start()
+        self.states = patch.object(bluestacks, "_device_states", side_effect=[self.refused, self.online]).start()
+        self.identity = patch.object(bluestacks, "_android_identity", return_value="id-one").start()
+        self.process = patch.object(bluestacks.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)).start()
+        patch.object(bluestacks.socket, "create_connection", side_effect=AssertionError("Unexpected socket access")).start()
+        patch.dict(os.environ, {"ANDROID_ADB_SERVER_PORT": "5040", "ADB_SERVER_SOCKET": "tcp:remote:5555",
+                                "ANDROID_ADB_SERVER_ADDRESS": "remote"}).start()
+
+    def test_explicit_connect_bootstraps_absent_local_server_then_verifies_target(self):
+        bluestacks.verify_identity(self.target, connect=True)
+        self.assertEqual([call.args[0] for call in self.process.call_args_list], [
+            [str(self.adb), "-P", "5040", "start-server"],
+            [str(self.adb), "-H", "127.0.0.1", "-P", "5040", "connect", self.target.endpoint],
+        ])
+        env = self.process.call_args_list[0].kwargs["env"]
+        self.assertNotIn("ADB_SERVER_SOCKET", env)
+        self.assertNotIn("ANDROID_ADB_SERVER_ADDRESS", env)
+        self.assertEqual(env["ANDROID_ADB_SERVER_PORT"], "5040")
+        self.identity.assert_called_once_with(self.target.endpoint)
+
+    def test_passive_verification_never_starts_server(self):
+        with self.assertRaisesRegex(RuntimeError, "Local ADB connection unavailable"):
+            bluestacks.verify_identity(self.target)
+        self.process.assert_not_called()
+        self.identity.assert_not_called()
+
+    def test_connected_target_needs_no_adb_process(self):
+        self.states.side_effect = [self.online, self.online]
+        bluestacks.verify_identity(self.target, connect=True)
+        self.process.assert_not_called()
+        self.identity.assert_called_once_with(self.target.endpoint)
+
+    def test_existing_server_only_connects_selected_transport(self):
+        self.states.side_effect = [{}, self.online]
+        bluestacks.verify_identity(self.target, connect=True)
+        self.process.assert_called_once()
+        self.assertEqual(self.process.call_args.args[0], [str(self.adb), "-H", "127.0.0.1", "-P", "5040",
+                                                       "connect", self.target.endpoint])
+
+    def test_server_protocol_error_or_timeout_never_bootstraps(self):
+        for cause in (None, TimeoutError("Local server timed out")):
+            with self.subTest(cause=cause):
+                failure = RuntimeError("Server request failed")
+                failure.__cause__ = cause
+                self.states.side_effect = [failure, self.online]
+                self.process.reset_mock()
+                bluestacks.verify_identity(self.target, connect=True)
+                self.process.assert_called_once()
+                self.assertEqual(self.process.call_args.args[0][-2:], ["connect", self.target.endpoint])
+
+    def test_bootstrap_failure_aborts_before_transport_or_identity(self):
+        self.process.return_value = subprocess.CompletedProcess([], 1)
+        with self.assertRaisesRegex(RuntimeError, "could not start the local server"):
+            bluestacks.verify_identity(self.target, connect=True)
+        self.process.assert_called_once()
+        self.identity.assert_not_called()
+
+    def test_bootstrap_timeout_and_os_error_are_reported(self):
+        for failure in (subprocess.TimeoutExpired("start-server", 15), OSError("Cannot launch ADB")):
+            with self.subTest(failure=failure):
+                self.states.side_effect = [self.refused]
+                self.process.side_effect = failure
+                self.process.reset_mock()
+                with self.assertRaisesRegex(RuntimeError, "Cannot start the local ADB server"):
+                    bluestacks.verify_identity(self.target, connect=True)
+                self.process.assert_called_once()
+                self.identity.assert_not_called()
+
+    def test_changed_mapping_refuses_bootstrap(self):
+        self.conf.write_text(self.conf.read_text().replace('"6101"', '"6237"'), encoding="utf-8")
+        with self.assertRaisesRegex(RuntimeError, "mapping or Android identity changed"):
+            bluestacks.verify_identity(self.target, connect=True)
+        self.states.assert_not_called()
+        self.process.assert_not_called()
+
+    def test_cold_start_still_requires_matching_android_identity(self):
+        self.identity.return_value = "another-account"
+        with self.assertRaisesRegex(RuntimeError, "identity mismatch"):
+            bluestacks.verify_identity(self.target, connect=True)
+        self.assertEqual(self.process.call_count, 2)
+
+    def test_bootstrap_and_connect_success_still_require_online_transport(self):
+        self.states.side_effect = [self.refused, {self.target.endpoint: "unauthorized"}]
+        with self.assertRaisesRegex(RuntimeError, "disconnected or not authorized"):
+            bluestacks.verify_identity(self.target, connect=True)
+        self.identity.assert_not_called()
+
+    def test_cold_start_manual_target_still_requires_bluestacks_vendor(self):
+        target = replace(self.target, config_path="", instance_id="manual@" + self.target.endpoint)
+        with patch.object(bluestacks, "_is_bluestacks", return_value=False) as vendor:
+            with self.assertRaisesRegex(RuntimeError, "cannot be verified as BlueStacks"):
+                bluestacks.verify_identity(target, connect=True)
+        vendor.assert_called_once_with(target.endpoint)
+
+    def test_mapping_is_rechecked_after_cold_start(self):
+        def identity(endpoint):
+            self.conf.write_text(self.conf.read_text().replace('"6101"', '"6237"'), encoding="utf-8")
+            return "id-one"
+        self.identity.side_effect = identity
+        with self.assertRaisesRegex(RuntimeError, "mapping or Android identity changed"):
+            bluestacks.verify_identity(self.target, connect=True)
+
+
 class ProtocolTests(unittest.TestCase):
     class Socket:
         def __init__(self, payload):
             self.payload = payload
             self.sent = []
+            self.timeouts = []
 
         def __enter__(self):
             return self
@@ -239,6 +363,9 @@ class ProtocolTests(unittest.TestCase):
 
         def sendall(self, data):
             self.sent.append(data)
+
+        def settimeout(self, timeout):
+            self.timeouts.append(timeout)
 
         def recv(self, length):
             data, self.payload = self.payload[:length], self.payload[length:]
@@ -252,7 +379,8 @@ class ProtocolTests(unittest.TestCase):
                 patch.dict(os.environ, {"ANDROID_ADB_SERVER_PORT": "5040"}):
             states = bluestacks._device_states()
         self.assertEqual(states, {"127.0.0.1:6101": "device"})
-        connect.assert_called_once_with(("127.0.0.1", 5040), timeout=1.5)
+        connect.assert_called_once_with(("127.0.0.1", 5040), timeout=3)
+        self.assertEqual(sock.timeouts, [1.5])
         self.assertEqual(sock.sent, [b"000chost:devices"])
 
     def test_identity_shell_is_read_only_and_targets_exact_endpoint(self):
@@ -261,6 +389,14 @@ class ProtocolTests(unittest.TestCase):
             self.assertEqual(bluestacks._android_identity("127.0.0.1:6237"), "id-one")
         services = [part[4:] for part in sock.sent]
         self.assertEqual(services, [b"host:transport:127.0.0.1:6237", b"shell:settings get secure android_id"])
+
+    def test_refused_server_preserves_cause_without_launching_adb(self):
+        with patch.object(bluestacks.socket, "create_connection", side_effect=ConnectionRefusedError("absent")), \
+                patch.object(bluestacks.subprocess, "run") as process:
+            with self.assertRaisesRegex(RuntimeError, "Local ADB connection unavailable") as failure:
+                bluestacks._device_states()
+        self.assertIsInstance(failure.exception.__cause__, ConnectionRefusedError)
+        process.assert_not_called()
 
     def test_generic_emulator_properties_do_not_identify_bluestacks(self):
         for props, expected in (("[ro.hardware]: [ranchu]\n[ro.product.manufacturer]: [samsung]", False),

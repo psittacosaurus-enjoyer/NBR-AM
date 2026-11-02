@@ -41,7 +41,8 @@ class RecognitionCompatibilityGuardTests(unittest.TestCase):
              patch.object(compat, 'ItemRecognizer') as recognizer, \
              patch.object(compat, 'evidence_paths') as evidence:
             with self.assertRaisesRegex(ValueError, 'Snapshot does not match'):
-                compat.check(self.snapshot, calibration_path=self.calibration_path, promote=True)
+                compat.check(self.snapshot, calibration_path=self.calibration_path, promote=True,
+                             baseline_calibration_path=backup)
         recognizer.assert_not_called()
         evidence.assert_not_called()
         self.assertEqual(self.calibration_path.read_bytes(), self.original)

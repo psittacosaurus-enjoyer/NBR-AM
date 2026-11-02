@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from PySide6.QtCore import Qt
 
-import manager_gui
+from app.gui import window as manager_gui
 import test_manager as fixtures
 
 

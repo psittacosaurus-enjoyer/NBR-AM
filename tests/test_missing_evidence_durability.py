@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-import loot_tracking as loot
+from app.backend import loot
 from test_loot_tracking import FakeRecognizer
 
 

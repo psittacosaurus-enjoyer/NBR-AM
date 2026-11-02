@@ -149,16 +149,15 @@ def evaluate_expanded_calibration(compatibility,calibration_path=DEFAULT_TEMPLAT
     L.atomic_json(L.ROOT/'reports/fandom_recognition/manager_upgrade.json',report)
     return report
 
-def check(snapshot,calibration_path=DEFAULT_TEMPLATES/'calibration.json',promote=True,additional_paths=()):
+def check(snapshot,calibration_path=DEFAULT_TEMPLATES/'calibration.json',promote=True,additional_paths=(),
+          baseline_calibration_path=None):
     cv2.setNumThreads(1)
     directory=L.ROOT/'reports/fandom_recognition';directory.mkdir(parents=True,exist_ok=True)
     current=json.loads(Path(calibration_path).read_text('utf-8'))
-    original_path=L.ROOT/'backups/fandom-1.1-before/calibration.json'
-    original=json.loads(original_path.read_text('utf-8')) if original_path.exists() else copy.deepcopy(current)
+    original=(json.loads(Path(baseline_calibration_path).read_text('utf-8'))
+              if baseline_calibration_path is not None else copy.deepcopy(current))
     snapshot=Path(snapshot)
-    # SQLite backup preserves data but may change page headers and therefore the file hash.
-    trusted_snapshot=original_path.with_name('library.sqlite3')
-    expected_snapshot_hash=file_hash(trusted_snapshot) if trusted_snapshot.exists() else original.get('library_sha256')
+    expected_snapshot_hash=original.get('library_sha256')
     if expected_snapshot_hash!=file_hash(snapshot):
         raise ValueError('Snapshot does not match the preserved pre-import calibration')
     before_config=copy.deepcopy(original);before_config['library_sha256']=file_hash(snapshot)
@@ -230,8 +229,11 @@ def check(snapshot,calibration_path=DEFAULT_TEMPLATES/'calibration.json',promote
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--snapshot',type=Path,required=True);p.add_argument('--no-promote',action='store_true')
+    p.add_argument('--baseline-calibration',type=Path,help='Explicit calibration matching the snapshot fingerprint')
+    p.add_argument('--calibration',type=Path,default=DEFAULT_TEMPLATES/'calibration.json')
     p.add_argument('--screenshot',type=Path,action='append',default=[],help='Additional real screenshot to compare; does not supply ground truth')
-    args=p.parse_args();report=check(args.snapshot,promote=not args.no_promote,additional_paths=args.screenshot)
+    args=p.parse_args();report=check(args.snapshot,calibration_path=args.calibration,promote=not args.no_promote,
+                                   additional_paths=args.screenshot,baseline_calibration_path=args.baseline_calibration)
     raise SystemExit(0 if report['passed'] else 1)
 
 if __name__=='__main__': main()

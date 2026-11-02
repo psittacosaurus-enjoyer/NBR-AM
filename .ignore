@@ -1,0 +1,11 @@
+# Search-tool ignores (ripgrep and tools built on it). Git tracking is unaffected.
+runtime/
+.venv/
+tests/fixtures/
+assets/**/*.png
+assets/**/*.webp
+assets/**/*.jpg
+docs/images/
+docs/VALIDATION.md
+docs/CLEANUP-1.25.md
+**/__pycache__/

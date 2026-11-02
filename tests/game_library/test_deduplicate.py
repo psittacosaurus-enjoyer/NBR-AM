@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 from game_library import library as L
-from game_library.deduplicate import deduplicate_copy
+from game_library.deduplicate import deduplicate_copy, consolidate
 
 
 class DeduplicateTests(unittest.TestCase):
@@ -65,7 +65,8 @@ class DeduplicateTests(unittest.TestCase):
             self.assertIsNone(db.execute('SELECT 1 FROM records WHERE id=?', (second,)).fetchone())
             self.assertEqual(db.execute('SELECT count(*) FROM records WHERE record_type="character"').fetchone()[0], 1)
             self.assertEqual(tuple(db.execute('SELECT * FROM relationships').fetchone()), (first, character, 'used_by'))
-            self.assertEqual(db.execute('SELECT canonical_id FROM deduplication_history WHERE original_id=?', (second,)).fetchone()[0], first)
+            self.assertEqual(db.execute('SELECT canonical_id FROM identity_aliases WHERE alias_id=?', (second,)).fetchone()[0], first)
+            self.assertEqual(L.get_record(db, second)['id'], first)
             self.assertEqual(db.execute('SELECT count(*) FROM record_assets WHERE record_id=?', (first,)).fetchone()[0], 2)
             self.assertEqual(db.execute('SELECT count(*) FROM record_search WHERE record_id=?', (second,)).fetchone()[0], 0)
             self.assertEqual(L.search(db, q='Alternate Material')['records'][0]['id'], first)
@@ -145,6 +146,141 @@ class DeduplicateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             deduplicate_copy(self.source, self.output)
         self.assertEqual(self.output.read_bytes(), b'keep')
+
+    def test_transactional_consolidation_preserves_alias_writes_sources_and_rolls_back(self):
+        first, _ = self.record('first-a', card=949)
+        second, _ = self.record('second-b', card=949)
+        self.db.commit()
+        with self.assertRaisesRegex(RuntimeError, 'abort'):
+            with self.db:
+                consolidate(self.db, preferred_ids=[first])
+                self.assertEqual(L.resolve_id(self.db, second), first)
+                raise RuntimeError('abort')
+        self.assertEqual(self.db.execute('SELECT count(*) FROM records').fetchone()[0], 2)
+        with self.db:
+            report = consolidate(self.db, preferred_ids=[first])
+        self.assertEqual(report['mapping'][second], first)
+        L.annotate(self.db, second, {'notes': 'Historical alias remains writable', 'tags': ['reviewed']})
+        canonical, _ = L.upsert_record(self.db, record_type='item', source_key='second-b',
+            display_name='New source spelling', source_url='https://example.test/second-b',
+            category='crystal', element='Body', rarity='3')
+        self.assertEqual(canonical, first)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM records').fetchone()[0], 1)
+        detail = L.get_record(self.db, second)
+        self.assertEqual(detail['id'], first)
+        self.assertEqual(detail['display_name'], 'Test Material')
+        self.assertEqual(detail['notes'], 'Historical alias remains writable')
+        self.assertIn('New source spelling', json.dumps(detail['sources']))
+        with self.db:
+            repeated = consolidate(self.db, preferred_ids=[first])
+        self.assertEqual(repeated['merged_groups'], [])
+        self.assertEqual(repeated['removed_asset_rows'], 0)
+        self.assertEqual(list(self.db.execute('PRAGMA foreign_key_check')), [])
+
+    def test_legacy_alias_schema_migrates_in_callers_transaction(self):
+        first, _ = self.record('first')
+        second, _ = self.record('second')
+        self.db.execute('DROP TABLE identity_aliases')
+        self.db.execute('CREATE TABLE identity_aliases (alias_id TEXT PRIMARY KEY REFERENCES records(id),'
+                        'canonical_id TEXT NOT NULL REFERENCES records(id),evidence TEXT NOT NULL)')
+        self.db.execute('INSERT INTO identity_aliases VALUES(?,?,?)', (second, first, 'Reviewed identity'))
+        self.db.commit()
+        with self.assertRaisesRegex(RuntimeError, 'abort migration'):
+            with self.db:
+                consolidate(self.db, preferred_ids=[first])
+                raise RuntimeError('abort migration')
+        self.assertIn('alias_id', {row[3] for row in self.db.execute('PRAGMA foreign_key_list(identity_aliases)')})
+        self.assertFalse(L.has_table(self.db, 'identity_aliases_new'))
+        with self.db:
+            consolidate(self.db, preferred_ids=[first])
+        self.assertEqual(L.get_record(self.db, second)['id'], first)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM records').fetchone()[0], 1)
+        self.assertNotIn('alias_id', {row[3] for row in self.db.execute('PRAGMA foreign_key_list(identity_aliases)')})
+        self.assertIn('canonical_id', {row[3] for row in self.db.execute('PRAGMA foreign_key_list(identity_aliases)')})
+        self.assertEqual(list(self.db.execute('PRAGMA foreign_key_check')), [])
+
+    def test_exact_asset_merge_retains_record_specific_urls_roles_and_source_rebuilds(self):
+        first, first_asset = self.record('first', record_type='character', sha='same-pixels')
+        second, second_asset = self.record('second', record_type='character', sha='same-pixels')
+        self.db.execute('UPDATE assets SET source_image_url=? WHERE id=?',
+                        ('https://example.test/abilities/shared.png', first_asset))
+        self.db.execute('UPDATE assets SET source_image_url=? WHERE id=?',
+                        ('https://example.test/ninjas/shared.png', second_asset))
+        self.db.execute('INSERT INTO record_assets VALUES(?,?,?)', (second, second_asset, 'card'))
+        with self.db:
+            report = consolidate(self.db)
+        self.assertEqual(report['removed_asset_rows'], 1)
+        canonical_asset = report['asset_mapping'][second_asset]
+        detail = L.get_record(self.db, second)
+        self.assertEqual({a['role'] for a in detail['assets']}, {'icon', 'card'})
+        self.assertTrue(all(a['source_image_urls'] == ['https://example.test/ninjas/shared.png'] for a in detail['assets']))
+        self.assertEqual(L.get_record(self.db, first)['assets'][0]['source_image_urls'],
+                         ['https://example.test/abilities/shared.png'])
+        original = dict(self.db.execute('SELECT * FROM assets WHERE id=?', (canonical_asset,)).fetchone())
+        original.update(id=second_asset, source_image_url='https://example.test/ninjas/shared.png')
+        self.assertEqual(L.upsert_asset(self.db, original), canonical_asset)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM assets').fetchone()[0], 1)
+        self.assertEqual(self.db.execute('SELECT count(*) FROM asset_sources').fetchone()[0], 2)
+
+    def test_changed_shared_source_splits_only_its_links_and_preserves_other_bytes(self):
+        for changing in ('a', 'b'):
+            with self.subTest(changing=changing):
+                db=sqlite3.connect(':memory:')
+                db.row_factory=sqlite3.Row
+                db.execute('PRAGMA foreign_keys=ON')
+                L.initialize(db)
+                def asset(key, digest='old'):
+                    url='https://example.test/'+key
+                    return dict(id=L.stable_id('asset',url),source_image_url=url,
+                        original_filename=key+'.png',local_image_path='assets/'+digest+'.png',
+                        thumbnail_path=None,sha256=digest,width=1,height=1,
+                        perceptual_hash=None,status='ok',collected_at=L.now())
+                records={}
+                for key in ('a','b'):
+                    rid,_=L.upsert_record(db,record_type='item',source_key=key,
+                        display_name=key,source_url='https://example.test/record/'+key)
+                    records[key]=rid
+                    aid=L.upsert_asset(db,asset(key))
+                    L.link_asset(db,rid,aid,'icon',asset(key)['source_image_url'])
+                    db.execute('INSERT INTO asset_preferences VALUES(?,?,?,?)',(rid,aid,10,'Reviewed'))
+                old=aid
+                new=L.upsert_asset(db,asset(changing,'new'))
+                self.assertNotEqual(new,old)
+                other='b' if changing=='a' else 'a'
+                for key,digest in ((changing,'new'),(other,'old')):
+                    rows=db.execute('SELECT a.sha256,a.local_image_path FROM assets a JOIN record_assets ra '
+                                    'ON a.id=ra.asset_id WHERE ra.record_id=?',(records[key],)).fetchall()
+                    self.assertEqual([tuple(row) for row in rows],[(digest,'assets/'+digest+'.png')])
+                    self.assertEqual(db.execute('SELECT count(*) FROM asset_preferences WHERE record_id=?',
+                                                (records[key],)).fetchone()[0],1)
+                self.assertEqual(L.upsert_asset(db,asset(changing,'new')),new)
+                self.assertEqual(db.execute('SELECT count(*) FROM assets').fetchone()[0],2)
+                # A subsequent update converges both sources onto existing bytes.
+                self.assertEqual(L.upsert_asset(db,asset(other,'new')),new)
+                self.assertEqual(db.execute('SELECT count(*) FROM assets').fetchone()[0],1)
+                self.assertEqual(list(db.execute('PRAGMA foreign_key_check')),[])
+                db.close()
+
+    def test_repeated_source_versions_allocate_an_unused_id_after_rejoining_shared_bytes(self):
+        def asset(key,digest):
+            url='https://example.test/'+key
+            return dict(id=L.stable_id('asset',url),source_image_url=url,original_filename=key+'.png',
+                        local_image_path='assets/'+digest+'.png',thumbnail_path=None,sha256=digest,
+                        width=1,height=1,perceptual_hash=None,status='ok',collected_at=L.now())
+        records={}
+        for key in ('a','b','c'):
+            records[key],_=L.upsert_record(self.db,record_type='item',source_key=key,
+                display_name=key,source_url='https://example.test/record/'+key)
+            aid=L.upsert_asset(self.db,asset(key,'0'))
+            L.link_asset(self.db,records[key],aid,'icon',asset(key,'0')['source_image_url'])
+        L.upsert_asset(self.db,asset('a','1'))
+        L.upsert_asset(self.db,asset('a','2'))
+        L.upsert_asset(self.db,asset('c','2'))
+        restored=L.upsert_asset(self.db,asset('a','1'))
+        self.assertEqual(L.upsert_asset(self.db,asset('a','1')),restored)
+        for key,digest in (('a','1'),('b','0'),('c','2')):
+            self.assertEqual({a['sha256'] for a in L.get_record(self.db,records[key])['assets']},{digest})
+        self.assertEqual(list(self.db.execute('PRAGMA foreign_key_check')),[])
 
 
 if __name__ == '__main__':

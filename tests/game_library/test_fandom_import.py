@@ -202,11 +202,32 @@ class FandomImportTests(unittest.TestCase):
         self.assertEqual([r['id'] for r in refs], [self.original_id])
         self.assertEqual(len(refs[0]['reference_paths']), 1)
         self.assertEqual(list((self.root / 'assets/items').glob('*')), [self.original_image])
-        with contextlib.closing(L.connect(report['backup'], readonly=True)) as backup:
-            saved = L.get_record(backup, self.original_id)
-        self.assertEqual(saved['display_name'], 'Reviewed Heart Scroll')
-        self.assertEqual(saved['notes'], 'Existing verified reward label')
-        self.assertNotIn(self.fandom_url, json.dumps(saved))
+        self.assertNotIn('backup', report)
+        self.assertFalse((self.root / 'backups').exists())
+
+    def test_changed_shared_fandom_url_preserves_the_other_identity_original(self):
+        shared=self.image('fandom-shared.png',alternate=True)
+        image_a=self.image_record(shared,url='https://static.wikia.nocookie.net/images/shared-a.png')
+        image_b=dict(image_a,url='https://static.wikia.nocookie.net/images/shared-b.png')
+        first=self.incoming(source_key='new-a',name='New Crystal',title='New Crystal',game_id='9000',
+                            category='Limit Break',images=[image_a])
+        second=self.incoming(source_key='new-b',name='New Crystal',title='New Crystal',game_id='9001',
+                             category='Limit Break',images=[image_b])
+        self.importer([first,second])
+        first_id=L.stable_id('item','fandom:new-a')
+        second_id=L.stable_id('item','fandom:new-b')
+        original_digest=image_a['sha256']
+        changed=self.image('fandom-changed.png',size=96)
+        replacement=self.image_record(changed,url=image_a['url'])
+        updated=dict(first,images=[replacement])
+        self.importer([updated,second])
+        with contextlib.closing(L.connect(self.path,readonly=True)) as db:
+            self.assertEqual({a['sha256'] for a in L.get_record(db,first_id)['assets']},{replacement['sha256']})
+            self.assertEqual({a['sha256'] for a in L.get_record(db,second_id)['assets']},{original_digest})
+            self.assertEqual(list(db.execute('PRAGMA foreign_key_check')),[])
+        counts=self.counts()
+        self.importer([updated,second])
+        self.assertEqual(self.counts(),counts)
 
     def test_repeated_import_does_not_multiply_records_assets_or_provenance(self):
         self.importer([self.incoming()])
@@ -310,7 +331,7 @@ class FandomImportTests(unittest.TestCase):
         self.importer([self.incoming(), genuinely_new])
         with contextlib.closing(L.connect(self.path)) as db:
             db.execute('INSERT INTO relationships VALUES(?,?,?)',
-                       (alias, self.original_id, 'source_equivalence'))
+                       (L.resolve_id(db, alias), L.stable_id('item', 'fandom:Skill_Crystal:4'), 'related_material'))
             db.commit()
         preserved_tables = ('record_sources', 'asset_sources', 'identity_aliases',
                             'asset_preferences', 'assets', 'record_assets', 'relationships')
@@ -319,7 +340,7 @@ class FandomImportTests(unittest.TestCase):
                       for table in preserved_tables}
             stable_ids = {row[0] for row in db.execute('SELECT id FROM records')}
         self.assertTrue(before['identity_aliases'])
-        self.assertEqual(len(stable_ids), 3)
+        self.assertEqual(len(stable_ids), 2)
         expected_reference_ids = {record['id'] for record in self.references()}
         original_files = {path: path.read_bytes() for path in (self.root/'assets').rglob('*') if path.is_file()}
         (self.root / 'data/manifest.json').write_text(json.dumps({'resources': []}), encoding='utf-8')
@@ -338,7 +359,7 @@ class FandomImportTests(unittest.TestCase):
         self.assertEqual({record['id'] for record in self.references()}, expected_reference_ids)
         self.assertTrue(all(path.read_bytes() == data for path, data in original_files.items()))
 
-    def test_confirmed_old_alias_keeps_both_stable_rows_but_one_recognition_identity(self):
+    def test_confirmed_old_alias_redirects_to_one_stable_recognition_identity(self):
         with contextlib.closing(L.connect(self.path)) as db:
             alias, _ = L.upsert_record(db, record_type='item', source_key='duplicate-source-scroll',
                 display_name='Heart Awakening Scroll', source_url=self.gacha_url + '?variant=duplicate',
@@ -348,9 +369,10 @@ class FandomImportTests(unittest.TestCase):
             db.execute('INSERT INTO record_assets VALUES(?,?,?)', (alias, self.asset_id, 'icon'))
             db.commit()
         self.importer([self.incoming()])
-        self.assertEqual(self.counts()['records'], 2)
+        self.assertEqual(self.counts()['records'], 1)
         with contextlib.closing(L.connect(self.path, readonly=True)) as db:
             self.assertIsNotNone(L.get_record(db, alias))
+            self.assertEqual(L.get_record(db, alias)['id'], self.original_id)
             self.assertIsNotNone(L.get_record(db, self.original_id))
         refs = self.references()
         self.assertEqual([r['id'] for r in refs], [self.original_id])

@@ -7,8 +7,8 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-import farm
-import loot_tracking as loot
+from automation import controller as farm
+from app.backend import loot
 from instance_fixtures import legacy_target
 from test_loot_tracking import FakeRecognizer
 from test_stages import FakeDevice

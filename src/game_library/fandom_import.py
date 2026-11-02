@@ -36,15 +36,6 @@ def source_name(record):
 
 def fingerprint(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
-def backup_database(db_path,root):
-    digest=fingerprint(db_path)
-    target=Path(root)/'backups'/('fandom-1.1-'+digest[:16])/'library.sqlite3'
-    target.parent.mkdir(parents=True,exist_ok=True)
-    if not target.exists():
-        with closing(sqlite3.connect(db_path)) as source,closing(sqlite3.connect(target)) as destination:
-            source.backup(destination)
-    return str(target)
-
 def dhash(image):
     gray=image.convert('L').resize((9,8),Image.Resampling.LANCZOS)
     p=list(gray.get_flattened_data() if hasattr(gray,'get_flattened_data') else gray.getdata());bits=0
@@ -118,6 +109,7 @@ def preferred_score(asset,role):
     return (1e12 if role in ('card','icon','image') else 0)+area*10+lossless
 
 def fill_missing_facts(db,rid,incoming):
+    rid=L.resolve_id(db,rid)
     if incoming.get('metadata',{}).get('source_discrepancies'): return False
     row=dict(db.execute('SELECT * FROM records WHERE id=?',(rid,)).fetchone())
     if row['verification_status'] not in ('source_verified','manually_verified'): return False
@@ -140,7 +132,6 @@ def import_records(records,db_path=L.DB_PATH,root=L.ROOT,dry_run=False):
         with closing(L.connect(db_path,readonly=True)) as original:
             db=sqlite3.connect(':memory:');original.backup(db);db.row_factory=sqlite3.Row;db.execute('PRAGMA foreign_keys=ON')
     else:
-        report['backup']=backup_database(db_path,root)
         db=L.connect(db_path)
     L.initialize(db)
     existing={r['id']:dict(r) for r in db.execute('SELECT * FROM records WHERE record_type="item"')}
@@ -189,12 +180,12 @@ def import_records(records,db_path=L.DB_PATH,root=L.ROOT,dry_run=False):
                             db.execute('INSERT OR IGNORE INTO identity_aliases VALUES(?,?,?)',(other,rid,evidence));report['aliases_confirmed']+=1
                     enriched.add(rid)
                 else:
-                    rid=L.stable_id('item','fandom:'+key)
+                    rid=L.resolve_id(db,L.stable_id('item','fandom:'+key))
                     if rid not in existing:
                         canonical_category=family(incoming.get('category')) or 'item'
                         meta={'original':{'name':title,'kind':canonical_category,'stars':incoming.get('rarity'),'element':incoming.get('element')},'game_id_namespace':incoming.get('metadata',{}).get('game_id_namespace'),'source':'Fandom','source_data':incoming.get('metadata',{}),'description':incoming.get('description')}
                         meta['identity_review_required']=bool(source_discrepancies)
-                        L.upsert_record(db,record_type='item',source_key='fandom:'+key,display_name=title,source_url=url,game_id=incoming.get('game_id'),category=canonical_category,element=incoming.get('element'),rarity=incoming.get('rarity'),metadata=meta,verification_status='inferred' if source_discrepancies else 'source_verified')
+                        rid,_=L.upsert_record(db,record_type='item',source_key='fandom:'+key,display_name=title,source_url=url,game_id=incoming.get('game_id'),category=canonical_category,element=incoming.get('element'),rarity=incoming.get('rarity'),metadata=meta,verification_status='inferred' if source_discrepancies else 'source_verified')
                         row=dict(db.execute('SELECT * FROM records WHERE id=?',(rid,)).fetchone());row['metadata']=json.loads(row['metadata']);existing[rid]=row;report['new_identities']+=1
                     # Different documented rarities/elements are ordinary variants. Review is needed only
                     # when a conflicting claim also points to the same exact illustration or same scoped ID.
@@ -245,9 +236,13 @@ def import_records(records,db_path=L.DB_PATH,root=L.ROOT,dry_run=False):
                                     destination=root/thumb;destination.parent.mkdir(parents=True,exist_ok=True)
                                     if not destination.exists(): preview.save(destination,'WEBP',quality=88)
                             asset={'id':aid,'source_image_url':image_url,'original_filename':image.get('original_filename') or source.name,'local_image_path':local,'thumbnail_path':thumb,'sha256':digest,'width':w,'height':h,'perceptual_hash':perceptual,'status':'ok','collected_at':L.now(),'format':format_name}
-                            db.execute('''INSERT INTO assets VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_image_url) DO UPDATE SET local_image_path=excluded.local_image_path,thumbnail_path=excluded.thumbnail_path,sha256=excluded.sha256,width=excluded.width,height=excluded.height,perceptual_hash=excluded.perceptual_hash,status=excluded.status''',tuple(asset[k] for k in ('id','source_image_url','original_filename','local_image_path','thumbnail_path','sha256','width','height','perceptual_hash','status','collected_at')))
-                            by_hash[digest]=asset;all_assets.append(asset);report['usable_reference_images_added']+=1
-                        db.execute('INSERT OR IGNORE INTO record_assets VALUES(?,?,?)',(rid,asset['id'],role))
+                            report['usable_reference_images_added']+=1
+                        incoming_asset=dict(asset,id=L.stable_id('asset',image['url']),source_image_url=image['url'])
+                        aid=L.upsert_asset(db,incoming_asset)
+                        asset=dict(db.execute('SELECT * FROM assets WHERE id=?',(aid,)).fetchone())
+                        by_hash[digest]=asset
+                        if not any(old['id']==aid for old in all_assets): all_assets.append(asset)
+                        L.link_asset(db,rid,asset['id'],role,image['url'])
                         db.execute('INSERT OR REPLACE INTO asset_sources VALUES(?,?,?,?,?)',(image['url'],asset['id'],'Fandom',url,json.dumps(image,ensure_ascii=False)))
                         # Retain GachaWiki asset provenance even when Fandom pixels are byte-identical.
                         db.execute('INSERT OR IGNORE INTO asset_sources VALUES(?,?,?,?,?)',(asset['source_image_url'],asset['id'],'GachaWiki' if 'gachawiki.net' in asset['source_image_url'] else 'Fandom',url,'{}'))
@@ -259,7 +254,14 @@ def import_records(records,db_path=L.DB_PATH,root=L.ROOT,dry_run=False):
                     value=dict(old);score=preferred_score(value,value['role'])
                     db.execute('INSERT OR IGNORE INTO asset_preferences VALUES(?,?,?,?)',(rid,value['id'],score,'Existing source; same fidelity criterion'))
                 mutated=True
-            if mutated: L.index(db)
+            if mutated:
+                # Reviewed aliases keep stable redirects without duplicate definitions.
+                try:
+                    from .deduplicate import _merge
+                except ImportError:
+                    from deduplicate import _merge
+                mapping={row[0]:L.resolve_id(db,row[0]) for row in db.execute('SELECT id FROM records')}
+                _merge(db,mapping)
         report['existing_identities_enriched']=len(enriched)
         report['unresolved_identity_conflicts']=len(report['conflicts'])
         report['visually_similar_images_flagged']=len({s['incoming_url'] for s in report['similarities']})

@@ -8,8 +8,8 @@ from unittest.mock import Mock, patch
 
 import numpy as np
 
-import farm
-import loot_tracking as loot
+from automation import controller as farm
+from app.backend import loot
 from test_stages import FakeDevice
 
 
@@ -123,7 +123,7 @@ class RecordingRecoveryTests(unittest.TestCase):
             np.testing.assert_array_equal(call.args[1], engine.device.image)
         collector.completed.assert_called_once()
 
-    def test_repeated_capture_failure_persists_attention_and_safely_recovers(self):
+    def test_repeated_capture_failure_escalates_and_keeps_retrying_automatically(self):
         collector = Mock()
         collector.completed.return_value = 'durable-completion-id'
         collector.evidence.return_value = False
@@ -135,7 +135,8 @@ class RecordingRecoveryTests(unittest.TestCase):
             engine.tick()
         self.assertNotIn('retry', engine.device.actions)
         recording = self.persisted_run()['recording']
-        self.assertEqual(recording['state'], 'operator_attention')
+        self.assertEqual(recording['state'], 'retryable_failure')
+        self.assertEqual(recording['recovery_tier'], 'broader')
         self.assertGreaterEqual(recording['capture_attempts'], farm.LOOT_MAX_ATTEMPTS)
         self.assertTrue(recording['error'])
         self.assertRegex(engine.data['blocked'].lower(), 'record|screenshot|capture')
@@ -146,6 +147,122 @@ class RecordingRecoveryTests(unittest.TestCase):
         engine.tick()
         self.assertEqual(engine.device.actions.count('retry'), 1)
         self.assertEqual(engine.data['counts']['completed'], 1)
+
+    def test_departed_results_are_closed_durably_and_farming_resumes(self):
+        for departure in ('start', 'battle'):
+            with self.subTest(departure=departure):
+                collector = Mock()
+                collector.completed.return_value = 'durable-completion-id'
+                collector.evidence.return_value = False
+                collector.missing.return_value = True
+                engine = self.start_run(collector)
+                self.complete(engine)
+                engine.device.image = self.frame('results')
+                engine.tick()
+                original_id = engine.data['run']['id']
+                engine.device.image = self.frame(departure)
+                engine.tick()
+                collector.missing.assert_called_once()
+                self.assertEqual(collector.missing.call_args.args[0], original_id)
+                self.assertEqual(collector.missing.call_args.kwargs['completion_id'],
+                                 'durable-completion-id')
+                recovered = engine.data['last_recording_recovery']
+                self.assertEqual(recovered['run_id'], original_id)
+                self.assertTrue(recovered['original_run']['recording']['capture_revoked'])
+                self.assertEqual(collector.evidence.call_count, 1)
+                self.assertFalse(farm.STOP.exists())
+                if departure == 'start':
+                    self.assertEqual(engine.data['run']['id'], original_id)
+                    self.assertEqual(engine.data['run']['recording']['state'],
+                                     'missing_screenshot')
+                    self.assertEqual(engine.device.actions[-1], 'start_mission')
+                else:
+                    self.assertNotEqual(engine.data['run']['id'], original_id)
+                    self.assertIsNone(engine.data['run']['outcome'])
+                    self.assertEqual(engine.data['run']['origin'],
+                                     'observed_after_recording_recovery')
+                (self.runtime / 'universal.json').unlink()
+                (self.runtime / 'session.json').unlink()
+
+    def test_normal_results_and_uncertain_observations_keep_capture_eligible(self):
+        collector = Mock()
+        collector.completed.return_value = 'durable-completion-id'
+        collector.evidence.return_value = True
+        engine = self.start_run(collector)
+        self.complete(engine)
+        for name in ('RANK_UP_STAMINA_ACK', 'RANK_UP_RESULTS', 'TRIAL_COINS_NEXT',
+                     'RESULTS_NEXT', 'REWARD_REVEAL', 'MISSION_COMPLETE', 'UNKNOWN'):
+            with patch.object(engine, 'observe', return_value=(self.frame('complete'), name, {}, {})):
+                engine.tick()
+            self.assertFalse(engine.data['run']['recording'].get('capture_revoked'))
+        with patch.object(engine, 'observe', side_effect=[
+                (self.frame('start'), 'READY_TO_START', {}, {}),
+                (self.frame('battle'), 'IN_BATTLE', {}, {})]):
+            engine.tick()
+        self.assertFalse(engine.data['run']['recording'].get('capture_revoked'))
+        engine.device.image = self.frame('results')
+        engine.tick()
+        self.assertEqual(self.persisted_run()['recording']['state'], 'screenshot_saved')
+
+    def test_departed_results_restore_retained_evidence_before_missing_closure(self):
+        collector = Mock()
+        collector.completed.return_value = 'durable-completion-id'
+        collector.evidence.return_value = False
+        collector.recover_evidence.return_value = True
+        engine = self.start_run(collector)
+        self.complete(engine)
+        engine.device.image = self.frame('start')
+        engine.tick()
+        recording = engine.data['run']['recording']
+        self.assertEqual(recording['state'], 'screenshot_saved')
+        self.assertEqual(recording['resolution_mode'], 'automatic_retained_evidence')
+        collector.missing.assert_not_called()
+        collector.recover_evidence.assert_called_once()
+        self.assertEqual(engine.device.actions[-1], 'start_mission')
+        self.assertEqual(engine.data['counts']['completed'], 1)
+
+    def test_missing_resolution_crash_state_retries_durable_ack_automatically(self):
+        collector = Mock()
+        collector.completed.return_value = 'durable-completion-id'
+        collector.recover_evidence.return_value = False
+        collector.missing.return_value = True
+        engine = self.start_run(collector)
+        self.complete(engine)
+        recording = engine.data['run']['recording']
+        recording.update(state='missing_screenshot', missing_evidence_acknowledged=False)
+        engine.device.image = self.frame('start')
+        engine.tick()
+        self.assertTrue(recording['missing_evidence_acknowledged'])
+        collector.missing.assert_called_once()
+        self.assertEqual(engine.device.actions[-1], 'start_mission')
+
+    def test_capture_failure_reports_this_jobs_operation_error_over_health_warning(self):
+        collector = Mock()
+        collector.completed.return_value = 'durable-completion-id'
+        collector.evidence.return_value = False
+        collector.health.return_value = {'error': 'unrelated health-file sharing violation',
+            'operation_errors': {'durable-completion-id': {'operation': 'capture',
+                'message': 'Loot evidence storage limit reached; no eligible diagnostics remain'}}}
+        engine = self.start_run(collector)
+        self.complete(engine)
+        engine.device.image = self.frame('results')
+        engine.tick()
+        self.assertEqual(self.persisted_run()['recording']['error'],
+                         'Loot evidence storage limit reached; no eligible diagnostics remain')
+
+    def test_revoked_recording_still_registers_original_completion(self):
+        collector = Mock()
+        collector.completed.side_effect = [None, 'durable-completion-id']
+        engine = self.start_run(collector)
+        self.complete(engine)
+        self.next_attempt()
+        engine.device.image = self.frame('battle')
+        engine.tick()
+        recording = self.persisted_run()['recording']
+        self.assertTrue(recording['capture_revoked'])
+        self.assertEqual(recording['completion_id'], 'durable-completion-id')
+        collector.evidence.assert_not_called()
+        self.assertEqual(engine.device.actions, ['start_mission'])
 
     def test_restart_after_completion_keeps_job_identity_and_original_time(self):
         unavailable = Mock()

@@ -1,10 +1,9 @@
-"""Convenient root entry point for the existing farming controller."""
-from importlib import import_module as _import_module
+"""Root command-line entry point for the farming controller."""
 from pathlib import Path as _Path
 import sys as _sys
 
 _sys.path.insert(0, str(_Path(__file__).resolve().parent / "src"))
-_controller = _import_module("src.farm")
+from automation import controller as _controller
 
 if __name__ == "__main__":
     try:

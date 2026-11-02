@@ -190,6 +190,20 @@ class LibraryTests(unittest.TestCase):
         self.assertEqual(len(json.loads((target / 'assets.json').read_text())), 1)
         self.assertEqual(list(target.glob('*.tmp')), [])
 
+    def test_character_summary_uses_scoped_icon_url_with_legacy_schema_fallback(self):
+        character,_=self.record('portrait',record_type='character')
+        aid=self.asset(character,'shared.png')
+        self.db.execute('UPDATE assets SET source_image_url=? WHERE id=?',
+                        ('https://gachawiki.net/abilities/shared.png',aid))
+        self.db.execute('INSERT INTO record_asset_sources VALUES(?,?,?,?)',
+                        (character,aid,'icon','https://gachawiki.net/ninjas/shared.png'))
+        library.index(self.db)
+        self.assertEqual(library.get_record(self.db,character)['local_image_path'],'assets/items/shared.png')
+        self.assertEqual(library.search(self.db)['records'][0]['local_image_path'],'assets/items/shared.png')
+        self.db.execute('DROP TABLE record_asset_sources')
+        self.assertIsNone(library.get_record(self.db,character)['local_image_path'])
+        self.assertIsNone(library.search(self.db)['records'][0]['local_image_path'])
+
 
 if __name__ == '__main__':
     unittest.main()

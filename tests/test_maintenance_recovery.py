@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import farm
+from automation import controller as farm
 from test_stages import FakeDevice
 
 
@@ -136,9 +136,10 @@ class MaintenanceRecoveryTests(unittest.TestCase):
             engine.tick()
         self.assertEqual(engine.device.actions, [])
         self.assertFalse(engine.mission_verified)
-        self.assertEqual(engine.data['blocked'], 'Prepare any mission Start Mission screen, then Start')
+        self.assertEqual(engine.data['blocked'],
+                         'Unverified mission state; automatic recovery is waiting for a pinned known state')
 
-    def test_auto_off_battle_confirms_mission_entry_and_reports_without_input(self):
+    def test_auto_off_battle_confirms_mission_entry_and_enables_once(self):
         engine = self.engine('start')
         engine.tick()
         engine.device.image = self.image('auto_off')
@@ -146,24 +147,27 @@ class MaintenanceRecoveryTests(unittest.TestCase):
         engine.tick()
         self.assertEqual(engine.data['screen'], 'IN_BATTLE')
         self.assertFalse(engine.data['battle_auto_enabled'])
-        self.assertEqual(engine.data['blocked'], 'Auto-play is off; enable Auto to continue')
+        self.assertEqual(engine.data['blocked'], 'Waiting for Auto-play to turn on')
         self.assertEqual(engine.data['counts']['started'], 1)
         self.assertEqual(engine.data['counts']['completed'], 0)
-        self.assertIsNone(engine.data['pending'])
-        self.assertEqual(engine.device.actions, ['start_mission'])
+        self.assertEqual(engine.data['pending']['id'], 'enable_auto')
+        self.assertEqual(engine.device.actions, ['start_mission', 'enable_auto'])
         engine.device.image = self.image('battle')
         engine.tick()
         self.assertTrue(engine.data['battle_auto_enabled'])
         self.assertIsNone(engine.data['blocked'])
+        self.assertIsNone(engine.data['pending'])
         self.assertEqual(engine.data['counts']['started'], 1)
-        self.assertEqual(engine.device.actions, ['start_mission'])
+        self.assertEqual(engine.device.actions, ['start_mission', 'enable_auto'])
 
-    def test_auto_off_battle_requires_both_exact_guards_and_has_no_action(self):
+    def test_auto_off_battle_requires_both_exact_guards_before_enabling(self):
         frame = self.image('auto_off')
         name, spec, _ = self.detector.classify(frame)
         self.assertEqual(name, 'IN_BATTLE')
         self.assertFalse(spec['battle_auto_enabled'])
-        self.assertIsNone(spec.get('action'))
+        self.assertTrue(spec['verified_safe'])
+        self.assertEqual(spec['action']['id'], 'enable_auto')
+        self.assertEqual(spec['action']['point'], [623, 56])
         altered = [(frame.astype(float) * .5).astype(frame.dtype)]
         for anchor in spec['anchors']:
             changed = frame.copy()

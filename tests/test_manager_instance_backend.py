@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import bluestacks
-from manager_backend import ControllerBackend, ControllerError
+from automation import adb as bluestacks
+from app.backend.controller import ControllerBackend, ControllerError
 
 
 def instance(name="Main", identifier="Pie64", port=5621):
@@ -25,7 +25,7 @@ class InstanceBackendTests(unittest.TestCase):
     def test_active_target_wins_over_discovery_order(self):
         first, active = instance(), instance("Custom", "Pie64_7", 5671)
         state = dict(running=True, instance=active.to_dict(), instance_locked=True)
-        with patch("bluestacks.discover", return_value={"instances": [first, active], "detail": ""}), \
+        with patch('automation.adb.discover', return_value={"instances": [first, active], "detail": ""}), \
              patch.object(self.backend, "_instance_state", return_value=state):
             result = self.backend.instances()
         self.assertEqual(result["selected_key"], active.key)
@@ -34,7 +34,7 @@ class InstanceBackendTests(unittest.TestCase):
 
     def test_missing_saved_instance_remains_visible_without_substitution(self):
         saved = instance("Saved", "Pie64_saved", 5681)
-        with patch("bluestacks.discover", return_value={"instances": [instance()], "detail": ""}), \
+        with patch('automation.adb.discover', return_value={"instances": [instance()], "detail": ""}), \
              patch.object(self.backend, "_instance_state", return_value=dict(
                  running=False, instance=saved.to_dict(), instance_error="Saved target missing")):
             result = self.backend.instances()
@@ -44,7 +44,7 @@ class InstanceBackendTests(unittest.TestCase):
         self.assertIn("missing", result["detail"])
 
     def test_unknown_controller_state_locks_selection(self):
-        with patch("bluestacks.discover", return_value={"instances": [], "detail": "No installation"}), \
+        with patch('automation.adb.discover', return_value={"instances": [], "detail": "No installation"}), \
              patch.object(self.backend, "_instance_state", side_effect=ControllerError("Unavailable")):
             result = self.backend.instances()
         self.assertTrue(result["locked"])
@@ -52,7 +52,7 @@ class InstanceBackendTests(unittest.TestCase):
 
     def test_selection_uses_controller_cli_as_structured_arguments(self):
         completed = subprocess.CompletedProcess([], 0, "saved", "")
-        with patch("manager_backend.subprocess.run", return_value=completed) as run:
+        with patch('app.backend.controller.subprocess.run', return_value=completed) as run:
             self.backend.apply_instance("config|Pie64_42")
             self.assertEqual(run.call_args.args[0][-2:], ["--instance-key", "config|Pie64_42"])
             self.backend.manual_instance(" Custom Account ", "127.0.0.1:5641")
@@ -62,7 +62,7 @@ class InstanceBackendTests(unittest.TestCase):
 
     def test_rejected_selection_is_reported(self):
         completed = subprocess.CompletedProcess([], 1, "", "Farming is active")
-        with patch("manager_backend.subprocess.run", return_value=completed):
+        with patch('app.backend.controller.subprocess.run', return_value=completed):
             with self.assertRaisesRegex(ControllerError, "Farming is active"):
                 self.backend.apply_instance(instance().key)
 
@@ -70,7 +70,7 @@ class InstanceBackendTests(unittest.TestCase):
         active = instance("Running custom account", "Pie64_active", 5691)
         with patch.object(self.backend, "_instance_state", return_value=dict(
                 running=True, instance=active.to_dict())), \
-             patch("bluestacks.verify_identity") as verify:
+             patch('automation.adb.verify_identity') as verify:
             result = self.backend.connection()
         verify.assert_called_once_with(active)
         self.assertTrue(result["available"])
@@ -83,7 +83,7 @@ class InstanceBackendTests(unittest.TestCase):
                     self.backend._instance_state()
 
     def test_loot_history_remains_with_selected_instance(self):
-        from loot_tracking import LootStore, read_dashboard
+        from app.backend.loot import LootStore, read_dashboard
         store = LootStore(self.backend.root)
         first = store.ensure_session("fixture:first", "universal", account="first")
         second = store.ensure_session("fixture:second", "universal", account="second")

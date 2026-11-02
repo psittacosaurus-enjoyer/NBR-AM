@@ -1,7 +1,7 @@
 """Small, synchronous GUI adapter for the independent farming controller.
 
-The GUI runs these calls in background threads. Only an explicit command()
-may change controller state; monitoring never connects or launches a device.
+The GUI runs these calls in background threads. Explicit controls may change
+controller state; monitoring never connects or launches a device.
 """
 from __future__ import annotations
 
@@ -171,8 +171,10 @@ class ControllerBackend:
             recording = (progress.get('run') or {}).get('recording')
             health = dict(health) if isinstance(health, dict) else {}
             if isinstance(recording, dict):
+                resolved = (recording.get('state') == 'missing_screenshot'
+                            and recording.get('missing_evidence_acknowledged') is True)
                 health.update(state=recording.get('state'),
-                              error=recording.get('error') or health.get('error'),
+                              error=(None if resolved else recording.get('error')) or health.get('error'),
                               next_attempt_at=recording.get('next_attempt_at'))
             if health:
                 # Live farmer failures may predate collector/database startup.
@@ -181,19 +183,25 @@ class ControllerBackend:
         return data
 
     def _invoke(self, action, stage=None, timeout=45, requested_generation=None,
-                *, instance_key=None, instance_name=None, endpoint=None):
+                *, instance_key=None, instance_name=None, endpoint=None,
+                offline=False, completion_id=None, reason=None):
         args = [str(self.python), str(self.root / "src" / "farm.py"), action]
         if stage is not None:
             if action in {"boss-swap", "early-exit"}:
                 args.extend(["--enabled", "on" if stage else "off"])
+            elif action == "ninja-mode":
+                args.extend(["--mode", stage])
             else:
                 args.extend(["--minutes" if action == "stamina-duration" else "--stage", str(stage)])
         if requested_generation is not None:
             args.extend(["--stop-generation", requested_generation])
         for option, value in (("--instance-key", instance_key),
-                              ("--instance-name", instance_name), ("--endpoint", endpoint)):
+                              ("--instance-name", instance_name), ("--endpoint", endpoint),
+                              ("--completion-id", completion_id), ("--reason", reason)):
             if value is not None:
                 args.extend([option, str(value)])
+        if offline:
+            args.append("--offline")
         try:
             result = subprocess.run(args, cwd=self.root, capture_output=True, text=True,
                                     encoding="utf-8", errors="replace", timeout=timeout,
@@ -216,8 +224,12 @@ class ControllerBackend:
         return lambda: self.command(action, stage, requested_generation=generation)
 
     def command(self, action, stage=None, *, requested_generation=None):
-        if action not in {"start", "stop", "restart", "end-stamina-wait", "stamina-duration", "boss-swap", "early-exit"}:
+        if action not in {"start", "stop", "restart", "end-stamina-wait", "stamina-duration", "boss-swap", "early-exit", "ninja-mode"}:
             raise ValueError("Unsupported manager command")
+        if action == "ninja-mode":
+            if stage not in farm.NINJA_EXIT_MODES:
+                raise ValueError("Choose Stage 10 Exit or Stage 15 Exit")
+            return self._invoke(action, stage)
         if action in {"boss-swap", "early-exit"}:
             if type(stage) is not bool:
                 raise ValueError("Ninja Road option must be enabled or disabled")
@@ -239,6 +251,37 @@ class ControllerBackend:
         if action == "stop":
             return self._invoke(action, timeout=75)
         return self._invoke(action, stage)
+
+    @staticmethod
+    def _recording_controller_active(snapshot):
+        return bool(snapshot.get("running") or snapshot.get("supervisor_running")
+                    or snapshot.get("worker_running") or snapshot.get("active_pids"))
+
+    def resolve_saved_input(self, stage, *, expected_instance_key=None):
+        """Resolve one guarded cross-stage input latch without starting farming."""
+        if stage != "universal":
+            raise ControllerError("Saved input recovery is available only for Universal farming.")
+        before = self.snapshot()
+        target = before.get("instance")
+        key = target.get("key") if isinstance(target, dict) else None
+        if (not isinstance(expected_instance_key, str) or not expected_instance_key
+                or not isinstance(key, str) or key != expected_instance_key):
+            raise ControllerError("The selected instance changed; refresh status before resolving the saved input.")
+        if before.get("instance_error") or before.get("instance_selection_required"):
+            raise ControllerError("A verified saved instance is required before resolving the saved input.")
+        if self._recording_controller_active(before):
+            raise ControllerError("Stop the controller before resolving the saved input.")
+        result = self._invoke(
+            "resolve-saved-input", stage, timeout=75, instance_key=key,
+            reason="User selected Resolve input in Automation Manager after Start reported an existing "
+                   "saved input; resume Universal only from the currently verified mission preparation screen.")
+        after = self.snapshot()
+        refreshed = after.get("instance")
+        refreshed_key = refreshed.get("key") if isinstance(refreshed, dict) else None
+        if self._recording_controller_active(after) or refreshed_key != key:
+            raise ControllerError(
+                "Saved input recovery returned without a verified stopped instance; refresh status before continuing.")
+        return result.strip() or "Saved input resolved. Use Start to resume farming."
 
     def _shutdown_inventory(self):
         # CIM is read-only. Include creation ticks in the same observation as

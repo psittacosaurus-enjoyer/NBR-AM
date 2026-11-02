@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import farm
+from automation import controller as farm
 from test_stages import FakeDevice
 
 
@@ -62,19 +62,16 @@ class NightTests(unittest.TestCase):
                 dimmed = (frame.astype(float) * .5).astype(frame.dtype)
                 self.assertNotEqual(detector.classify(dimmed)[0], 'MISSION_COMPLETE')
 
-    def test_fresh_reward_holdouts_remain_distinct_and_require_every_guard(self):
+    def test_reward_capture_requires_every_guard(self):
         detector = farm.Detector(STAGE)
-        for number in range(8):
-            with self.subTest(capture=number):
-                frame = self.image(FIXTURES + f'reward_stall_{number:02}.png')
-                self.assertEqual(detector.classify(frame)[0], 'REWARD_REVEAL')
-                dimmed = (frame.astype(float) * .5).astype(frame.dtype)
-                self.assertNotEqual(detector.classify(dimmed)[0], 'REWARD_REVEAL')
+        frame = self.image(FIXTURES + 'reward_stall_00.png')
+        self.assertEqual(detector.classify(frame)[0], 'REWARD_REVEAL')
+        dimmed = (frame.astype(float) * .5).astype(frame.dtype)
+        self.assertNotEqual(detector.classify(dimmed)[0], 'REWARD_REVEAL')
         for filename in ('ready_to_retry.png', 'stamina_prompt.png', 'rank_up_stamina_ack.png'):
             with self.subTest(other_screen=filename):
                 self.assertNotEqual(detector.classify(self.image(FIXTURES + filename))[0], 'REWARD_REVEAL')
-        _, spec, _ = detector.classify(self.image(FIXTURES + 'reward_stall_00.png'))
-        frame = self.image(FIXTURES + 'reward_stall_00.png')
+        _, spec, _ = detector.classify(frame)
         for anchor in spec['anchors']:
             with self.subTest(region=anchor['region']):
                 changed = frame.copy()

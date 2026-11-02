@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import farm
+from automation import controller as farm
 from test_stages import FakeDevice
 from instance_fixtures import legacy_target
 
@@ -31,12 +31,15 @@ class StaminaControlTests(unittest.TestCase):
         self.frame = farm.np.zeros((1600, 900, 3), dtype=farm.np.uint8)
         self.screen = 'STAMINA_PROMPT'
         self.specs = {
-            'STAMINA_PROMPT': {'action': {'id': 'dismiss_stamina', 'kind': 'tap',
-                                        'point': [299, 1018], 'expected': ['READY_TO_RETRY']}},
-            'READY_TO_RETRY': {'action': {'id': 'retry', 'kind': 'tap',
+            'READY_TO_RETRY': {'name': 'READY_TO_RETRY',
+                              'action': {'id': 'retry', 'kind': 'tap',
                                         'point': [450, 1524],
                                         'expected': ['READY_TO_START', 'STAMINA_PROMPT']}},
         }
+        stamina_frame = farm.cv2.imread(str(farm.ROOT / 'tests/fixtures/rich_b/not_enough_stamina.png'))
+        name, spec, _ = farm.Detector('universal').classify(stamina_frame)
+        self.assertEqual(name, 'STAMINA_PROMPT')
+        self.specs[name] = spec
         farm.write_json(self.runtime / 'selection.json', {'stage': 'universal'})
         farm.write_json(self.runtime / 'session.json', {'stage': 'universal', 'mission_verified': True})
 

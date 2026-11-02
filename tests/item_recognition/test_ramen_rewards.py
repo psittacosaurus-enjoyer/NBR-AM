@@ -91,7 +91,7 @@ class RamenRewardTests(unittest.TestCase):
         self.assertEqual({r['element'] for r in entries}, {'Bravery', 'Heart', 'Wisdom', 'Body', 'Skill'})
 
     def test_duplicate_crystal_source_records_count_two_icons_as_two_drops(self):
-        from loot_tracking import LootStore
+        from app.backend.loot import LootStore
         fixture = self.crystal_fixture
         path = FIXTURES / 'bravery_crystal_results.png'
         self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), fixture['evidence']['screenshot_sha256'])
@@ -116,7 +116,7 @@ class RamenRewardTests(unittest.TestCase):
         self.assertTrue(all(r['identity_status'] == 'ambiguous' for r in baseline['unknown_rewards']))
 
     def test_skill_crystal_aliases_count_two_and_three_icons_once(self):
-        from loot_tracking import LootStore
+        from app.backend.loot import LootStore
         canonical = self.alias_fixture['skill_canonical']
         store = LootStore(self.root)
         session = store.ensure_session('fixture:skill-crystals', 'universal')
@@ -152,7 +152,7 @@ class RamenRewardTests(unittest.TestCase):
         self.assert_rewards(ROOT / 'tests/fixtures/universal/unconfigured_results.png', expected)
 
     def test_lucky_card_back_is_unrevealed_and_never_an_extra_item_icon(self):
-        from loot_tracking import LootStore
+        from app.backend.loot import LootStore
         from item_recognition.reward_layout import has_unrevealed_rewards
         import cv2
         pending = FIXTURES / 'bravery_lucky_unrevealed.png'
@@ -183,7 +183,7 @@ class RamenRewardTests(unittest.TestCase):
         self.assertEqual(result['identity_status'], 'candidate')
 
     def test_xl_variants_keep_distinct_ids_and_count_once_per_saved_icon(self):
-        from loot_tracking import LootStore
+        from app.backend.loot import LootStore
         store = LootStore(self.root)
         session = store.ensure_session('fixture:xl-count', 'universal')
         expected_counts = Counter()
@@ -249,7 +249,7 @@ class RamenRewardTests(unittest.TestCase):
         self.assertEqual(reviewed['base_calibration_sha256'], hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_each_saved_icon_including_lucky_drop_counts_once(self):
-        from loot_tracking import LootStore
+        from app.backend.loot import LootStore
         result = self.recognizer.analyze_screenshot(ROOT / 'tests/fixtures/universal/unconfigured_results.png')
         store = LootStore(self.root)
         session = store.ensure_session('fixture:ramen-count', 'universal')

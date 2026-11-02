@@ -35,13 +35,15 @@ def _fact(field, value):
 
 def _records(db):
     records = {}
-    for row in db.execute(L.SELECT + " WHERE r.record_type='item'"):
+    for row in db.execute(L.select_query(db) + " WHERE r.record_type='item'"):
         record = L.effective(row)
         record['manual_facts'] = {key: row['manual_' + key] for key in ('display_name', 'category')
                                   if row['manual_' + key] is not None}
         record['assets'] = [dict(asset) for asset in db.execute(
             'SELECT a.*,ra.role FROM assets a JOIN record_assets ra ON a.id=ra.asset_id '
             'WHERE ra.record_id=?', (record['id'],))]
+        for asset in record['assets']:
+            asset['source_image_urls'] = L.record_asset_urls(db, record['id'], asset['id'], asset['role']) or [asset['source_image_url']]
         records[record['id']] = record
     return records
 
@@ -51,9 +53,10 @@ def _source_cards(record):
     for asset in record['assets']:
         if asset['role'] not in ('card', 'icon', 'image'):
             continue
-        match = re.search(r'/(?:missions|lb|materials)/card-(\d+)\.|/Card-(\d+)\.', asset['source_image_url'])
-        if match:
-            cards.add(str(int(next(value for value in match.groups() if value))))
+        for url in asset.get('source_image_urls', [asset['source_image_url']]):
+            match = re.search(r'/(?:missions|lb|materials)/card-(\d+)\.|/Card-(\d+)\.', url)
+            if match:
+                cards.add(str(int(next(value for value in match.groups() if value))))
     if namespace(record) == 'card_no' and record.get('game_id') is not None:
         cards.add(_identifier(record['game_id']))
     return cards
@@ -168,46 +171,57 @@ def _plan(db, calibration, preferred_ids):
 
 
 def _merge(db, mapping):
+    L.migrate_aliases(db)
     removed = {rid: canonical for rid, canonical in mapping.items() if rid != canonical}
-    db.execute('CREATE TABLE IF NOT EXISTS deduplication_history '
-               '(original_id TEXT PRIMARY KEY,canonical_id TEXT NOT NULL REFERENCES records(id),original_json TEXT NOT NULL)')
+    aliases = [tuple(row) for row in db.execute('SELECT * FROM identity_aliases')]
+    # Preserve the context of each URL before any asset or identity is merged.
+    db.execute('INSERT OR IGNORE INTO record_asset_sources '
+               'SELECT ra.record_id,ra.asset_id,ra.role,a.source_image_url FROM record_assets ra '
+               'JOIN assets a ON a.id=ra.asset_id WHERE NOT EXISTS '
+               '(SELECT 1 FROM record_asset_sources s WHERE s.record_id=ra.record_id '
+               'AND s.asset_id=ra.asset_id AND s.role=ra.role)')
     for rid, canonical in removed.items():
         original = dict(db.execute('SELECT * FROM records WHERE id=?', (rid,)).fetchone())
         annotation = db.execute('SELECT * FROM annotations WHERE record_id=?', (rid,)).fetchone()
-        db.execute('INSERT INTO deduplication_history VALUES(?,?,?)',
-                   (rid, canonical, json.dumps({'record': original, 'annotation': dict(annotation) if annotation else None})))
-        db.execute('INSERT OR IGNORE INTO record_sources VALUES(?,?,?,?,?,?,?,?,?,?,?,?)',
-            ('Deduplicated record', rid, canonical, original['source_url'], original['display_name'],
-             original['game_id'], original['category'], original['element'], original['rarity'],
-             original['metadata'], original['verification_status'], original['content_hash']))
+        L._source_record(db, canonical, original)
         db.execute('INSERT OR IGNORE INTO record_assets SELECT ?,asset_id,role FROM record_assets WHERE record_id=?',
                    (canonical, rid))
+        db.execute('INSERT OR IGNORE INTO record_asset_sources SELECT ?,asset_id,role,source_image_url '
+                   'FROM record_asset_sources WHERE record_id=?', (canonical, rid))
         db.execute('INSERT INTO asset_preferences SELECT ?,asset_id,fidelity_score,basis FROM asset_preferences '
                    'WHERE record_id=? ON CONFLICT(record_id,asset_id) DO UPDATE SET '
                    'fidelity_score=MAX(asset_preferences.fidelity_score,excluded.fidelity_score)', (canonical, rid))
         if annotation:
             db.execute('INSERT OR IGNORE INTO annotations SELECT ?,display_name,category,tags,notes,'
                        'verification_status,updated_at FROM annotations WHERE record_id=?', (canonical, rid))
+            current = dict(db.execute('SELECT * FROM annotations WHERE record_id=?', (canonical,)).fetchone())
+            for field in ('display_name', 'category', 'verification_status'):
+                if current[field] is None and annotation[field] is not None:
+                    db.execute('UPDATE annotations SET '+field+'=? WHERE record_id=?', (annotation[field], canonical))
+            tags = list(dict.fromkeys(json.loads(current['tags'] or '[]') + json.loads(annotation['tags'] or '[]')))
+            notes = '\n\n'.join(dict.fromkeys(value for value in (current['notes'], annotation['notes']) if value))
+            db.execute('UPDATE annotations SET tags=?,notes=? WHERE record_id=?', (json.dumps(tags), notes, canonical))
         for field in ('game_id', 'element', 'rarity'):
             db.execute(f'UPDATE records SET {field}=COALESCE({field},?) WHERE id=?', (original[field], canonical))
         db.execute('UPDATE record_sources SET record_id=? WHERE record_id=?', (canonical, rid))
-        for table in ('record_assets', 'asset_preferences', 'annotations'):
+        for table in ('record_assets', 'record_asset_sources', 'asset_preferences', 'annotations'):
             db.execute(f'DELETE FROM {table} WHERE record_id=?', (rid,))
     relationships = [tuple(row) for row in db.execute('SELECT * FROM relationships')]
     db.execute('DELETE FROM relationships')
     db.executemany('INSERT OR IGNORE INTO relationships VALUES(?,?,?)',
         [(mapping.get(first, first), mapping.get(second, second), kind) for first, second, kind in relationships])
-    aliases = [tuple(row) for row in db.execute('SELECT * FROM identity_aliases')]
     db.execute('DELETE FROM identity_aliases')
     db.executemany('INSERT OR IGNORE INTO identity_aliases VALUES(?,?,?)',
-        [(mapping.get(first, first), mapping.get(second, second), proof) for first, second, proof in aliases
-         if mapping.get(first, first) != mapping.get(second, second)])
+        [(first, mapping.get(second, second), proof) for first, second, proof in aliases
+         if first != mapping.get(second, second)])
+    db.executemany('INSERT OR REPLACE INTO identity_aliases VALUES(?,?,?)',
+                   [(rid, canonical, 'Proven source identity consolidation') for rid, canonical in removed.items()])
     db.executemany('DELETE FROM records WHERE id=?', [(rid,) for rid in removed])
     preferences = {}
     for canonical in sorted(set(mapping.values())):
         assets = [dict(row) for row in db.execute('SELECT a.*,ra.role FROM assets a JOIN record_assets ra '
                                                 'ON a.id=ra.asset_id WHERE ra.record_id=?', (canonical,))]
-        for asset in assets:
+        for asset in assets if canonical in removed.values() else []:
             score = preferred_score(asset, asset['role'])
             db.execute('INSERT INTO asset_preferences VALUES(?,?,?,?) ON CONFLICT(record_id,asset_id) '
                        'DO UPDATE SET fidelity_score=MAX(asset_preferences.fidelity_score,excluded.fidelity_score)',
@@ -220,6 +234,67 @@ def _merge(db, mapping):
             preferences[canonical] = dict(chosen)
     L.index(db)
     return preferences
+
+
+def normalize_assets(db):
+    """Consolidate exact image rows; return paths eligible for subsequent cleanup.
+
+    No files are read, created or deleted, and the caller owns the transaction.
+    Distinct source URLs and their per-record roles remain available to consumers.
+    """
+    L.migrate_aliases(db)
+    db.execute('INSERT OR IGNORE INTO record_asset_sources '
+               'SELECT ra.record_id,ra.asset_id,ra.role,a.source_image_url FROM record_assets ra '
+               'JOIN assets a ON a.id=ra.asset_id WHERE NOT EXISTS '
+               '(SELECT 1 FROM record_asset_sources s WHERE s.record_id=ra.record_id '
+               'AND s.asset_id=ra.asset_id AND s.role=ra.role)')
+    groups = defaultdict(list)
+    for row in db.execute('SELECT * FROM assets WHERE status="ok" AND sha256 IS NOT NULL ORDER BY id'):
+        groups[row['sha256']].append(dict(row))
+    mapping, paths = {}, {}
+    for rows in groups.values():
+        canonical = rows[0]
+        for asset in rows:
+            url = asset['source_image_url']
+            db.execute('INSERT INTO asset_sources VALUES(?,?,?,?,?) ON CONFLICT(source_image_url) '
+                       'DO UPDATE SET asset_id=excluded.asset_id',
+                       (url, canonical['id'], 'GachaWiki' if 'gachawiki.net' in url else 'Fandom', '', '{}'))
+            mapping[asset['id']] = canonical['id']
+            if asset['id'] == canonical['id']:
+                continue
+            db.execute('INSERT OR IGNORE INTO record_assets SELECT record_id,?,role FROM record_assets '
+                       'WHERE asset_id=?', (canonical['id'], asset['id']))
+            db.execute('INSERT OR IGNORE INTO record_asset_sources SELECT record_id,?,role,source_image_url '
+                       'FROM record_asset_sources WHERE asset_id=?', (canonical['id'], asset['id']))
+            db.execute('INSERT INTO asset_preferences SELECT record_id,?,fidelity_score,basis '
+                       'FROM asset_preferences WHERE asset_id=? '
+                       'ON CONFLICT(record_id,asset_id) DO UPDATE SET '
+                       'fidelity_score=MAX(asset_preferences.fidelity_score,excluded.fidelity_score)',
+                       (canonical['id'], asset['id']))
+            db.execute('UPDATE asset_sources SET asset_id=? WHERE asset_id=?', (canonical['id'], asset['id']))
+            for field in ('local_image_path', 'thumbnail_path'):
+                if asset[field] and canonical[field] and asset[field] != canonical[field]:
+                    paths[asset[field]] = canonical[field]
+            for table in ('record_assets', 'record_asset_sources', 'asset_preferences'):
+                db.execute('DELETE FROM '+table+' WHERE asset_id=?', (asset['id'],))
+            db.execute('DELETE FROM assets WHERE id=?', (asset['id'],))
+    L.index(db)
+    return {'mapping': mapping, 'path_mapping': paths,
+            'removed_asset_rows': sum(first != second for first, second in mapping.items())}
+
+
+def consolidate(db, calibration=None, preferred_ids=()):
+    """Apply proven identity/byte normalization within the caller's transaction."""
+    calibration = calibration or {}
+    mapping, groups, rejected, collisions = _plan(db, calibration, preferred_ids)
+    preferences = _merge(db, mapping)
+    assets = normalize_assets(db)
+    if db.execute('PRAGMA foreign_key_check').fetchall():
+        raise ValueError('Foreign key validation failed after consolidation')
+    return {'mapping': mapping, 'merged_groups': groups, 'rejected_merges': rejected,
+            'unproven_collisions': collisions, 'preferred_assets': preferences,
+            'asset_mapping': assets['mapping'], 'path_mapping': assets['path_mapping'],
+            'removed_asset_rows': assets['removed_asset_rows']}
 
 
 def deduplicate_copy(source, output, calibration_path=None, preferred_ids=()):

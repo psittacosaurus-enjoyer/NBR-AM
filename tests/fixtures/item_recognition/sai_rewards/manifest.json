@@ -1,0 +1,3075 @@
+{
+  "schema_version": 1,
+  "sai_id": "character_31a58300c0533b1a399f80fe",
+  "excluded_sai_id": "character_353e377b4bd236970103e076",
+  "library_sha256": "385deac3f71cf3d90ca8cd94c98bdacf043e623fbf9bfa53c8438355be42207f",
+  "threshold": 0.78,
+  "margin": 0.1,
+  "positives": [
+    {
+      "file": "clean.png",
+      "sha256": "806730cb92bdba654fe6e7f7e88e4a76014fde68067941333380c27662037517",
+      "expected_item_id": "character_31a58300c0533b1a399f80fe",
+      "source_screenshot": "runtime/loot/diagnostics/20261021_085205_acc1_universal_job_a27606f46e6076b7b451da7c8b399d576e8f7f6d83c8f149_uncertain.png",
+      "source_screenshot_sha256": "e046d78763e0f3f3d865d483c3d2643c040289ec3648cb96d97c38bc3ceb8133",
+      "bounding_box": [
+        57,
+        411,
+        134,
+        139
+      ],
+      "split": "calibration",
+      "baseline_match_score": 0.877565,
+      "baseline_score_margin": 0.170168
+    },
+    {
+      "file": "lucky.png",
+      "sha256": "a9ba2ab66ff161cd02aed0b532cfe4f9e7492e36929d07b456c4b63101c5e4dc",
+      "expected_item_id": "character_31a58300c0533b1a399f80fe",
+      "source_screenshot": "runtime/loot/diagnostics/20261021_085428_acc1_universal_job_e42d3f72949849bf300c3b858b6757319adf441c659a85bd_uncertain.png",
+      "source_screenshot_sha256": "a6c7522c812c192774b0e533caf9add28ead0616f02ee20912eb96380d0a05a9",
+      "bounding_box": [
+        219,
+        411,
+        134,
+        139
+      ],
+      "split": "calibration",
+      "baseline_match_score": 0.817661,
+      "baseline_score_margin": 0.137494
+    },
+    {
+      "file": "lucky_dim.png",
+      "sha256": "acf6d5501de0b4343b013360a2cb59b1ed5609a3231c6aa37e6da77800aa8991",
+      "expected_item_id": "character_31a58300c0533b1a399f80fe",
+      "source_screenshot": "runtime/loot/diagnostics/20261021_092154_acc1_universal_job_eea594e6ff986b572340cfe513f95f139abd18d24c5da7d6_uncertain.png",
+      "source_screenshot_sha256": "de2fab02136a5afd97d8b3ea65a556bdf67789d8960a4e5b71a050c96e1dd752",
+      "bounding_box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "split": "calibration",
+      "baseline_match_score": 0.788308,
+      "baseline_score_margin": 0.126329
+    },
+    {
+      "file": "latest_lucky_holdout.png",
+      "sha256": "95478ab3d962a136a5d090a35dc218551c2a1b0e92bf48cc1f65f4eb585c33dd",
+      "expected_item_id": "character_31a58300c0533b1a399f80fe",
+      "source_screenshot": "runtime/loot/diagnostics/20261021_095532_acc1_universal_job_2e366e7cf7314abc430a92c4b26648c2e5bc6b5f6d3e14d5_uncertain.png",
+      "source_screenshot_sha256": "a86a1b2e31b23258b3abc41a288685025c22908e92c50c024669637f698293c1",
+      "bounding_box": [
+        543,
+        411,
+        134,
+        139
+      ],
+      "split": "holdout",
+      "baseline_match_score": 0.859078,
+      "baseline_score_margin": 0.161631
+    }
+  ],
+  "references": [
+    {
+      "file": "character_111f600e09e74e4950939d66.png",
+      "sha256": "fd0a118824a3fbab854bcc55bddb7412f81b55c014f7cd6756bb6dd72273cb14",
+      "source_asset": "runtime/library/assets/characters/27540197b27c82c21609ab550db7c99c96f1df0ed034891b6a4d419df3a28a47.webp",
+      "source_asset_sha256": "27540197b27c82c21609ab550db7c99c96f1df0ed034891b6a4d419df3a28a47",
+      "item_id": "character_111f600e09e74e4950939d66",
+      "game_id": "261",
+      "rarity": "5",
+      "element": "Wisdom",
+      "record_type": "character",
+      "source_key": "sasuke-uchiha-curse-mark-2nd-state:261",
+      "display_name": "Sasuke Uchiha \"Curse Mark 2nd State\"",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninjas.json",
+        "json_pointer": "$.ninjas[100].forms[0]",
+        "original": {
+          "stars": 5,
+          "maxStars": 6,
+          "blazingAwakened": false,
+          "cardNo": 261,
+          "element": "Wisdom",
+          "range": "Short",
+          "affiliations": [
+            "Sound",
+            "Uchiha Clan"
+          ],
+          "maxLv": 70,
+          "maxLvLb": null,
+          "limitBreak": false,
+          "cost": {
+            "base": 60,
+            "reduced": 36
+          },
+          "luck": {
+            "min": 1,
+            "max": 80
+          },
+          "normalHits": 1,
+          "released": {
+            "global": "2017-01-05",
+            "japan": "2016-12-29"
+          },
+          "stats": {
+            "missions": {
+              "hp": {
+                "base": 582,
+                "max": 1164,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 608,
+                "max": 1216,
+                "maxLb": null
+              }
+            },
+            "nwus": {
+              "hp": {
+                "base": 12222,
+                "max": 24444,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 1216,
+                "max": 2432,
+                "maxLb": null
+              },
+              "speed": {
+                "base": 61,
+                "max": 121,
+                "maxLb": null
+              }
+            },
+            "plusValues": {
+              "hp": 200,
+              "atk": 75,
+              "speed": 25
+            }
+          },
+          "fieldSkill": "21%-42% chance of attacking back when receiving an attack.",
+          "buddySkill": "Reduces damage by 5%.",
+          "syncSkills": [
+            {
+              "name": "Sync With Wisdom",
+              "text": "Reduces Bravery damage taken by 15%.",
+              "textNwus": null,
+              "effect": "Reduce Bravery Damage"
+            }
+          ],
+          "abilities": [
+            {
+              "name": "Critical Rate Boost",
+              "text": "Boosts critical rate by 1.5x.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0201.webp"
+            },
+            {
+              "name": "Reduce Damage",
+              "text": "Reduces damage taken by 5%.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0105.webp"
+            },
+            {
+              "name": "Critical Rate Boost",
+              "text": "Boosts critical rate by 1.5x.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0201.webp"
+            },
+            {
+              "name": "Reduce Damage",
+              "text": "Reduces damage taken by 5%.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0105.webp"
+            }
+          ],
+          "ninjutsu": {
+            "name": "Pitch Black Eyes",
+            "chakra": 6,
+            "text": "Gives you 2 perfect dodge(s) for 3 turn(s), and restores your Chakra Gauge by 5.",
+            "textNwus": null,
+            "hits": null,
+            "shape": null,
+            "range": null,
+            "position": null
+          },
+          "secretTechnique": null,
+          "effects": {
+            "self": [
+              "Perfect Dodge",
+              "Chakra Recovery"
+            ],
+            "skill": [
+              "Counterattack",
+              "Reduce Damage"
+            ],
+            "sync": [
+              "Reduce Bravery Damage"
+            ]
+          },
+          "awakening": {
+            "to": 6,
+            "materials": [
+              {
+                "name": "Awakening Scroll \"Wisdom Book\"",
+                "stars": 4,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Wisdom",
+                "icon": "/naruto-blazing/materials/card-0956.webp"
+              },
+              {
+                "name": "Awakening Scroll \"Wisdom Book\"",
+                "stars": 3,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Wisdom",
+                "icon": "/naruto-blazing/materials/card-0914.webp"
+              }
+            ]
+          },
+          "notes": [],
+          "source": {
+            "title": "Sasuke Uchiha \"Curse Mark 2nd State\" (\u26055)",
+            "url": "https://naruto-blazing.fandom.com/wiki/Sasuke_Uchiha_%22Curse_Mark_2nd_State%22_%28%E2%98%855%29",
+            "revid": 43592
+          },
+          "card": "/naruto-blazing/ninjas/sasuke-uchiha-curse-mark-2nd-state/card-261.webp",
+          "art": "/naruto-blazing/ninjas/sasuke-uchiha-curse-mark-2nd-state/art-261.webp",
+          "artCutout": true,
+          "fieldEffect": "Counterattack",
+          "buddyEffect": "Reduce Damage"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "ninja_id": "sasuke-uchiha-curse-mark-2nd-state",
+        "character_name": "Sasuke Uchiha",
+        "title": "Curse Mark 2nd State",
+        "roster_metadata": {
+          "id": "sasuke-uchiha-curse-mark-2nd-state",
+          "name": "Sasuke Uchiha",
+          "title": "Curse Mark 2nd State",
+          "element": "Wisdom",
+          "range": "Short",
+          "affiliations": [
+            "Sound",
+            "Uchiha Clan"
+          ],
+          "baseStars": 5,
+          "maxStars": 6,
+          "released": {
+            "global": "2017-01-05",
+            "japan": "2016-12-29"
+          },
+          "batch": 11,
+          "serverReleased": "2026-10-31",
+          "new": false,
+          "upcoming": true,
+          "obtain": [
+            {
+              "type": "impact",
+              "name": "Impact! Battle in the Final Valley!"
+            }
+          ],
+          "source": {
+            "title": "Sasuke Uchiha \"Curse Mark 2nd State\"",
+            "url": "https://naruto-blazing.fandom.com/wiki/Sasuke_Uchiha_%22Curse_Mark_2nd_State%22_%28%E2%98%856%29",
+            "license": "CC BY-SA 3.0"
+          },
+          "art": "/naruto-blazing/ninjas/sasuke-uchiha-curse-mark-2nd-state/art-262.webp",
+          "card": "/naruto-blazing/ninjas/sasuke-uchiha-curse-mark-2nd-state/card-262.webp"
+        },
+        "upcoming": true,
+        "game_id_kind": "cardNo",
+        "supplemental_metadata": {
+          "stat-curves.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/stat-curves.json",
+            "data": {
+              "261": {
+                "unit": 10895,
+                "maxLv": 70,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    70,
+                    [
+                      582,
+                      1164,
+                      100
+                    ],
+                    [
+                      608,
+                      1216,
+                      -100
+                    ],
+                    [
+                      12222,
+                      24444,
+                      100
+                    ],
+                    [
+                      1216,
+                      2432,
+                      -100
+                    ],
+                    [
+                      61,
+                      121,
+                      100
+                    ]
+                  ]
+                ]
+              },
+              "262": {
+                "unit": 10896,
+                "maxLv": 100,
+                "maxLvLb": 150,
+                "ranges": [
+                  [
+                    1,
+                    100,
+                    [
+                      743,
+                      1486,
+                      100
+                    ],
+                    [
+                      796,
+                      1592,
+                      -100
+                    ],
+                    [
+                      15603,
+                      31206,
+                      100
+                    ],
+                    [
+                      1592,
+                      3184,
+                      -100
+                    ],
+                    [
+                      76,
+                      152,
+                      100
+                    ]
+                  ],
+                  [
+                    100,
+                    105,
+                    [
+                      1486,
+                      1516,
+                      100
+                    ],
+                    [
+                      1592,
+                      1628,
+                      100
+                    ],
+                    [
+                      31206,
+                      31836,
+                      100
+                    ],
+                    [
+                      3184,
+                      3256,
+                      100
+                    ],
+                    [
+                      152,
+                      154,
+                      100
+                    ]
+                  ],
+                  [
+                    105,
+                    110,
+                    [
+                      1516,
+                      1550,
+                      100
+                    ],
+                    [
+                      1628,
+                      1668,
+                      100
+                    ],
+                    [
+                      31836,
+                      32550,
+                      100
+                    ],
+                    [
+                      3256,
+                      3336,
+                      100
+                    ],
+                    [
+                      154,
+                      156,
+                      100
+                    ]
+                  ],
+                  [
+                    110,
+                    115,
+                    [
+                      1550,
+                      1588,
+                      100
+                    ],
+                    [
+                      1668,
+                      1712,
+                      100
+                    ],
+                    [
+                      32550,
+                      33348,
+                      100
+                    ],
+                    [
+                      3336,
+                      3424,
+                      100
+                    ],
+                    [
+                      156,
+                      158,
+                      100
+                    ]
+                  ],
+                  [
+                    115,
+                    120,
+                    [
+                      1588,
+                      1630,
+                      100
+                    ],
+                    [
+                      1712,
+                      1760,
+                      100
+                    ],
+                    [
+                      33348,
+                      34230,
+                      100
+                    ],
+                    [
+                      3424,
+                      3520,
+                      100
+                    ],
+                    [
+                      158,
+                      160,
+                      100
+                    ]
+                  ],
+                  [
+                    120,
+                    125,
+                    [
+                      1630,
+                      1676,
+                      100
+                    ],
+                    [
+                      1760,
+                      1812,
+                      100
+                    ],
+                    [
+                      34230,
+                      35196,
+                      100
+                    ],
+                    [
+                      3520,
+                      3624,
+                      100
+                    ],
+                    [
+                      160,
+                      162,
+                      100
+                    ]
+                  ],
+                  [
+                    125,
+                    130,
+                    [
+                      1676,
+                      1726,
+                      100
+                    ],
+                    [
+                      1812,
+                      1868,
+                      100
+                    ],
+                    [
+                      35196,
+                      36246,
+                      100
+                    ],
+                    [
+                      3624,
+                      3736,
+                      100
+                    ],
+                    [
+                      162,
+                      164,
+                      100
+                    ]
+                  ],
+                  [
+                    130,
+                    135,
+                    [
+                      1726,
+                      1780,
+                      100
+                    ],
+                    [
+                      1868,
+                      1928,
+                      100
+                    ],
+                    [
+                      36246,
+                      37380,
+                      100
+                    ],
+                    [
+                      3736,
+                      3856,
+                      100
+                    ],
+                    [
+                      164,
+                      166,
+                      100
+                    ]
+                  ],
+                  [
+                    135,
+                    140,
+                    [
+                      1780,
+                      1840,
+                      100
+                    ],
+                    [
+                      1928,
+                      1992,
+                      100
+                    ],
+                    [
+                      37380,
+                      38640,
+                      100
+                    ],
+                    [
+                      3856,
+                      3984,
+                      100
+                    ],
+                    [
+                      166,
+                      168,
+                      100
+                    ]
+                  ],
+                  [
+                    140,
+                    145,
+                    [
+                      1840,
+                      1904,
+                      100
+                    ],
+                    [
+                      1992,
+                      2060,
+                      100
+                    ],
+                    [
+                      38640,
+                      39984,
+                      100
+                    ],
+                    [
+                      3984,
+                      4120,
+                      100
+                    ],
+                    [
+                      168,
+                      170,
+                      100
+                    ]
+                  ],
+                  [
+                    145,
+                    150,
+                    [
+                      1904,
+                      1972,
+                      100
+                    ],
+                    [
+                      2060,
+                      2132,
+                      100
+                    ],
+                    [
+                      39984,
+                      41412,
+                      100
+                    ],
+                    [
+                      4120,
+                      4264,
+                      100
+                    ],
+                    [
+                      170,
+                      172,
+                      100
+                    ]
+                  ]
+                ]
+              }
+            }
+          },
+          "tower.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/tower.json",
+            "data": {
+              "id": "sasuke-uchiha-curse-mark-2nd-state",
+              "stars": 6,
+              "unit": 10896,
+              "plus": 100,
+              "rise": 0,
+              "critUp": 1.0,
+              "syncs": [],
+              "modes": {
+                "pve": {
+                  "atk": {
+                    "max": 1592,
+                    "maxLb": 2132
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "secret",
+                      "name": "Chidori Lament",
+                      "rate": 6.0,
+                      "boost": 0.0,
+                      "hits": 11,
+                      "killer": {
+                        "element": "Bravery",
+                        "rate": 9.0
+                      }
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                },
+                "pvp": {
+                  "atk": {
+                    "max": 3184,
+                    "maxLb": 4264
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "secret",
+                      "name": "Chidori Lament",
+                      "rate": 6.0,
+                      "boost": 0.0,
+                      "hits": 11,
+                      "killer": {
+                        "element": "Bravery",
+                        "rate": 9.0
+                      }
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                }
+              }
+            }
+          },
+          "limit-break.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/limit-break.json",
+            "data": {
+              "steps": [
+                {
+                  "from": 100,
+                  "to": 105,
+                  "ryo": 40320,
+                  "items": {
+                    "elemental": 1,
+                    "scroll3": 2,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 105,
+                  "to": 110,
+                  "ryo": 168960,
+                  "items": {
+                    "elemental": 2,
+                    "own5": 1,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 110,
+                  "to": 115,
+                  "ryo": 220800,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 2,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 115,
+                  "to": 120,
+                  "ryo": 368640,
+                  "items": {
+                    "own5": 4,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 120,
+                  "to": 125,
+                  "ryo": 480000,
+                  "items": {
+                    "own5": 5
+                  }
+                },
+                {
+                  "from": 125,
+                  "to": 130,
+                  "ryo": 399360,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 1,
+                    "own6": 1,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 130,
+                  "to": 135,
+                  "ryo": 673920,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 1,
+                    "own6": 2,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 135,
+                  "to": 140,
+                  "ryo": 752640,
+                  "items": {
+                    "own5": 2,
+                    "own6": 2,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 140,
+                  "to": 145,
+                  "ryo": 1224960,
+                  "items": {
+                    "own5": 1,
+                    "own6": 4
+                  }
+                },
+                {
+                  "from": 145,
+                  "to": 150,
+                  "ryo": 1440000,
+                  "items": {
+                    "own6": 5
+                  }
+                }
+              ],
+              "5": "/naruto-blazing/lb/card-0972.webp",
+              "6": "/naruto-blazing/lb/card-0973.webp",
+              "awaken": {
+                "own5": 3,
+                "scroll3": 1,
+                "scroll4": 1
+              }
+            }
+          }
+        }
+      },
+      "source_url": "https://gachawiki.net/naruto-blazing/ninjas/sasuke-uchiha-curse-mark-2nd-state",
+      "asset_source_url": "https://gachawiki.net/naruto-blazing/ninjas/sasuke-uchiha-curse-mark-2nd-state/card-261.webp",
+      "role": "card"
+    },
+    {
+      "file": "character_31a58300c0533b1a399f80fe.png",
+      "sha256": "2358a1434362b19d14c3449982f56b115b14cbd0de7cc6255d0c7f563729d719",
+      "source_asset": "runtime/library/assets/characters/9016736f576a8aed1470b6a9813b6fbcab25f235bd222c4919d302a2beb77299.webp",
+      "source_asset_sha256": "9016736f576a8aed1470b6a9813b6fbcab25f235bd222c4919d302a2beb77299",
+      "item_id": "character_31a58300c0533b1a399f80fe",
+      "game_id": "239",
+      "rarity": "5",
+      "element": "Body",
+      "record_type": "character",
+      "source_key": "sai-mask-like-smile:239",
+      "display_name": "Sai \"Mask-like Smile\"",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninjas.json",
+        "json_pointer": "$.ninjas[92].forms[0]",
+        "original": {
+          "stars": 5,
+          "maxStars": 6,
+          "blazingAwakened": false,
+          "cardNo": 239,
+          "element": "Body",
+          "range": "Long",
+          "affiliations": [
+            "Hidden Leaf"
+          ],
+          "maxLv": 70,
+          "maxLvLb": null,
+          "limitBreak": false,
+          "cost": {
+            "base": 26,
+            "reduced": 16
+          },
+          "luck": {
+            "min": 1,
+            "max": 80
+          },
+          "normalHits": 1,
+          "released": {
+            "global": "2016-12-15",
+            "japan": "2016-12-07"
+          },
+          "stats": {
+            "missions": {
+              "hp": {
+                "base": 402,
+                "max": 804,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 344,
+                "max": 688,
+                "maxLb": null
+              }
+            },
+            "nwus": {
+              "hp": {
+                "base": 6432,
+                "max": 12864,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 482,
+                "max": 963,
+                "maxLb": null
+              },
+              "speed": {
+                "base": 114,
+                "max": 227,
+                "maxLb": null
+              }
+            },
+            "plusValues": {
+              "hp": 200,
+              "atk": 75,
+              "speed": 25,
+              "hpAbilities": 100,
+              "atkAbilities": 100,
+              "hpNwusAbilities": 500,
+              "atkNwusAbilities": 100
+            }
+          },
+          "fieldSkill": "Reduces an enemy's chance to counter by 9%-18%.",
+          "buddySkill": "Boosts critical rate by 1.75x.",
+          "syncSkills": [
+            {
+              "name": "Sync With All Except Body",
+              "text": "Reduces Skill damage taken by 10%.",
+              "textNwus": null,
+              "effect": "Reduce Skill Damage"
+            }
+          ],
+          "abilities": [
+            {
+              "name": "Combination Attack Boost",
+              "text": "Boosts attack by 1.1x during Combinations.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0108.webp"
+            },
+            {
+              "name": "Combination Critical Rate Boost",
+              "text": "Boosts critical rate by 1.75x during Combinations.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0208.webp"
+            },
+            {
+              "name": "Health Boost",
+              "text": "Boosts health by 100.",
+              "textNwus": "Boosts health by 500.",
+              "icon": "/naruto-blazing/abilities/icon-0301.webp"
+            },
+            {
+              "name": "Attack Boost",
+              "text": "Boosts attack by 100.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0101.webp"
+            }
+          ],
+          "ninjutsu": {
+            "name": "Ninja Art: Super Beast Scroll",
+            "chakra": 4,
+            "text": "3x attack toward 1 enemy(s) in range.",
+            "textNwus": null,
+            "hits": 6,
+            "shape": "H. Rectangle",
+            "range": "Vast",
+            "position": "Right"
+          },
+          "secretTechnique": null,
+          "effects": {
+            "skill": [
+              "Counter Sensor",
+              "Critical Rate Boost"
+            ],
+            "sync": [
+              "Reduce Skill Damage"
+            ]
+          },
+          "awakening": {
+            "to": 6,
+            "materials": [
+              {
+                "name": "Awakening Scroll \"Body Book\"",
+                "stars": 4,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Body",
+                "icon": "/naruto-blazing/materials/card-0954.webp"
+              },
+              {
+                "name": "Awakening Scroll \"Body Book\"",
+                "stars": 3,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Body",
+                "icon": "/naruto-blazing/materials/card-0908.webp"
+              }
+            ]
+          },
+          "notes": [],
+          "source": {
+            "title": "Sai \"Mask-like Smile\" (\u26055)",
+            "url": "https://naruto-blazing.fandom.com/wiki/Sai_%22Mask-like_Smile%22_%28%E2%98%855%29",
+            "revid": 43564
+          },
+          "card": "/naruto-blazing/ninjas/sai-mask-like-smile/card-239.webp",
+          "art": "/naruto-blazing/ninjas/sai-mask-like-smile/art-239.webp",
+          "artCutout": true,
+          "fieldEffect": "Counter Sensor",
+          "buddyEffect": "Critical Rate Boost"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "ninja_id": "sai-mask-like-smile",
+        "character_name": "Sai",
+        "title": "Mask-like Smile",
+        "roster_metadata": {
+          "id": "sai-mask-like-smile",
+          "name": "Sai",
+          "title": "Mask-like Smile",
+          "element": "Body",
+          "range": "Long",
+          "affiliations": [
+            "Hidden Leaf"
+          ],
+          "baseStars": 5,
+          "maxStars": 6,
+          "released": {
+            "global": "2016-12-15",
+            "japan": "2016-12-07"
+          },
+          "batch": 9,
+          "serverReleased": "2026-10-17",
+          "new": false,
+          "upcoming": true,
+          "obtain": [
+            {
+              "type": "emergency",
+              "name": "Life-giving Brushstrokes"
+            }
+          ],
+          "source": {
+            "title": "Sai \"Mask-like Smile\"",
+            "url": "https://naruto-blazing.fandom.com/wiki/Sai_%22Mask-like_Smile%22_%28%E2%98%856%29",
+            "license": "CC BY-SA 3.0"
+          },
+          "art": "/naruto-blazing/ninjas/sai-mask-like-smile/art-240.webp",
+          "card": "/naruto-blazing/ninjas/sai-mask-like-smile/card-240.webp"
+        },
+        "upcoming": true,
+        "game_id_kind": "cardNo",
+        "supplemental_metadata": {
+          "stat-curves.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/stat-curves.json",
+            "data": {
+              "239": {
+                "unit": 12615,
+                "maxLv": 70,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    70,
+                    [
+                      402,
+                      804,
+                      100
+                    ],
+                    [
+                      344,
+                      688,
+                      -100
+                    ],
+                    [
+                      6432,
+                      12864,
+                      100
+                    ],
+                    [
+                      482,
+                      963,
+                      -100
+                    ],
+                    [
+                      114,
+                      227,
+                      100
+                    ]
+                  ]
+                ]
+              },
+              "240": {
+                "unit": 12616,
+                "maxLv": 100,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    100,
+                    [
+                      562,
+                      1124,
+                      100
+                    ],
+                    [
+                      402,
+                      804,
+                      -100
+                    ],
+                    [
+                      8992,
+                      17984,
+                      100
+                    ],
+                    [
+                      563,
+                      1126,
+                      -100
+                    ],
+                    [
+                      142,
+                      284,
+                      100
+                    ]
+                  ]
+                ]
+              }
+            }
+          },
+          "tower.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/tower.json",
+            "data": {
+              "id": "sai-mask-like-smile",
+              "stars": 6,
+              "unit": 12616,
+              "plus": 100,
+              "rise": 100,
+              "critUp": 1.0,
+              "syncs": [],
+              "modes": {
+                "pve": {
+                  "atk": {
+                    "max": 804,
+                    "maxLb": null
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "ninjutsu",
+                      "name": "Ninja Art: Super Beast Scroll",
+                      "rate": 3.5,
+                      "boost": 0.0,
+                      "hits": 6,
+                      "killer": null
+                    },
+                    {
+                      "kind": "secret",
+                      "name": "Ninja Art: Super Beast Scroll: Armor Collection",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 8,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                },
+                "pvp": {
+                  "atk": {
+                    "max": 1126,
+                    "maxLb": null
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "ninjutsu",
+                      "name": "Ninja Art: Super Beast Scroll",
+                      "rate": 3.5,
+                      "boost": 0.0,
+                      "hits": 6,
+                      "killer": null
+                    },
+                    {
+                      "kind": "secret",
+                      "name": "Ninja Art: Super Beast Scroll: Armor Collection",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 8,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "source_url": "https://gachawiki.net/naruto-blazing/ninjas/sai-mask-like-smile",
+      "asset_source_url": "https://gachawiki.net/naruto-blazing/ninjas/sai-mask-like-smile/card-239.webp",
+      "role": "card"
+    },
+    {
+      "file": "character_353e377b4bd236970103e076.png",
+      "sha256": "62625eba08fa61df53064077c60ea64dfc6c280626431a4a46ca9ddcb740ac8a",
+      "source_asset": "runtime/library/assets/characters/551cede4e67ee10cb91695e841257bee4876b06ae3154a99f5bad8097d0a732a.webp",
+      "source_asset_sha256": "551cede4e67ee10cb91695e841257bee4876b06ae3154a99f5bad8097d0a732a",
+      "item_id": "character_353e377b4bd236970103e076",
+      "game_id": "240",
+      "rarity": "6",
+      "element": "Body",
+      "record_type": "character",
+      "source_key": "sai-mask-like-smile:240",
+      "display_name": "Sai \"Mask-like Smile\"",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninjas.json",
+        "json_pointer": "$.ninjas[92].forms[1]",
+        "original": {
+          "stars": 6,
+          "maxStars": 6,
+          "blazingAwakened": false,
+          "cardNo": 240,
+          "element": "Body",
+          "range": "Long",
+          "affiliations": [
+            "Hidden Leaf"
+          ],
+          "maxLv": 100,
+          "maxLvLb": null,
+          "limitBreak": false,
+          "cost": {
+            "base": 60,
+            "reduced": 30
+          },
+          "luck": {
+            "min": 1,
+            "max": 99
+          },
+          "normalHits": 1,
+          "released": {
+            "global": "2016-12-15",
+            "japan": "2016-12-07"
+          },
+          "stats": {
+            "missions": {
+              "hp": {
+                "base": 562,
+                "max": 1124,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 402,
+                "max": 804,
+                "maxLb": null
+              }
+            },
+            "nwus": {
+              "hp": {
+                "base": 8992,
+                "max": 17984,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 563,
+                "max": 1126,
+                "maxLb": null
+              },
+              "speed": {
+                "base": 142,
+                "max": 284,
+                "maxLb": null
+              }
+            },
+            "plusValues": {
+              "hp": 300,
+              "atk": 100,
+              "speed": 30,
+              "hpAbilities": 100,
+              "atkAbilities": 100,
+              "hpNwusAbilities": 500,
+              "atkNwusAbilities": 100
+            }
+          },
+          "fieldSkill": "Reduces an enemy's chance to counter by 12%-24%.",
+          "buddySkill": "Boosts critical rate by 2x.",
+          "syncSkills": [
+            {
+              "name": "Sync With All Except Body",
+              "text": "Reduces Skill damage taken by 10%.",
+              "textNwus": null,
+              "effect": "Reduce Skill Damage"
+            },
+            {
+              "name": "Sync With Hidden Leaf",
+              "text": "Reduces Heart damage taken by 10%.",
+              "textNwus": null,
+              "effect": "Reduce Heart Damage"
+            }
+          ],
+          "abilities": [
+            {
+              "name": "Combination Attack Boost",
+              "text": "Boosts attack by 1.1x during Combinations.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0108.webp"
+            },
+            {
+              "name": "Combination Critical Rate Boost",
+              "text": "Boosts critical rate by 1.75x during Combinations.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0208.webp"
+            },
+            {
+              "name": "Health Boost",
+              "text": "Boosts health by 100.",
+              "textNwus": "Boosts health by 500.",
+              "icon": "/naruto-blazing/abilities/icon-0301.webp"
+            },
+            {
+              "name": "Attack Boost",
+              "text": "Boosts attack by 100.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0101.webp"
+            },
+            {
+              "name": "Reduce Skill Damage",
+              "text": "Reduces Skill damage taken by 10%.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-2005.webp"
+            }
+          ],
+          "ninjutsu": {
+            "name": "Ninja Art: Super Beast Scroll",
+            "chakra": 3,
+            "text": "3.5x attack toward 1 enemy(s) in range.",
+            "textNwus": null,
+            "hits": 6,
+            "shape": "H. Rectangle",
+            "range": "Vast",
+            "position": "Right"
+          },
+          "secretTechnique": {
+            "name": "Ninja Art: Super Beast Scroll: Armor Collection",
+            "chakra": 6,
+            "text": "8x attack toward 1 enemy(s) in range.",
+            "textNwus": null,
+            "hits": 8,
+            "shape": "Circle",
+            "range": "Short",
+            "position": "Center"
+          },
+          "effects": {
+            "skill": [
+              "Counter Sensor",
+              "Critical Rate Boost"
+            ],
+            "sync": [
+              "Reduce Skill Damage",
+              "Reduce Heart Damage"
+            ]
+          },
+          "awakening": null,
+          "notes": [],
+          "source": {
+            "title": "Sai \"Mask-like Smile\" (\u26056)",
+            "url": "https://naruto-blazing.fandom.com/wiki/Sai_%22Mask-like_Smile%22_%28%E2%98%856%29",
+            "revid": 43050
+          },
+          "card": "/naruto-blazing/ninjas/sai-mask-like-smile/card-240.webp",
+          "art": "/naruto-blazing/ninjas/sai-mask-like-smile/art-240.webp",
+          "artCutout": true,
+          "fieldEffect": "Counter Sensor",
+          "buddyEffect": "Critical Rate Boost"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "ninja_id": "sai-mask-like-smile",
+        "character_name": "Sai",
+        "title": "Mask-like Smile",
+        "roster_metadata": {
+          "id": "sai-mask-like-smile",
+          "name": "Sai",
+          "title": "Mask-like Smile",
+          "element": "Body",
+          "range": "Long",
+          "affiliations": [
+            "Hidden Leaf"
+          ],
+          "baseStars": 5,
+          "maxStars": 6,
+          "released": {
+            "global": "2016-12-15",
+            "japan": "2016-12-07"
+          },
+          "batch": 9,
+          "serverReleased": "2026-10-17",
+          "new": false,
+          "upcoming": true,
+          "obtain": [
+            {
+              "type": "emergency",
+              "name": "Life-giving Brushstrokes"
+            }
+          ],
+          "source": {
+            "title": "Sai \"Mask-like Smile\"",
+            "url": "https://naruto-blazing.fandom.com/wiki/Sai_%22Mask-like_Smile%22_%28%E2%98%856%29",
+            "license": "CC BY-SA 3.0"
+          },
+          "art": "/naruto-blazing/ninjas/sai-mask-like-smile/art-240.webp",
+          "card": "/naruto-blazing/ninjas/sai-mask-like-smile/card-240.webp"
+        },
+        "upcoming": true,
+        "game_id_kind": "cardNo",
+        "supplemental_metadata": {
+          "stat-curves.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/stat-curves.json",
+            "data": {
+              "239": {
+                "unit": 12615,
+                "maxLv": 70,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    70,
+                    [
+                      402,
+                      804,
+                      100
+                    ],
+                    [
+                      344,
+                      688,
+                      -100
+                    ],
+                    [
+                      6432,
+                      12864,
+                      100
+                    ],
+                    [
+                      482,
+                      963,
+                      -100
+                    ],
+                    [
+                      114,
+                      227,
+                      100
+                    ]
+                  ]
+                ]
+              },
+              "240": {
+                "unit": 12616,
+                "maxLv": 100,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    100,
+                    [
+                      562,
+                      1124,
+                      100
+                    ],
+                    [
+                      402,
+                      804,
+                      -100
+                    ],
+                    [
+                      8992,
+                      17984,
+                      100
+                    ],
+                    [
+                      563,
+                      1126,
+                      -100
+                    ],
+                    [
+                      142,
+                      284,
+                      100
+                    ]
+                  ]
+                ]
+              }
+            }
+          },
+          "tower.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/tower.json",
+            "data": {
+              "id": "sai-mask-like-smile",
+              "stars": 6,
+              "unit": 12616,
+              "plus": 100,
+              "rise": 100,
+              "critUp": 1.0,
+              "syncs": [],
+              "modes": {
+                "pve": {
+                  "atk": {
+                    "max": 804,
+                    "maxLb": null
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "ninjutsu",
+                      "name": "Ninja Art: Super Beast Scroll",
+                      "rate": 3.5,
+                      "boost": 0.0,
+                      "hits": 6,
+                      "killer": null
+                    },
+                    {
+                      "kind": "secret",
+                      "name": "Ninja Art: Super Beast Scroll: Armor Collection",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 8,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                },
+                "pvp": {
+                  "atk": {
+                    "max": 1126,
+                    "maxLb": null
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "ninjutsu",
+                      "name": "Ninja Art: Super Beast Scroll",
+                      "rate": 3.5,
+                      "boost": 0.0,
+                      "hits": 6,
+                      "killer": null
+                    },
+                    {
+                      "kind": "secret",
+                      "name": "Ninja Art: Super Beast Scroll: Armor Collection",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 8,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                }
+              }
+            }
+          }
+        }
+      },
+      "source_url": "https://gachawiki.net/naruto-blazing/ninjas/sai-mask-like-smile",
+      "asset_source_url": "https://gachawiki.net/naruto-blazing/ninjas/sai-mask-like-smile/card-240.webp",
+      "role": "card"
+    },
+    {
+      "file": "character_46ed2cb53f0c2b4b19767268.png",
+      "sha256": "31be1e2d4738105c681db1e9d921ca876545c071da11d6fd623e26e422e0fe8d",
+      "source_asset": "runtime/library/assets/characters/3b1b82c81478842623253b85379becaf7c58e0c1bcd13ad9ab39be0c2ae1d106.webp",
+      "source_asset_sha256": "3b1b82c81478842623253b85379becaf7c58e0c1bcd13ad9ab39be0c2ae1d106",
+      "item_id": "character_46ed2cb53f0c2b4b19767268",
+      "game_id": "298",
+      "rarity": "5",
+      "element": "Bravery",
+      "record_type": "character",
+      "source_key": "gengo-master-of-silence:298",
+      "display_name": "Gengo \"Master of Silence\"",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninjas.json",
+        "json_pointer": "$.ninjas[117].forms[0]",
+        "original": {
+          "stars": 5,
+          "maxStars": 6,
+          "blazingAwakened": false,
+          "cardNo": 298,
+          "element": "Bravery",
+          "range": "Long",
+          "affiliations": [],
+          "maxLv": 70,
+          "maxLvLb": null,
+          "limitBreak": false,
+          "cost": {
+            "base": 60,
+            "reduced": 36
+          },
+          "luck": {
+            "min": 1,
+            "max": 80
+          },
+          "normalHits": 1,
+          "released": {
+            "global": "2017-02-14",
+            "japan": "2017-02-08"
+          },
+          "stats": {
+            "missions": {
+              "hp": {
+                "base": 324,
+                "max": 648,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 348,
+                "max": 696,
+                "maxLb": null
+              }
+            },
+            "nwus": {
+              "hp": {
+                "base": 6480,
+                "max": 12960,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 557,
+                "max": 1114,
+                "maxLb": null
+              },
+              "speed": {
+                "base": 96,
+                "max": 192,
+                "maxLb": null
+              }
+            },
+            "plusValues": {
+              "hp": 200,
+              "atk": 75,
+              "speed": 25,
+              "hpAbilities": 200,
+              "hpNwusAbilities": 1000
+            }
+          },
+          "fieldSkill": "Boosts attack by 70-140.",
+          "buddySkill": "Boosts attack by 95.",
+          "syncSkills": [
+            {
+              "name": "Sync With Bravery",
+              "text": "Boosts attack by 75.",
+              "textNwus": "Boosts attack by 150.",
+              "effect": "Attack Boost"
+            }
+          ],
+          "abilities": [
+            {
+              "name": "Reduce Wisdom Damage",
+              "text": "Reduces Wisdom damage taken by 10%.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-2305.webp"
+            },
+            {
+              "name": "Health Boost",
+              "text": "Boosts health by 100.",
+              "textNwus": "Boosts health by 500.",
+              "icon": "/naruto-blazing/abilities/icon-0301.webp"
+            },
+            {
+              "name": "Reduce Wisdom Damage",
+              "text": "Reduces Wisdom damage taken by 10%.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-2305.webp"
+            },
+            {
+              "name": "Health Boost",
+              "text": "Boosts health by 100.",
+              "textNwus": "Boosts health by 500.",
+              "icon": "/naruto-blazing/abilities/icon-0301.webp"
+            }
+          ],
+          "ninjutsu": {
+            "name": "Evil Illusion: Enchanting Flattery",
+            "chakra": 6,
+            "text": "All allies in range get 25% attack boost for 3 turn(s).",
+            "textNwus": null,
+            "hits": null,
+            "shape": "Circle",
+            "range": "Long",
+            "position": "Center"
+          },
+          "secretTechnique": null,
+          "effects": {
+            "self": [
+              "Attack Boost"
+            ],
+            "support": [
+              "Attack Boost"
+            ],
+            "skill": [
+              "Attack Boost"
+            ],
+            "sync": [
+              "Attack Boost"
+            ]
+          },
+          "awakening": {
+            "to": 6,
+            "materials": [
+              {
+                "name": "Awakening Scroll \"Bravery Book\"",
+                "stars": 4,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Bravery",
+                "icon": "/naruto-blazing/materials/card-0955.webp"
+              },
+              {
+                "name": "Awakening Scroll \"Bravery Book\"",
+                "stars": 3,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Bravery",
+                "icon": "/naruto-blazing/materials/card-0911.webp"
+              }
+            ]
+          },
+          "notes": [],
+          "source": {
+            "title": "Gengo \"Master of Silence\" (\u26055)",
+            "url": "https://naruto-blazing.fandom.com/wiki/Gengo_%22Master_of_Silence%22_%28%E2%98%855%29",
+            "revid": 43336
+          },
+          "card": "/naruto-blazing/ninjas/gengo-master-of-silence/card-298.webp",
+          "art": "/naruto-blazing/ninjas/gengo-master-of-silence/art-298.webp",
+          "artCutout": true,
+          "fieldEffect": "Attack Boost",
+          "buddyEffect": "Attack Boost"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "ninja_id": "gengo-master-of-silence",
+        "character_name": "Gengo",
+        "title": "Master of Silence",
+        "roster_metadata": {
+          "id": "gengo-master-of-silence",
+          "name": "Gengo",
+          "title": "Master of Silence",
+          "element": "Bravery",
+          "range": "Long",
+          "affiliations": [],
+          "baseStars": 5,
+          "maxStars": 6,
+          "released": {
+            "global": "2017-02-14",
+            "japan": "2017-02-08"
+          },
+          "batch": 15,
+          "serverReleased": "2026-11-28",
+          "new": false,
+          "upcoming": true,
+          "obtain": [
+            {
+              "type": "impact",
+              "name": "Impact! Lord of Silence"
+            }
+          ],
+          "source": {
+            "title": "Gengo \"Master of Silence\"",
+            "url": "https://naruto-blazing.fandom.com/wiki/Gengo_%22Master_of_Silence%22_%28%E2%98%856%29",
+            "license": "CC BY-SA 3.0"
+          },
+          "art": "/naruto-blazing/ninjas/gengo-master-of-silence/art-299.webp",
+          "card": "/naruto-blazing/ninjas/gengo-master-of-silence/card-299.webp"
+        },
+        "upcoming": true,
+        "game_id_kind": "cardNo",
+        "supplemental_metadata": {
+          "stat-curves.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/stat-curves.json",
+            "data": {
+              "298": {
+                "unit": 12875,
+                "maxLv": 70,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    70,
+                    [
+                      324,
+                      648,
+                      100
+                    ],
+                    [
+                      348,
+                      696,
+                      -100
+                    ],
+                    [
+                      6480,
+                      12960,
+                      100
+                    ],
+                    [
+                      557,
+                      1114,
+                      -100
+                    ],
+                    [
+                      96,
+                      192,
+                      100
+                    ]
+                  ]
+                ]
+              },
+              "299": {
+                "unit": 12876,
+                "maxLv": 100,
+                "maxLvLb": 150,
+                "ranges": [
+                  [
+                    1,
+                    100,
+                    [
+                      512,
+                      1024,
+                      100
+                    ],
+                    [
+                      524,
+                      1048,
+                      -100
+                    ],
+                    [
+                      10240,
+                      20480,
+                      100
+                    ],
+                    [
+                      838,
+                      1677,
+                      -100
+                    ],
+                    [
+                      120,
+                      240,
+                      100
+                    ]
+                  ],
+                  [
+                    100,
+                    105,
+                    [
+                      1024,
+                      1044,
+                      100
+                    ],
+                    [
+                      1048,
+                      1064,
+                      100
+                    ],
+                    [
+                      20480,
+                      20880,
+                      100
+                    ],
+                    [
+                      1677,
+                      1702,
+                      100
+                    ],
+                    [
+                      240,
+                      242,
+                      100
+                    ]
+                  ],
+                  [
+                    105,
+                    110,
+                    [
+                      1044,
+                      1068,
+                      100
+                    ],
+                    [
+                      1064,
+                      1086,
+                      100
+                    ],
+                    [
+                      20880,
+                      21360,
+                      100
+                    ],
+                    [
+                      1702,
+                      1738,
+                      100
+                    ],
+                    [
+                      242,
+                      244,
+                      100
+                    ]
+                  ],
+                  [
+                    110,
+                    115,
+                    [
+                      1068,
+                      1096,
+                      100
+                    ],
+                    [
+                      1086,
+                      1114,
+                      100
+                    ],
+                    [
+                      21360,
+                      21920,
+                      100
+                    ],
+                    [
+                      1738,
+                      1782,
+                      100
+                    ],
+                    [
+                      244,
+                      246,
+                      100
+                    ]
+                  ],
+                  [
+                    115,
+                    120,
+                    [
+                      1096,
+                      1128,
+                      100
+                    ],
+                    [
+                      1114,
+                      1148,
+                      100
+                    ],
+                    [
+                      21920,
+                      22560,
+                      100
+                    ],
+                    [
+                      1782,
+                      1837,
+                      100
+                    ],
+                    [
+                      246,
+                      248,
+                      100
+                    ]
+                  ],
+                  [
+                    120,
+                    125,
+                    [
+                      1128,
+                      1164,
+                      100
+                    ],
+                    [
+                      1148,
+                      1188,
+                      100
+                    ],
+                    [
+                      22560,
+                      23280,
+                      100
+                    ],
+                    [
+                      1837,
+                      1901,
+                      100
+                    ],
+                    [
+                      248,
+                      250,
+                      100
+                    ]
+                  ],
+                  [
+                    125,
+                    130,
+                    [
+                      1164,
+                      1204,
+                      100
+                    ],
+                    [
+                      1188,
+                      1234,
+                      100
+                    ],
+                    [
+                      23280,
+                      24080,
+                      100
+                    ],
+                    [
+                      1901,
+                      1974,
+                      100
+                    ],
+                    [
+                      250,
+                      252,
+                      100
+                    ]
+                  ],
+                  [
+                    130,
+                    135,
+                    [
+                      1204,
+                      1248,
+                      100
+                    ],
+                    [
+                      1234,
+                      1286,
+                      100
+                    ],
+                    [
+                      24080,
+                      24960,
+                      100
+                    ],
+                    [
+                      1974,
+                      2058,
+                      100
+                    ],
+                    [
+                      252,
+                      254,
+                      100
+                    ]
+                  ],
+                  [
+                    135,
+                    140,
+                    [
+                      1248,
+                      1296,
+                      100
+                    ],
+                    [
+                      1286,
+                      1344,
+                      100
+                    ],
+                    [
+                      24960,
+                      25920,
+                      100
+                    ],
+                    [
+                      2058,
+                      2150,
+                      100
+                    ],
+                    [
+                      254,
+                      256,
+                      100
+                    ]
+                  ],
+                  [
+                    140,
+                    145,
+                    [
+                      1296,
+                      1348,
+                      100
+                    ],
+                    [
+                      1344,
+                      1408,
+                      100
+                    ],
+                    [
+                      25920,
+                      26960,
+                      100
+                    ],
+                    [
+                      2150,
+                      2253,
+                      100
+                    ],
+                    [
+                      256,
+                      258,
+                      100
+                    ]
+                  ],
+                  [
+                    145,
+                    150,
+                    [
+                      1348,
+                      1404,
+                      100
+                    ],
+                    [
+                      1408,
+                      1478,
+                      100
+                    ],
+                    [
+                      26960,
+                      28080,
+                      100
+                    ],
+                    [
+                      2253,
+                      2365,
+                      100
+                    ],
+                    [
+                      258,
+                      260,
+                      100
+                    ]
+                  ]
+                ]
+              }
+            }
+          },
+          "tower.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/tower.json",
+            "data": {
+              "id": "gengo-master-of-silence",
+              "stars": 6,
+              "unit": 12876,
+              "plus": 100,
+              "rise": 0,
+              "critUp": 1.0,
+              "syncs": [
+                {
+                  "name": "Sync With Bravery",
+                  "condition": "Sync when front row element is Bravery",
+                  "pve": 75,
+                  "pvp": 150
+                }
+              ],
+              "modes": {
+                "pve": {
+                  "atk": {
+                    "max": 1048,
+                    "maxLb": 1478
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "secret",
+                      "name": "Enchanted Directive",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 9,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": {
+                    "rank": 1,
+                    "turns": null,
+                    "from": "ninjutsu",
+                    "rate": 1.25
+                  },
+                  "critBuff": null
+                },
+                "pvp": {
+                  "atk": {
+                    "max": 1677,
+                    "maxLb": 2365
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "secret",
+                      "name": "Enchanted Directive",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 9,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": {
+                    "rank": 1,
+                    "turns": null,
+                    "from": "ninjutsu",
+                    "rate": 1.25
+                  },
+                  "critBuff": null
+                }
+              }
+            }
+          },
+          "limit-break.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/limit-break.json",
+            "data": {
+              "steps": [
+                {
+                  "from": 100,
+                  "to": 105,
+                  "ryo": 40320,
+                  "items": {
+                    "elemental": 1,
+                    "scroll3": 2,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 105,
+                  "to": 110,
+                  "ryo": 168960,
+                  "items": {
+                    "elemental": 2,
+                    "own5": 1,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 110,
+                  "to": 115,
+                  "ryo": 220800,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 2,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 115,
+                  "to": 120,
+                  "ryo": 368640,
+                  "items": {
+                    "own5": 4,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 120,
+                  "to": 125,
+                  "ryo": 480000,
+                  "items": {
+                    "own5": 5
+                  }
+                },
+                {
+                  "from": 125,
+                  "to": 130,
+                  "ryo": 399360,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 1,
+                    "own6": 1,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 130,
+                  "to": 135,
+                  "ryo": 673920,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 1,
+                    "own6": 2,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 135,
+                  "to": 140,
+                  "ryo": 752640,
+                  "items": {
+                    "own5": 2,
+                    "own6": 2,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 140,
+                  "to": 145,
+                  "ryo": 1224960,
+                  "items": {
+                    "own5": 1,
+                    "own6": 4
+                  }
+                },
+                {
+                  "from": 145,
+                  "to": 150,
+                  "ryo": 1440000,
+                  "items": {
+                    "own6": 5
+                  }
+                }
+              ],
+              "5": "/naruto-blazing/lb/card-0998.webp",
+              "6": "/naruto-blazing/lb/card-0999.webp",
+              "awaken": {
+                "own5": 3,
+                "scroll3": 1,
+                "scroll4": 1
+              }
+            }
+          }
+        }
+      },
+      "source_url": "https://gachawiki.net/naruto-blazing/ninjas/gengo-master-of-silence",
+      "asset_source_url": "https://gachawiki.net/naruto-blazing/ninjas/gengo-master-of-silence/card-298.webp",
+      "role": "card"
+    },
+    {
+      "file": "character_c5b5a5959ccb1695d8992c3f.png",
+      "sha256": "ce4f9a33d08dbf6e53be55c25de3c95bfb4676cd61881de986475f2702223cd5",
+      "source_asset": "runtime/library/assets/characters/e66697b3695b58d7988e70e43b9601480ef3409058b28cff0ed40dfe000c1dc6.webp",
+      "source_asset_sha256": "e66697b3695b58d7988e70e43b9601480ef3409058b28cff0ed40dfe000c1dc6",
+      "item_id": "character_c5b5a5959ccb1695d8992c3f",
+      "game_id": "308",
+      "rarity": "5",
+      "element": "Skill",
+      "record_type": "character",
+      "source_key": "itachi-uchiha-shuras-truth:308",
+      "display_name": "Itachi Uchiha \"Shura's Truth\"",
+      "verification_status": "source_verified",
+      "metadata": {
+        "source_data_url": "https://gachawiki.net/data/naruto-blazing/ninjas.json",
+        "json_pointer": "$.ninjas[123].forms[0]",
+        "original": {
+          "stars": 5,
+          "maxStars": 6,
+          "blazingAwakened": false,
+          "cardNo": 308,
+          "element": "Skill",
+          "range": "Mid",
+          "affiliations": [
+            "Akatsuki",
+            "Uchiha Clan"
+          ],
+          "maxLv": 70,
+          "maxLvLb": null,
+          "limitBreak": false,
+          "cost": {
+            "base": 60,
+            "reduced": 36
+          },
+          "luck": {
+            "min": 1,
+            "max": 80
+          },
+          "normalHits": 1,
+          "released": {
+            "global": "2017-02-28",
+            "japan": "2017-02-22"
+          },
+          "stats": {
+            "missions": {
+              "hp": {
+                "base": 432,
+                "max": 864,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 515,
+                "max": 1030,
+                "maxLb": null
+              }
+            },
+            "nwus": {
+              "hp": {
+                "base": 9936,
+                "max": 19872,
+                "maxLb": null
+              },
+              "atk": {
+                "base": 1030,
+                "max": 2060,
+                "maxLb": null
+              },
+              "speed": {
+                "base": 28,
+                "max": 56,
+                "maxLb": null
+              }
+            },
+            "plusValues": {
+              "hp": 200,
+              "atk": 75,
+              "speed": 25,
+              "atkAbilities": 100,
+              "atkNwusAbilities": 100
+            }
+          },
+          "fieldSkill": "Boosts critical rate by 1.3-1.8x.",
+          "buddySkill": "Reduces the chance of receiving jutsu sealing by 15% (Not Field Skills).",
+          "syncSkills": [
+            {
+              "name": "Sync With Skill",
+              "text": "Lowers rate of getting jutsu sealed by 10% (excluding Field Effects and F Skills).",
+              "textNwus": null,
+              "effect": "Jutsu Sealing Resistance"
+            }
+          ],
+          "abilities": [
+            {
+              "name": "Jutsu Sealing Resistance",
+              "text": "Lowers rate of getting jutsu sealed by 10% (Not F Skills).",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-1505.webp"
+            },
+            {
+              "name": "Jutsu Sealing Resistance",
+              "text": "Lowers rate of getting jutsu sealed by 10% (Not F Skills).",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-1505.webp"
+            },
+            {
+              "name": "Jutsu Sealing Resistance",
+              "text": "Lowers rate of getting jutsu sealed by 10% (Not F Skills).",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-1505.webp"
+            },
+            {
+              "name": "Attack Boost",
+              "text": "Boosts attack by 100.",
+              "textNwus": null,
+              "icon": "/naruto-blazing/abilities/icon-0101.webp"
+            }
+          ],
+          "ninjutsu": {
+            "name": "Amaterasu",
+            "chakra": 7,
+            "text": "3.5x attack toward all enemies in range, 40% chance of reducing their attack for 6 turn(s).",
+            "textNwus": null,
+            "hits": 8,
+            "shape": "H. Rectangle (Fat)",
+            "range": "Mid",
+            "position": "Right"
+          },
+          "secretTechnique": null,
+          "effects": {
+            "enemy": [
+              "Attack Reduction"
+            ],
+            "skill": [
+              "Critical Rate Boost",
+              "Jutsu Sealing Resistance"
+            ],
+            "sync": [
+              "Jutsu Sealing Resistance"
+            ]
+          },
+          "awakening": {
+            "to": 6,
+            "materials": [
+              {
+                "name": "Awakening Scroll \"Skill Book\"",
+                "stars": 4,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Skill",
+                "icon": "/naruto-blazing/materials/card-0953.webp"
+              },
+              {
+                "name": "Awakening Scroll \"Skill Book\"",
+                "stars": 3,
+                "count": 2,
+                "kind": "scroll",
+                "element": "Skill",
+                "icon": "/naruto-blazing/materials/card-0905.webp"
+              }
+            ]
+          },
+          "notes": [
+            "Enemy's attack is reduced by 15% with his Ninjutsu."
+          ],
+          "source": {
+            "title": "Itachi Uchiha \"Shura's Truth\" (\u26055)",
+            "url": "https://naruto-blazing.fandom.com/wiki/Itachi_Uchiha_%22Shura%27s_Truth%22_%28%E2%98%855%29",
+            "revid": 46677
+          },
+          "card": "/naruto-blazing/ninjas/itachi-uchiha-shuras-truth/card-308.webp",
+          "art": "/naruto-blazing/ninjas/itachi-uchiha-shuras-truth/art-308.webp",
+          "artCutout": true,
+          "fieldEffect": "Critical Rate Boost",
+          "buddyEffect": "Jutsu Sealing Resistance"
+        },
+        "verification_basis": "Values explicitly supplied by GachaWiki; not screenshot-tested.",
+        "ninja_id": "itachi-uchiha-shuras-truth",
+        "character_name": "Itachi Uchiha",
+        "title": "Shura's Truth",
+        "roster_metadata": {
+          "id": "itachi-uchiha-shuras-truth",
+          "name": "Itachi Uchiha",
+          "title": "Shura's Truth",
+          "element": "Skill",
+          "range": "Mid",
+          "affiliations": [
+            "Akatsuki",
+            "Uchiha Clan"
+          ],
+          "baseStars": 5,
+          "maxStars": 6,
+          "released": {
+            "global": "2017-02-28",
+            "japan": "2017-02-22"
+          },
+          "batch": 17,
+          "serverReleased": "2026-12-12",
+          "new": false,
+          "upcoming": true,
+          "obtain": [
+            {
+              "type": "impact",
+              "name": "Impact! Arrival of a Savage God"
+            }
+          ],
+          "source": {
+            "title": "Itachi Uchiha \"Shura's Truth\"",
+            "url": "https://naruto-blazing.fandom.com/wiki/Itachi_Uchiha_%22Shura%27s_Truth%22_%28%E2%98%856%29",
+            "license": "CC BY-SA 3.0"
+          },
+          "art": "/naruto-blazing/ninjas/itachi-uchiha-shuras-truth/art-309.webp",
+          "card": "/naruto-blazing/ninjas/itachi-uchiha-shuras-truth/card-309.webp"
+        },
+        "upcoming": true,
+        "game_id_kind": "cardNo",
+        "supplemental_metadata": {
+          "stat-curves.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/stat-curves.json",
+            "data": {
+              "308": {
+                "unit": 12945,
+                "maxLv": 70,
+                "maxLvLb": null,
+                "ranges": [
+                  [
+                    1,
+                    70,
+                    [
+                      432,
+                      864,
+                      100
+                    ],
+                    [
+                      515,
+                      1030,
+                      -100
+                    ],
+                    [
+                      9936,
+                      19872,
+                      100
+                    ],
+                    [
+                      1030,
+                      2060,
+                      -100
+                    ],
+                    [
+                      28,
+                      56,
+                      100
+                    ]
+                  ]
+                ]
+              },
+              "309": {
+                "unit": 12946,
+                "maxLv": 100,
+                "maxLvLb": 150,
+                "ranges": [
+                  [
+                    1,
+                    100,
+                    [
+                      603,
+                      1206,
+                      100
+                    ],
+                    [
+                      693,
+                      1386,
+                      -100
+                    ],
+                    [
+                      13869,
+                      27738,
+                      100
+                    ],
+                    [
+                      1386,
+                      2772,
+                      -100
+                    ],
+                    [
+                      35,
+                      70,
+                      100
+                    ]
+                  ],
+                  [
+                    100,
+                    105,
+                    [
+                      1206,
+                      1218,
+                      100
+                    ],
+                    [
+                      1386,
+                      1398,
+                      100
+                    ],
+                    [
+                      27738,
+                      28014,
+                      100
+                    ],
+                    [
+                      2772,
+                      2796,
+                      100
+                    ],
+                    [
+                      70,
+                      72,
+                      100
+                    ]
+                  ],
+                  [
+                    105,
+                    110,
+                    [
+                      1218,
+                      1234,
+                      100
+                    ],
+                    [
+                      1398,
+                      1416,
+                      100
+                    ],
+                    [
+                      28014,
+                      28382,
+                      100
+                    ],
+                    [
+                      2796,
+                      2832,
+                      100
+                    ],
+                    [
+                      72,
+                      74,
+                      100
+                    ]
+                  ],
+                  [
+                    110,
+                    115,
+                    [
+                      1234,
+                      1254,
+                      100
+                    ],
+                    [
+                      1416,
+                      1440,
+                      100
+                    ],
+                    [
+                      28382,
+                      28842,
+                      100
+                    ],
+                    [
+                      2832,
+                      2880,
+                      100
+                    ],
+                    [
+                      74,
+                      76,
+                      100
+                    ]
+                  ],
+                  [
+                    115,
+                    120,
+                    [
+                      1254,
+                      1278,
+                      100
+                    ],
+                    [
+                      1440,
+                      1470,
+                      100
+                    ],
+                    [
+                      28842,
+                      29394,
+                      100
+                    ],
+                    [
+                      2880,
+                      2940,
+                      100
+                    ],
+                    [
+                      76,
+                      78,
+                      100
+                    ]
+                  ],
+                  [
+                    120,
+                    125,
+                    [
+                      1278,
+                      1308,
+                      100
+                    ],
+                    [
+                      1470,
+                      1508,
+                      100
+                    ],
+                    [
+                      29394,
+                      30084,
+                      100
+                    ],
+                    [
+                      2940,
+                      3016,
+                      100
+                    ],
+                    [
+                      78,
+                      80,
+                      100
+                    ]
+                  ],
+                  [
+                    125,
+                    130,
+                    [
+                      1308,
+                      1344,
+                      100
+                    ],
+                    [
+                      1508,
+                      1554,
+                      100
+                    ],
+                    [
+                      30084,
+                      30912,
+                      100
+                    ],
+                    [
+                      3016,
+                      3108,
+                      100
+                    ],
+                    [
+                      80,
+                      82,
+                      100
+                    ]
+                  ],
+                  [
+                    130,
+                    135,
+                    [
+                      1344,
+                      1386,
+                      100
+                    ],
+                    [
+                      1554,
+                      1608,
+                      100
+                    ],
+                    [
+                      30912,
+                      31878,
+                      100
+                    ],
+                    [
+                      3108,
+                      3216,
+                      100
+                    ],
+                    [
+                      82,
+                      84,
+                      100
+                    ]
+                  ],
+                  [
+                    135,
+                    140,
+                    [
+                      1386,
+                      1436,
+                      100
+                    ],
+                    [
+                      1608,
+                      1670,
+                      100
+                    ],
+                    [
+                      31878,
+                      33028,
+                      100
+                    ],
+                    [
+                      3216,
+                      3340,
+                      100
+                    ],
+                    [
+                      84,
+                      86,
+                      100
+                    ]
+                  ],
+                  [
+                    140,
+                    145,
+                    [
+                      1436,
+                      1494,
+                      100
+                    ],
+                    [
+                      1670,
+                      1740,
+                      100
+                    ],
+                    [
+                      33028,
+                      34362,
+                      100
+                    ],
+                    [
+                      3340,
+                      3480,
+                      100
+                    ],
+                    [
+                      86,
+                      88,
+                      100
+                    ]
+                  ],
+                  [
+                    145,
+                    150,
+                    [
+                      1494,
+                      1562,
+                      100
+                    ],
+                    [
+                      1740,
+                      1820,
+                      100
+                    ],
+                    [
+                      34362,
+                      35926,
+                      100
+                    ],
+                    [
+                      3480,
+                      3640,
+                      100
+                    ],
+                    [
+                      88,
+                      90,
+                      100
+                    ]
+                  ]
+                ]
+              }
+            }
+          },
+          "tower.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/tower.json",
+            "data": {
+              "id": "itachi-uchiha-shuras-truth",
+              "stars": 6,
+              "unit": 12946,
+              "plus": 100,
+              "rise": 100,
+              "critUp": 1.0,
+              "syncs": [],
+              "modes": {
+                "pve": {
+                  "atk": {
+                    "max": 1386,
+                    "maxLb": 1820
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "ninjutsu",
+                      "name": "Amaterasu",
+                      "rate": 4.0,
+                      "boost": 0.0,
+                      "hits": 8,
+                      "killer": null
+                    },
+                    {
+                      "kind": "secret",
+                      "name": "Susano'o: Totsuka Blade",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 7,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                },
+                "pvp": {
+                  "atk": {
+                    "max": 2772,
+                    "maxLb": 3640
+                  },
+                  "jutsus": [
+                    {
+                      "kind": "ninjutsu",
+                      "name": "Amaterasu",
+                      "rate": 4.0,
+                      "boost": 0.0,
+                      "hits": 8,
+                      "killer": null
+                    },
+                    {
+                      "kind": "secret",
+                      "name": "Susano'o: Totsuka Blade",
+                      "rate": 8.0,
+                      "boost": 0.0,
+                      "hits": 7,
+                      "killer": null
+                    }
+                  ],
+                  "atkUp": null,
+                  "critBuff": null
+                }
+              }
+            }
+          },
+          "limit-break.json": {
+            "source_data_url": "https://gachawiki.net/data/naruto-blazing/limit-break.json",
+            "data": {
+              "steps": [
+                {
+                  "from": 100,
+                  "to": 105,
+                  "ryo": 40320,
+                  "items": {
+                    "elemental": 1,
+                    "scroll3": 2,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 105,
+                  "to": 110,
+                  "ryo": 168960,
+                  "items": {
+                    "elemental": 2,
+                    "own5": 1,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 110,
+                  "to": 115,
+                  "ryo": 220800,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 2,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 115,
+                  "to": 120,
+                  "ryo": 368640,
+                  "items": {
+                    "own5": 4,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 120,
+                  "to": 125,
+                  "ryo": 480000,
+                  "items": {
+                    "own5": 5
+                  }
+                },
+                {
+                  "from": 125,
+                  "to": 130,
+                  "ryo": 399360,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 1,
+                    "own6": 1,
+                    "scroll4": 2
+                  }
+                },
+                {
+                  "from": 130,
+                  "to": 135,
+                  "ryo": 673920,
+                  "items": {
+                    "elemental": 1,
+                    "own5": 1,
+                    "own6": 2,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 135,
+                  "to": 140,
+                  "ryo": 752640,
+                  "items": {
+                    "own5": 2,
+                    "own6": 2,
+                    "scroll4": 1
+                  }
+                },
+                {
+                  "from": 140,
+                  "to": 145,
+                  "ryo": 1224960,
+                  "items": {
+                    "own5": 1,
+                    "own6": 4
+                  }
+                },
+                {
+                  "from": 145,
+                  "to": 150,
+                  "ryo": 1440000,
+                  "items": {
+                    "own6": 5
+                  }
+                }
+              ],
+              "5": "/naruto-blazing/lb/card-1000.webp",
+              "6": "/naruto-blazing/lb/card-1001.webp",
+              "awaken": {
+                "own5": 3,
+                "scroll3": 1,
+                "scroll4": 1
+              }
+            }
+          }
+        }
+      },
+      "source_url": "https://gachawiki.net/naruto-blazing/ninjas/itachi-uchiha-shuras-truth",
+      "asset_source_url": "https://gachawiki.net/naruto-blazing/ninjas/itachi-uchiha-shuras-truth/card-308.webp",
+      "role": "card"
+    }
+  ]
+}

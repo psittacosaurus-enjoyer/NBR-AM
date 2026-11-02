@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import numpy as np
 
-import farm
+from automation import controller as farm
 from automation.ninja_road import NinjaRoadEngine
 from fixture_images import load_fixture
 
@@ -29,6 +29,7 @@ class Device:
     def __init__(self, engine):
         self.engine = engine
         self.actions = []
+        self.launches = 0
         self.failure = None
         self.package = farm.PACKAGE
 
@@ -45,6 +46,13 @@ class Device:
         if self.failure:
             raise self.failure
         self.actions.append(action["id"])
+
+    def launch(self):
+        if farm.STOP.exists():
+            raise AssertionError("Recovery must honor Stop before relaunch")
+        if self.failure:
+            raise self.failure
+        self.launches += 1
 
 
 class NinjaRoadTests(unittest.TestCase):
@@ -70,9 +78,17 @@ class NinjaRoadTests(unittest.TestCase):
         self.engine.device = Device(self.engine)
 
     def screen(self, name, action=None, expected=(), **metadata):
-        spec = dict(metadata)
+        spec = {"name": name, **metadata}
         if action:
             spec["action"] = {"id": action, "kind": "tap", "point": [10, 10], "expected": list(expected)}
+        if name == "STAMINA_PROMPT" and action == "dismiss_stamina":
+            spec.setdefault("recovery", True)
+            spec["anchors"] = [{}, {}, {
+                "region": [200, 982, 399, 1054],
+                "template": "assets/patterns/rich_b/stamina_prompt/2.png",
+                "correlation": .96, "difference": 12,
+            }]
+            spec["action"].update(point=[299, 1018], point_anchor=2)
         self.engine.detector.name = name
         self.engine.detector.spec = spec
 
@@ -470,7 +486,7 @@ class NinjaRoadTests(unittest.TestCase):
         self.assertNotIn("connection_pending", self.engine.data)
         self.assertEqual(self.engine.device.actions, ["nr_team"])
 
-    def test_connection_recovery_stops_after_three_unaccepted_starts(self):
+    def test_connection_recovery_escalates_after_three_unaccepted_starts(self):
         self.suspended_start()
         for count in range(1, 4):
             self.assertEqual(self.engine.data["connection_recoveries"], count)
@@ -484,6 +500,197 @@ class NinjaRoadTests(unittest.TestCase):
         self.assertNotIn("connection_pending", self.engine.data)
         self.assertEqual(self.engine.data["counts"]["started"], 0)
         self.assertEqual(self.engine.data["counts"]["resets"], 0)
+        self.engine.data["connection_escalation"]["next_attempt_at"] = farm.time.time() - 1
+        self.engine.tick()
+        self.assertEqual(self.engine.device.launches, 1)
+        self.assertEqual(self.engine.data["connection_recoveries"], 0)
+        self.assertNotIn("connection_recovery_limit", self.engine.data)
+        self.assertEqual(self.engine.data["pending"]["id"], "nr_start")
+
+    def test_unknown_screen_uses_backoff_then_verified_game_relaunch(self):
+        clock = [1000.0]
+        self.screen("UNKNOWN")
+        with patch("automation.ninja_road.time.time", side_effect=lambda: clock[0]):
+            for delay in (5, 10, 20, 40):
+                self.assertEqual(self.engine.tick(), delay)
+                self.assertEqual(self.engine.device.launches, 0)
+                clock[0] += delay
+            self.assertEqual(self.engine.tick(), 5)
+            self.assertEqual(self.engine.device.launches, 1)
+            self.assertEqual(self.engine.device.actions, [])
+            self.assertEqual(self.engine.data["recognition_recovery"]["relaunches"], 1)
+            self.screen("NR_HOME", verified_safe=True)
+            self.engine.tick(act=False)
+        self.assertNotIn("recognition_recovery", self.engine.data)
+        events = [call.args[0] for call in farm.event.call_args_list]
+        self.assertIn("ninja_recognition_failed", events)
+        self.assertIn("ninja_recognition_relaunch_sent", events)
+        self.assertIn("ninja_recognition_recovery_verified", events)
+
+    def test_repeated_two_frame_disagreement_uses_same_recovery_backoff(self):
+        clock = [2000.0]
+        frame = np.zeros((160, 90, 3), dtype=np.uint8)
+        known = {"name": "NR_START", "verified_safe": True}
+        with patch("automation.ninja_road.time.time", side_effect=lambda: clock[0]):
+            for delay in (5, 10, 20, 40):
+                observations = [(frame, "NR_START", known, {}),
+                                (frame, "UNKNOWN", None, {})]
+                with patch.object(self.engine, "observe", side_effect=observations):
+                    self.assertEqual(self.engine.tick(), delay)
+                clock[0] += delay
+            observations = [(frame, "NR_START", known, {}),
+                            (frame, "UNKNOWN", None, {})]
+            with patch.object(self.engine, "observe", side_effect=observations):
+                self.assertEqual(self.engine.tick(), 5)
+        self.assertEqual(self.engine.device.launches, 1)
+        self.assertEqual(self.engine.device.actions, [])
+
+    def test_foreground_loss_backs_off_then_relaunches_pinned_game_only(self):
+        self.engine.device.package = "com.uncube.launcher3"
+        self.assertEqual(self.engine.tick(), 5)
+        self.engine.data["foreground_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.assertEqual(self.engine.tick(), 10)
+        self.engine.data["foreground_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.assertEqual(self.engine.tick(), 5)
+        self.assertEqual(self.engine.device.launches, 1)
+        self.assertEqual(self.engine.device.actions, [])
+        self.engine.device.package = farm.PACKAGE
+        self.engine.tick(act=False)
+        self.assertNotIn("foreground_recovery", self.engine.data)
+        events = [call.args[0] for call in farm.event.call_args_list]
+        self.assertIn("ninja_foreground_relaunch_sent", events)
+        self.assertIn("ninja_foreground_restored", events)
+
+    def test_transition_timeout_retries_exact_safe_action_then_relaunches(self):
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=True)
+        self.engine.tick()
+        original_time = self.engine.data["pending"]["time"]
+        for retry in range(1, self.engine.TRANSITION_RETRY_LIMIT + 1):
+            self.engine.data["pending"]["last_attempt_at"] = farm.time.time() - self.engine.TRANSITION_TIMEOUT - 1
+            self.engine.tick()
+            self.engine.data["transition_recovery"]["next_attempt_at"] = farm.time.time() - 1
+            self.engine.tick()
+            self.assertEqual(self.engine.device.actions.count("nr_start"), retry + 1)
+            self.assertEqual(self.engine.data["pending"]["time"], original_time)
+        self.engine.data["pending"]["last_attempt_at"] = farm.time.time() - self.engine.TRANSITION_TIMEOUT - 1
+        self.engine.tick()
+        self.engine.data["transition_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.engine.tick()
+        self.assertEqual(self.engine.device.actions.count("nr_start"),
+                         self.engine.TRANSITION_RETRY_LIMIT + 1)
+        self.assertEqual(self.engine.device.launches, 1)
+        self.assertEqual(self.engine.data["pending"]["id"], "nr_start")
+        self.assertNotIn("transition_timed_out", self.engine.data)
+
+    def test_transition_retry_geometry_change_uses_relaunch_without_tapping(self):
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=True)
+        self.engine.tick()
+        original = copy.deepcopy(self.engine.data["pending"])
+        self.engine.detector.spec["action"]["point"] = [20, 20]
+        self.engine.data["pending"]["last_attempt_at"] = farm.time.time() - self.engine.TRANSITION_TIMEOUT - 1
+        self.engine.tick()
+        self.engine.data["transition_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.engine.tick()
+        self.assertEqual(self.engine.device.actions, ["nr_start"])
+        self.assertEqual(self.engine.device.launches, 1)
+        self.assertEqual(self.engine.data["pending"]["retry_guard"], original["retry_guard"])
+        self.assertEqual(self.engine.data["pending"]["time"], original["time"])
+
+    def test_retry_exception_revokes_returned_evidence_for_map_advance(self):
+        self.engine.data.update(current_team=1, available_teams=[1],
+                                run={"id": "active", "outcome": None})
+        self.screen("NR_TEAM_SELECT", "nr_team", ["NR_COMBAT"],
+                    ready_map_index=3, verified_safe=True)
+        self.engine.tick()
+        self.assertTrue(self.engine.data["pending"]["returned"])
+        self.engine.data["pending"]["last_attempt_at"] = farm.time.time() - self.engine.TRANSITION_TIMEOUT - 1
+        self.engine.tick()
+        self.engine.data["transition_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.engine.device.failure = RuntimeError("uncertain retry")
+        with self.assertRaisesRegex(RuntimeError, "uncertain retry"):
+            self.engine.tick()
+        self.assertNotIn("returned", self.engine.data["pending"])
+        self.assertNotIn("returned", farm.read_json(self.engine.progress)["pending"])
+
+    def test_observe_only_never_runs_foreground_unknown_or_transition_recovery(self):
+        self.engine.device.package = "com.uncube.launcher3"
+        for _ in range(6):
+            self.engine.tick(act=False)
+        self.engine.device.package = farm.PACKAGE
+        self.screen("UNKNOWN")
+        for _ in range(6):
+            self.engine.tick(act=False)
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=True)
+        self.engine.tick()
+        self.engine.data["pending"]["last_attempt_at"] = farm.time.time() - self.engine.TRANSITION_TIMEOUT - 1
+        self.engine.tick(act=False)
+        self.engine.data["transition_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.engine.tick(act=False)
+        self.assertEqual(self.engine.device.actions, ["nr_start"])
+        self.assertEqual(self.engine.device.launches, 0)
+        self.assertNotIn("recognition_recovery", self.engine.data)
+        self.assertNotIn("foreground_recovery", self.engine.data)
+
+    def test_missing_team_slots_back_off_then_relaunch_without_starting(self):
+        clock = [1000.0]
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=True,
+                    require_team_slots=True, available_teams=[])
+        with patch("automation.ninja_road.time.time", side_effect=lambda: clock[0]):
+            for delay in (5, 10, 20, 40):
+                self.assertEqual(self.engine.tick(), delay)
+                clock[0] += delay
+            self.assertEqual(self.engine.tick(), 5)
+        self.assertEqual(self.engine.device.actions, [])
+        self.assertEqual(self.engine.device.launches, 1)
+        self.engine.detector.spec["available_teams"] = [1, 2, 3]
+        self.engine.tick()
+        self.assertEqual(self.engine.device.actions, ["nr_start"])
+        self.assertNotIn("visual_prerequisite_recovery", self.engine.data)
+
+    def test_stage15_missing_ready_map_recovers_without_entering_combat(self):
+        self.engine.data["run"] = {"id": "stage15", "outcome": None, "exit_mode": "stage15"}
+        self.screen("NR_TEAM_SELECT", "nr_team", ["NR_COMBAT"], verified_safe=True)
+        with patch.object(self.engine, "observe", return_value=(
+                np.zeros((160, 90, 3), dtype=np.uint8), "NR_TEAM_SELECT",
+                self.engine.detector.spec, {})):
+            self.assertEqual(self.engine.tick(), 5)
+        self.assertEqual(self.engine.device.actions, [])
+        self.assertEqual(self.engine.data["visual_prerequisite_recovery"]["reason"],
+                         "unambiguous_ready_map")
+
+    def test_visual_prerequisite_recovery_does_not_bypass_stamina_or_progression(self):
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=True,
+                    require_team_slots=True, available_teams=[1, 2, 3])
+        self.engine.data["stamina_until"] = farm.time.time() + 1000
+        self.assertEqual(self.engine.tick(), 30)
+        self.assertNotIn("visual_prerequisite_recovery", self.engine.data)
+        self.engine.data.update(stamina_until=0, current_team=1, defeated_teams=[], available_teams=[1, 2, 3])
+        self.screen("NR_TEAM_SELECT", "nr_team", ["NR_COMBAT"],
+                    team_index=2, verified_safe=True)
+        for _ in range(6):
+            self.engine.tick()
+        self.assertEqual(self.engine.device.actions, [])
+        self.assertEqual(self.engine.device.launches, 0)
+        self.assertNotIn("visual_prerequisite_recovery", self.engine.data)
+
+    def test_transition_timeout_never_retries_unverified_action(self):
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=True)
+        self.engine.tick()
+        self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"],
+                    attempt_start=True, verified_safe=False)
+        self.engine.data["pending"]["time"] -= self.engine.TRANSITION_TIMEOUT + 1
+        self.engine.tick()
+        self.engine.data["transition_recovery"]["next_attempt_at"] = farm.time.time() - 1
+        self.engine.tick()
+        self.assertEqual(self.engine.device.actions, ["nr_start"])
+        self.assertEqual(self.engine.device.launches, 1)
+        self.assertEqual(self.engine.data["pending"]["id"], "nr_start")
 
     def test_connection_uncertain_ack_keeps_both_latches(self):
         self.screen("NR_START", "nr_start", ["NR_TEAM_SELECT"], attempt_start=True)

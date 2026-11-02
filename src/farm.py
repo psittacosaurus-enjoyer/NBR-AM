@@ -1,4 +1,4 @@
-"""Compatibility import for :mod:`automation.controller`."""
+"""Command-line entry point for the controller and its managed worker processes."""
 import sys
 from automation import controller as _implementation
 

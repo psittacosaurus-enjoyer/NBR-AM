@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import loot_tracking as loot
+from app.backend import loot
 
 
 class RecordingDashboardTests(unittest.TestCase):
@@ -86,6 +86,21 @@ class RecordingDashboardTests(unittest.TestCase):
         data = loot.read_dashboard(self.root, dict(running=False, instance_account='acc1'))
         self.assertEqual(data['outstanding_jobs'], 1)
         self.assertEqual(data['runs'][0]['completion_id'], 'job_fixture')
+
+    def test_ended_resolved_completion_does_not_resurface_stale_persistence_failure(self):
+        store = loot.LootStore(self.root)
+        sid = store.ensure_session('fixture:resolved', 'universal', account='acc1')
+        value = dict(session_id=sid, completion_id='job_resolved', run_id='resolved',
+                     run_sequence=1, completed_at=100)
+        store.finish(value, 'missing_screenshot', {}, None, ['Original reward evidence was unavailable'])
+        store.end_session(sid)
+        loot._atomic_json(self.directory / 'persistence_error.json',
+                          dict(session_id=sid, error='Original health replacement failed'))
+        data = loot.read_dashboard(self.root, dict(running=False, instance_account='acc1'), session_id=sid)
+        self.assertEqual(data['outstanding_jobs'], 0)
+        self.assertEqual(data['status'], 'Session Ended')
+        self.assertNotIn('Persistence failure', data['detail'])
+        self.assertEqual(data['runs'][0]['status'], 'missing_screenshot')
 
 
 if __name__ == '__main__':

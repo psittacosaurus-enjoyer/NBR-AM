@@ -17,8 +17,8 @@ from PySide6.QtGui import QFontDatabase, QIcon
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QDialog, QLabel
 
-from manager_gui import ManagerWindow
-from manager_art import RetroBanner
+from app.gui.window import ManagerWindow
+from app.gui.art import RetroBanner
 import test_manager as fixtures
 from test_loot_gui import LootBackend
 from test_manager_controls import ControlsBackend
@@ -442,7 +442,7 @@ class AppearanceTests(unittest.TestCase):
                 row = next(run.child(i) for i in range(run.childCount())
                            if run.child(i).text(0) == "Open retained screenshot")
                 window.loot_run_tree.scrollToItem(row)
-                with patch("manager_gui.QDesktopServices.openUrl", return_value=True) as open_url:
+                with patch('app.gui.window.QDesktopServices.openUrl', return_value=True) as open_url:
                     window.loot_run_tree.itemDoubleClicked.emit(row, 0)
                     self.wait_until(lambda: open_url.call_count == 1)
                     self.assertEqual(Path(open_url.call_args.args[0].toLocalFile()), screenshot)
@@ -486,7 +486,7 @@ class AppearanceTests(unittest.TestCase):
                 waiting["farm"]["stamina_until"] = 2000
                 waiting["farm"]["blocked"] = "Waiting for stamina before retrying this mission."
                 backend.state = waiting
-                with patch("manager_gui.time.time", return_value=1881):
+                with patch('app.gui.window.time.time', return_value=1881):
                     window.refresh()
                     self.wait_until(lambda: not window._poll_busy and window.stamina_status_label.text() == "WAITING")
                     window._update_runtime()
@@ -511,7 +511,7 @@ class AppearanceTests(unittest.TestCase):
                 self.assertEqual(backend.commands, [])
 
     def test_retro_has_no_visible_motto_tagline_or_duplicate_title_labels(self):
-        import manager_art
+        from app.gui import art as manager_art
 
         window, backend = self.window(appearance="retro98")
         labels = [label.text() for label in window.findChildren(QLabel) if label.isVisible()]
@@ -519,7 +519,7 @@ class AppearanceTests(unittest.TestCase):
         for phrase in ("efficiency", "more time", "what you enjoy", "get things done"):
             self.assertNotIn(phrase, visible_text)
         self.assertNotIn(window.windowTitle(), labels)
-        with patch("manager_art._pixel_text", wraps=manager_art._pixel_text) as paint_text:
+        with patch('app.gui.art._pixel_text', wraps=manager_art._pixel_text) as paint_text:
             window.grab()
             paint_text.assert_not_called()
         self.assertEqual(backend.commands, [])

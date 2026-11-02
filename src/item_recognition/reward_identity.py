@@ -11,11 +11,19 @@ from collections import defaultdict
 import re
 
 
+def asset_source_urls(asset):
+    """Use the URLs linked to this record, rather than another asset owner."""
+    return asset.get('source_image_urls') or [asset.get('source_image_url', '')]
+
+
 def _character_asset(record, asset):
     if asset.get('status') != 'ok' or not asset.get('local_image_path'):
         return False
-    url = asset.get('source_image_url', '')
     role = asset.get('role')
+    return any(_character_url(record, role, url) for url in asset_source_urls(asset))
+
+
+def _character_url(record, role, url):
     if any(part in url for part in ('/abilities/', '/materials/', '/cutins/')):
         return False
     if role in ('card', 'portrait'):
@@ -84,8 +92,9 @@ def _shared_item_source_card(records, source_card_id):
         if game_id is not None and (not str(game_id).isdigit() or int(game_id) != expected):
             return False
         cards = {int(found.group(1)) for asset in record.get('assets', [])
+                 for url in asset_source_urls(asset)
                  if (found := re.search(r'/(?:missions|lb)/card-(\d+)\.',
-                                        asset.get('source_image_url', '')))}
+                                        url))}
         if cards != {expected}:
             return False
     return bool(records)

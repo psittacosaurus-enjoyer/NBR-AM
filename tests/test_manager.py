@@ -18,13 +18,13 @@ from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-import manager_backend
-from manager_backend import ControllerBackend, ControllerError
+from app.backend import controller as manager_backend
+from app.backend.controller import ControllerBackend, ControllerError
 from PySide6.QtCore import QSettings, QTimer, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
-from manager_gui import ManagerWindow
+from app.gui.window import ManagerWindow
 
 def stopped_snapshot(stage="universal"):
     return {"running": False, "active_pids": [], "stop_requested": False,
@@ -90,6 +90,34 @@ class BackendTests(unittest.TestCase):
             self.assertEqual(self.backend.command("start"), "Started")
         invoke.assert_called_once_with("start", "universal")
 
+    def test_resolve_saved_input_binds_exact_stopped_instance_and_audit_reason(self):
+        target = dict(key="fixture-key", android_id="fixture-device", endpoint="127.0.0.1:5555")
+        state = {**stopped_snapshot(), "instance": target, "instance_account": "acc1"}
+        with patch.object(self.backend, "snapshot", side_effect=[copy.deepcopy(state), copy.deepcopy(state)]), \
+             patch.object(self.backend, "_invoke", return_value="Saved input resolved") as invoke:
+            result = self.backend.resolve_saved_input("universal", expected_instance_key="fixture-key")
+        self.assertEqual(result, "Saved input resolved")
+        args, kwargs = invoke.call_args
+        self.assertEqual(args, ("resolve-saved-input", "universal"))
+        self.assertEqual(kwargs["timeout"], 75)
+        self.assertEqual(kwargs["instance_key"], "fixture-key")
+        self.assertIn("User selected Resolve input", kwargs["reason"])
+
+    def test_resolve_saved_input_rejects_wrong_stage_instance_and_active_controller(self):
+        target = dict(key="fixture-key", android_id="fixture-device", endpoint="127.0.0.1:5555")
+        stopped = {**stopped_snapshot(), "instance": target, "instance_account": "acc1"}
+        with patch.object(self.backend, "_invoke") as invoke:
+            with self.assertRaisesRegex(ControllerError, "only for Universal"):
+                self.backend.resolve_saved_input("ninja_road", expected_instance_key="fixture-key")
+            with patch.object(self.backend, "snapshot", return_value=copy.deepcopy(stopped)):
+                with self.assertRaisesRegex(ControllerError, "selected instance changed"):
+                    self.backend.resolve_saved_input("universal", expected_instance_key="other-key")
+            active = {**running_snapshot(), "instance": target, "instance_account": "acc1"}
+            with patch.object(self.backend, "snapshot", return_value=active):
+                with self.assertRaisesRegex(ControllerError, "Stop the controller"):
+                    self.backend.resolve_saved_input("universal", expected_instance_key="fixture-key")
+        invoke.assert_not_called()
+
     def test_universal_snapshot_preserves_run_identity(self):
         state = running_snapshot('universal')
         state['farm']['run'] = {'id':'fixture-run'}
@@ -118,7 +146,7 @@ class BackendTests(unittest.TestCase):
         started.assert_called_once_with(1001)
 
     def test_session_completions_persist_and_exclude_prior_farming_processes(self):
-        from loot_tracking import LootStore
+        from app.backend.loot import LootStore
         store = LootStore(self.root)
         old = store.ensure_session('900:old', 'universal')
         current = store.ensure_session('1001:current', 'universal')
@@ -265,6 +293,21 @@ class FakeBackend:
             elif action == "stop":
                 self.state = {**stopped_snapshot(self.state["stage"]), "stop_requested": True}
         return f"{action} fixture completed"
+
+
+class ResolveInputBackend(FakeBackend):
+    def __init__(self):
+        target = dict(key="fixture-key", android_id="fixture-device", endpoint="127.0.0.1:5555")
+        super().__init__({**stopped_snapshot(), "instance": target, "instance_account": "acc1"})
+        self.resolutions = []
+        self.resolve_gate = None
+
+    def resolve_saved_input(self, stage, *, expected_instance_key=None):
+        self.record("resolve-input")
+        self.resolutions.append((stage, expected_instance_key))
+        if self.resolve_gate is not None:
+            self.resolve_gate.wait(5)
+        return "Saved input resolved. Use Start to resume farming."
 
 class GuiTests(unittest.TestCase):
     @classmethod
@@ -507,6 +550,56 @@ class GuiTests(unittest.TestCase):
         self.assertIn("Fixture duplicate controller refusal", window.log_view.toPlainText())
         self.assertFalse(window.stop_button.isEnabled())
         self.assertEqual(backend.commands, [("start", "universal")])
+
+    def test_resolve_input_is_separate_guarded_and_runs_once_in_background(self):
+        window, backend = self.window(ResolveInputBackend())
+        self.assertFalse(window.resolve_input_button.isEnabled())
+        self.assertFalse(hasattr(window, "skip_error_button"))
+        backend.command_error = "Controller start failed: Resolve the existing saved input before starting"
+        QTest.mouseClick(window.start_button, Qt.MouseButton.LeftButton)
+        self.wait_until(lambda: window.resolve_input_button.isEnabled())
+        backend.command_error = None
+
+        for appearance in ("retro98", "original"):
+            window.set_appearance(appearance)
+            self.app.processEvents()
+            self.assertTrue(window.resolve_input_button.isVisible())
+            self.assertTrue(window.resolve_input_button.isEnabled())
+            self.assertEqual(window.resolve_input_button.text(), "Resolve input")
+
+        window.stage_combo.setItemData(0, "ninja_road")
+        window._stage_changed()
+        window._update_controls()
+        self.assertFalse(window.resolve_input_button.isEnabled())
+        window.stage_combo.setItemData(0, "universal")
+        window._stage_changed()
+        window._update_controls()
+        self.assertTrue(window.resolve_input_button.isEnabled())
+
+        backend.resolve_gate = threading.Event()
+        QTest.mouseClick(window.resolve_input_button, Qt.MouseButton.LeftButton)
+        self.wait_until(lambda: backend.resolutions == [("universal", "fixture-key")])
+        self.assertFalse(window.resolve_input_button.isEnabled())
+        self.assertFalse(window.start_button.isEnabled())
+        window.resolve_saved_input()
+        self.assertEqual(len(backend.resolutions), 1)
+        backend.resolve_gate.set()
+        self.wait_until(lambda: window._pending_action is None and not window._awaiting_verification)
+        self.assertTrue(window.start_button.isEnabled())
+        self.assertFalse(window.resolve_input_button.isEnabled())
+        self.assertIn("Saved input resolved", window.detail_label.text())
+        self.assertTrue(all(thread != threading.get_ident() for action, thread in backend.calls
+                            if action == "resolve-input"))
+
+    def test_resolve_input_requires_matching_error_and_backend_support(self):
+        window, _ = self.window(ResolveInputBackend())
+        window._command_error = "Some other start failure"
+        window._render_state()
+        self.assertFalse(window.resolve_input_button.isEnabled())
+        unsupported, _ = self.window(FakeBackend())
+        unsupported._command_error = "Resolve the existing saved input before starting"
+        unsupported._render_state()
+        self.assertFalse(unsupported.resolve_input_button.isEnabled())
 
     def test_disconnection_allows_explicit_guarded_start_and_existing_run_stop(self):
         window, backend = self.window()

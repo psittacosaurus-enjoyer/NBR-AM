@@ -101,8 +101,20 @@
         }
       ],
       "priority": 0,
-      "verified_safe": false,
-      "battle_auto_enabled": false
+      "verified_safe": true,
+      "battle_auto_enabled": false,
+      "action": {
+        "id": "enable_auto",
+        "kind": "tap",
+        "point": [
+          623,
+          56
+        ],
+        "expected": [
+          "IN_BATTLE",
+          "MISSION_COMPLETE"
+        ]
+      }
     },
     {
       "name": "MISSION_COMPLETE",
@@ -664,7 +676,7 @@
             614,
             1301
           ],
-          "template": "assets/patterns/rich_b/ready_to_start/2.png",
+          "template": "assets/patterns/ready_to_start/2.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -675,7 +687,7 @@
             419,
             1361
           ],
-          "template": "assets/patterns/rich_b/ready_to_start/3.png",
+          "template": "assets/patterns/ready_to_start/3.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -686,7 +698,7 @@
             524,
             1354
           ],
-          "template": "assets/patterns/rich_b/ready_to_start/4.png",
+          "template": "assets/patterns/ready_to_start/4.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -719,7 +731,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/rich_b/results_next/0.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -730,7 +742,7 @@
             665,
             346
           ],
-          "template": "assets/patterns/rich_b/results_next/2.png",
+          "template": "assets/patterns/results_next/2.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -741,7 +753,7 @@
             565,
             1549
           ],
-          "template": "assets/patterns/rich_b/results_next/3.png",
+          "template": "assets/patterns/results_next/3.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -826,7 +838,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/rich_b/ready_to_retry/0.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -837,7 +849,7 @@
             556,
             1549
           ],
-          "template": "assets/patterns/rich_b/ready_to_retry/2.png",
+          "template": "assets/patterns/ready_to_retry/2.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -880,7 +892,7 @@
             548,
             935
           ],
-          "template": "assets/patterns/rich_b/rank_up_stamina_ack/1.png",
+          "template": "assets/patterns/rank_up_stamina_ack/1.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -978,7 +990,7 @@
             614,
             1301
           ],
-          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/2.png",
+          "template": "assets/patterns/ready_to_start/2.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -989,7 +1001,7 @@
             419,
             1361
           ],
-          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/3.png",
+          "template": "assets/patterns/ready_to_start/3.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -1000,7 +1012,7 @@
             524,
             1354
           ],
-          "template": "assets/patterns/night_of_tragedy_a/ready_to_start/4.png",
+          "template": "assets/patterns/ready_to_start/4.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -1033,7 +1045,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/night_of_tragedy_a/results_next/0.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -1055,7 +1067,7 @@
             565,
             1549
           ],
-          "template": "assets/patterns/night_of_tragedy_a/results_next/3.png",
+          "template": "assets/patterns/results_next/3.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -1108,7 +1120,7 @@
             577,
             1548
           ],
-          "template": "assets/patterns/night_of_tragedy_a/reward_reveal/3.png",
+          "template": "assets/patterns/reward_reveal/3.png",
           "correlation": 0.96,
           "difference": 16
         },
@@ -1119,7 +1131,7 @@
             500,
             826
           ],
-          "template": "assets/patterns/night_of_tragedy_a/reward_reveal/4.png",
+          "template": "assets/patterns/reward_reveal/4.png",
           "correlation": 0.96,
           "difference": 16
         }
@@ -1181,7 +1193,7 @@
             683,
             69
           ],
-          "template": "assets/patterns/night_of_tragedy_a/in_battle/0.png",
+          "template": "assets/patterns/in_battle/0.png",
           "correlation": 0.96,
           "difference": 16
         },
@@ -1192,7 +1204,7 @@
             852,
             69
           ],
-          "template": "assets/patterns/night_of_tragedy_a/in_battle/1.png",
+          "template": "assets/patterns/in_battle/1.png",
           "correlation": 0.96,
           "difference": 16
         }
@@ -1223,7 +1235,7 @@
             683,
             69
           ],
-          "template": "assets/patterns/night_of_tragedy_a/in_battle/0.png",
+          "template": "assets/patterns/in_battle/0.png",
           "correlation": 0.96,
           "difference": 16
         },
@@ -1234,7 +1246,7 @@
             852,
             69
           ],
-          "template": "assets/patterns/night_of_tragedy_a/in_battle/1.png",
+          "template": "assets/patterns/in_battle/1.png",
           "correlation": 0.96,
           "difference": 16
         }
@@ -1253,7 +1265,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/night_of_tragedy_a/ready_to_retry/0.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -1307,7 +1319,7 @@
             548,
             935
           ],
-          "template": "assets/patterns/night_of_tragedy_a/rank_up_stamina_ack/1.png",
+          "template": "assets/patterns/rank_up_stamina_ack/1.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -1362,7 +1374,7 @@
             399,
             1054
           ],
-          "template": "assets/patterns/night_of_tragedy_a/stamina_prompt/2.png",
+          "template": "assets/patterns/rich_b/stamina_prompt/2.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -1394,7 +1406,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/universal_results/header.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -1460,6 +1472,32 @@
           "READY_TO_RETRY"
         ]
       }
+    },
+    {
+      "name": "LOADING",
+      "priority": 70,
+      "verified_safe": false,
+      "note": "Game 'Now loading...' overlay. Observation only: it never authorizes input and outranks any screen visible underneath it.",
+      "anchors": [
+        {
+          "template": "assets/patterns/loading/now_loading.png",
+          "region": [
+            304,
+            556,
+            596,
+            601
+          ],
+          "search_region": [
+            264,
+            516,
+            636,
+            641
+          ],
+          "binarize": 200,
+          "correlation": 0.85,
+          "difference": 32
+        }
+      ]
     }
   ]
 }

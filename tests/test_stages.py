@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 import cv2
 
-import farm
+from automation import controller as farm
 from instance_fixtures import legacy_target
 
 
@@ -19,6 +19,7 @@ class FakeDevice:
         self.image = image
         self.actions = []
         self.commands = []
+        self.launches = 0
 
     def connect(self): pass
     def foreground(self): return farm.PACKAGE
@@ -26,6 +27,7 @@ class FakeDevice:
     def perform(self, action): self.actions.append(action['id'])
     def verify(self): pass
     def command(self, args): self.commands.append(args)
+    def launch(self): self.launches += 1
 
 
 class StageTests(unittest.TestCase):

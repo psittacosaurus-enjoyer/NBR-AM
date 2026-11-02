@@ -313,7 +313,7 @@
             873,
             315
           ],
-          "template": "assets/patterns/home_menu/2.png",
+          "template": "assets/patterns/home_emergency/2.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -542,7 +542,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/rich_b/rich_banner/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -553,7 +553,7 @@
             551,
             560
           ],
-          "template": "assets/patterns/rich_b/rich_banner/1.png",
+          "template": "assets/patterns/emergency_list_overshot/1.png",
           "correlation": 0.96,
           "difference": 12,
           "search_region": [
@@ -662,7 +662,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/emergency_list_2/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -732,7 +732,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/emergency_list_3/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -803,7 +803,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/scrolls_banner/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -876,7 +876,7 @@
             614,
             1301
           ],
-          "template": "assets/patterns/rich_b/ready_to_start/2.png",
+          "template": "assets/patterns/ready_to_start/2.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -887,7 +887,7 @@
             419,
             1361
           ],
-          "template": "assets/patterns/rich_b/ready_to_start/3.png",
+          "template": "assets/patterns/ready_to_start/3.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -898,7 +898,7 @@
             524,
             1354
           ],
-          "template": "assets/patterns/rich_b/ready_to_start/4.png",
+          "template": "assets/patterns/ready_to_start/4.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -932,7 +932,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/rich_b/results_next/0.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -943,7 +943,7 @@
             709,
             247
           ],
-          "template": "assets/patterns/rich_b/results_next/1.png",
+          "template": "assets/patterns/rich_b/ready_to_retry/1.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -954,7 +954,7 @@
             665,
             346
           ],
-          "template": "assets/patterns/rich_b/results_next/2.png",
+          "template": "assets/patterns/results_next/2.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -965,7 +965,7 @@
             565,
             1549
           ],
-          "template": "assets/patterns/rich_b/results_next/3.png",
+          "template": "assets/patterns/results_next/3.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -997,7 +997,7 @@
             709,
             247
           ],
-          "template": "assets/patterns/rich_b/reward_reveal/0.png",
+          "template": "assets/patterns/rich_b/ready_to_retry/1.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -1062,7 +1062,7 @@
             525,
             102
           ],
-          "template": "assets/patterns/rich_b/ready_to_retry/0.png",
+          "template": "assets/patterns/ready_to_retry/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -1084,7 +1084,7 @@
             556,
             1549
           ],
-          "template": "assets/patterns/rich_b/ready_to_retry/2.png",
+          "template": "assets/patterns/ready_to_retry/2.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -1128,7 +1128,7 @@
             548,
             935
           ],
-          "template": "assets/patterns/rich_b/rank_up_stamina_ack/1.png",
+          "template": "assets/patterns/rank_up_stamina_ack/1.png",
           "correlation": 0.96,
           "difference": 12
         },

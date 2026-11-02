@@ -202,7 +202,7 @@
             649,
             247
           ],
-          "template": "assets/patterns/results_next/1.png",
+          "template": "assets/patterns/ready_to_retry/1.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -255,7 +255,7 @@
             649,
             247
           ],
-          "template": "assets/patterns/reward_reveal/0.png",
+          "template": "assets/patterns/ready_to_retry/1.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -473,7 +473,7 @@
             873,
             315
           ],
-          "template": "assets/patterns/home_menu/2.png",
+          "template": "assets/patterns/home_emergency/2.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -704,7 +704,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/scrolls_banner/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -758,7 +758,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/emergency_list_2/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -826,7 +826,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/emergency_list_3/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },
@@ -894,7 +894,7 @@
             733,
             312
           ],
-          "template": "assets/patterns/emergency_list_overshot/0.png",
+          "template": "assets/patterns/emergency_list/0.png",
           "correlation": 0.96,
           "difference": 12
         },

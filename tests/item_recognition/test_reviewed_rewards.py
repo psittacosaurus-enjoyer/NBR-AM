@@ -88,6 +88,28 @@ class ReviewedRewardTests(unittest.TestCase):
         self.assertEqual(recognized.reference_snapshot['reviewed_rewards_sha256'],self.digest(self.supplement))
         self.assertEqual(self.digest(self.calibration),self.reviewed['base_calibration_sha256'])
 
+    def test_reviewed_support_survives_duplicate_record_removal(self):
+        from game_library.deduplicate import consolidate
+        before = self.recognizer().match_icon(self.heart)
+        db = L.connect(self.path)
+        try:
+            with db:
+                consolidate(db, self.base, [self.canonical])
+            self.assertIsNone(db.execute('SELECT id FROM records WHERE id=?', (self.alias,)).fetchone())
+        finally:
+            db.close()
+        self.base['library_sha256'] = self.digest(self.path)
+        self.write_calibration()
+        self.reviewed.update(library_sha256=self.digest(self.path),
+                             base_calibration_sha256=self.digest(self.calibration))
+        self.write_supplement()
+        recognized = self.recognizer()
+        after = recognized.match_icon(self.heart)
+        for field in ('identity_status', 'item_id', 'match_score', 'score_margin', 'confidence'):
+            self.assertEqual(before[field], after[field], field)
+        self.assertIn(self.canonical, recognized.supported_items)
+        self.assertEqual(set(after['member_ids']), {self.canonical, self.alias})
+
     def test_unrelated_requested_support_cannot_bypass_reviewed_group(self):
         self.reviewed['supported_item_ids'].append(self.unrelated); self.write_supplement()
         result=self.recognizer().match_icon(self.other)

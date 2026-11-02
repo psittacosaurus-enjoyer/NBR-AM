@@ -1,0 +1,30 @@
+{
+  "map": 9,
+  "team": 1,
+  "run_id": "428b23aea97c466484e341d99e9a31a8",
+  "crop_region": [
+    60,
+    1310,
+    880,
+    1530
+  ],
+  "description": "Actual worker-published Stage 9 backline gauge crops before and after all three expenditure observations. Same three Jiraiya active portraits and Minato reserve portraits; no reordering, recoloring or resizing. Captures are manual Auto OFF.",
+  "frames": [
+    {
+      "moment": "before",
+      "source_name": "live_0021_NR_COMBAT_AUTO_OFF.jpg",
+      "source_sha256": "9b7a2f85eda82ee16c19b4530f41dde5e3b7b12f9ec8f55c0c238893e20ca6a9",
+      "source_captured_at": 1793069486.5909064,
+      "fixture": "stage9_backline_before.png",
+      "fixture_sha256": "9eead3028c1151f1577c50e8a92ff97c94d0e67125fec1a06365e2d8ce8c27c5"
+    },
+    {
+      "moment": "after",
+      "source_name": "live_0035_NR_COMBAT_AUTO_OFF.jpg",
+      "source_sha256": "287dbbf45996bd74e37e2ff7310ad0ed873fe5122634fa8f1ddc588aabdd6649",
+      "source_captured_at": 1793069520.9952488,
+      "fixture": "stage9_backline_after.png",
+      "fixture_sha256": "40f8a6765f44c15af078647bb0a7063633322bf2b3e0ecc4471ac5dd477ba426"
+    }
+  ]
+}

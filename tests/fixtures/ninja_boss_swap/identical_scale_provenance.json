@@ -1,0 +1,14 @@
+{
+  "source": "runtime/validation/boss_swap_three_runs_20261027/stalled_live.png and before_ninja_road.json",
+  "captured_date": "2026-10-27",
+  "run_id": "b35a35cc79044bf18c1dc6211eaea86c",
+  "team": 3,
+  "column": 2,
+  "phase": "enter",
+  "map": 10,
+  "elements_before": [
+    38.69512195121951,
+    29.767441860465116
+  ],
+  "description": "Returned third-column swap stalled with matching Jiraiya portrait art in both roles. The original scale grid missed the strict cross-size identity match; intermediate .63 scale passes without changing thresholds."
+}

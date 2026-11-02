@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import farm
+from automation import controller as farm
 from test_stages import FakeDevice
 
 
@@ -73,11 +73,15 @@ class CompletionRecognitionTests(unittest.TestCase):
             engine = farm.Engine('universal')
         engine.data['run'] = {'id':'active', 'start':0, 'outcome':None}
         with patch.object(farm, 'ocr_text', return_value='') as probe:
-            self.assertEqual(engine.tick(), 2)
+            # Animation inside a run is a transition: quick re-observation,
+            # one loss probe, no input and no recovery record.
+            self.assertEqual(engine.tick(), farm.TRANSITION_POLL_SECONDS)
             probe.assert_called_once()
         self.assertEqual(device.actions, [])
+        self.assertNotIn('recovery', engine.data)
         engine.data['run']['outcome'] = 'completed'
-        self.assertEqual(engine.tick(), 30)
+        self.assertEqual(engine.tick(), farm.TRANSITION_POLL_SECONDS)
+        self.assertEqual(device.actions, [])
 
 
 if __name__ == '__main__':

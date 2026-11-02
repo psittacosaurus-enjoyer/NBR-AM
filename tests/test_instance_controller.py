@@ -9,8 +9,8 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import farm
-from bluestacks import Instance
+from automation import controller as farm
+from automation.adb import Instance
 
 
 class InstanceControllerTests(unittest.TestCase):
@@ -240,6 +240,7 @@ class InstanceControllerTests(unittest.TestCase):
         farm.subprocess.run.return_value = subprocess.CompletedProcess([], 0, b"id-one\n", b"")
         device.command(["shell", "settings", "get", "secure", "android_id"])
         device.connect()
+        farm.verify_identity.assert_called_once_with(self.first, connect=True)
         for call in farm.subprocess.run.call_args_list:
             argv = call.args[0]
             self.assertIn(self.first.endpoint, argv)

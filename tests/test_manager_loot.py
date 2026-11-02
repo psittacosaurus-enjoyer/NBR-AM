@@ -14,7 +14,7 @@ from PySide6.QtGui import QColor, QImage
 from PySide6.QtWidgets import QApplication
 
 from game_library import library
-from manager_loot import LootGrid, acquired_count, enrich_loot_items, sort_loot_items
+from app.gui.loot import LootGrid, acquired_count, enrich_loot_items, sort_loot_items
 
 
 class ManagerLootTests(unittest.TestCase):
@@ -67,6 +67,22 @@ class ManagerLootTests(unittest.TestCase):
         grid.show()
         self.app.processEvents()
         return grid
+
+    def test_merged_artwork_preserves_each_characters_source_eligibility(self):
+        from game_library.deduplicate import normalize_assets
+        portrait = self.record('portrait', record_type='character')
+        ability = self.record('ability', record_type='character')
+        path = self.asset(portrait, 'z-portrait',
+                          source_url='https://example.test/ninjas/1.png')
+        self.asset(ability, 'a-ability', source_url='https://example.test/abilities/1.png')
+        digest = hashlib.sha256(Path(path).read_bytes()).hexdigest()
+        self.db.execute('UPDATE assets SET sha256=?', (digest,))
+        with self.db:
+            normalize_assets(self.db)
+        items = enrich_loot_items(self.root, [{'item_id': portrait}, {'item_id': ability}])
+        self.assertIsNotNone(items[0]['icon_path'])
+        self.assertIsNone(items[1]['icon_path'])
+        self.assertEqual(self.db.execute('SELECT count(*) FROM assets').fetchone()[0], 1)
 
     def test_exact_record_id_wins_over_identical_name_and_recorded_counters_are_preserved(self):
         first = self.record('first')

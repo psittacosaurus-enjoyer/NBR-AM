@@ -683,7 +683,7 @@
             498,
             1538
           ],
-          "template": "assets/patterns/ninja_road/nr_return/2.png",
+          "template": "assets/patterns/ninja_road/nr_results/2.png",
           "correlation": 0.96,
           "difference": 12
         }
@@ -1052,7 +1052,7 @@
             683,
             69
           ],
-          "template": "assets/patterns/night_of_tragedy_a/in_battle/0.png",
+          "template": "assets/patterns/in_battle/0.png",
           "correlation": 0.96,
           "difference": 16
         },
@@ -1063,7 +1063,7 @@
             852,
             69
           ],
-          "template": "assets/patterns/night_of_tragedy_a/in_battle/1.png",
+          "template": "assets/patterns/in_battle/1.png",
           "correlation": 0.96,
           "difference": 16
         }

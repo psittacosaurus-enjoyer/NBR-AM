@@ -128,6 +128,43 @@ class BuildTests(unittest.TestCase):
         with contextlib.closing(L.connect(self.root / 'data/library.sqlite3', readonly=True)) as db:
             self.assertEqual(L.search(db, q='Uzumaki', record_type='character')['total'], 2)
 
+    def test_shared_source_update_preserves_annotated_links_in_either_manifest_order(self):
+        for order in (('a','b'),('b','a')):
+            with self.subTest(order=order):
+                root=self.root/''.join(order)
+                (root/'data').mkdir(parents=True)
+                (root/'assets').mkdir()
+                (root/'assets/old.png').write_bytes(b'old fixture')
+                (root/'assets/new.png').write_bytes(b'new fixture')
+                path=root/'data/library.sqlite3'
+                records={}
+                with contextlib.closing(L.connect(path)) as db:
+                    L.initialize(db)
+                    for key in ('a','b'):
+                        url=build.HOME+'/fixtures/'+key+'.png'
+                        records[key],_=L.upsert_record(db,record_type='item',source_key=key,
+                            display_name=key,source_url=build.HOME+'/items/'+key)
+                        aid=L.upsert_asset(db,dict(id=L.stable_id('asset',url),source_image_url=url,
+                            original_filename=key+'.png',local_image_path='assets/old.png',thumbnail_path=None,
+                            sha256='old',width=1,height=1,perceptual_hash=None,status='ok',collected_at=L.now()))
+                        L.link_asset(db,records[key],aid,'icon',url)
+                        L.annotate(db,records[key],{'notes':'Keep this reviewed record'})
+                resources=[dict(url=build.HOME+'/fixtures/'+key+'.png',kind='image',status='ok',
+                    path='assets/'+('new' if key=='a' else 'old')+'.png',
+                    sha256='new' if key=='a' else 'old',width=1,height=1) for key in order]
+                (root/'data/manifest.json').write_text(json.dumps({'resources':resources}),encoding='utf-8')
+                for repeat in range(2):
+                    builder=build.Builder(root=root)
+                    try:
+                        with contextlib.redirect_stdout(io.StringIO()):
+                            builder.run()
+                    finally:
+                        builder.db.close()
+                    with contextlib.closing(L.connect(path,readonly=True)) as db:
+                        for key,digest in (('a','new'),('b','old')):
+                            self.assertEqual({a['sha256'] for a in L.get_record(db,records[key])['assets']},{digest})
+                        self.assertEqual(list(db.execute('PRAGMA foreign_key_check')),[])
+
 
 if __name__ == '__main__':
     unittest.main()

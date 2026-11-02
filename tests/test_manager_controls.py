@@ -9,7 +9,7 @@ from unittest.mock import patch
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtTest import QTest
 
-import manager_backend
+from app.backend import controller as manager_backend
 import test_manager as fixtures
 
 
@@ -64,7 +64,7 @@ class ManagerControlsTests(unittest.TestCase):
 
     def test_end_wait_commands_controller_and_countdown_uses_its_deadline(self):
         window, backend = self.waiting_window()
-        with patch("manager_gui.time.time", return_value=backend.state["farm"]["stamina_until"] - 119):
+        with patch('app.gui.window.time.time', return_value=backend.state["farm"]["stamina_until"] - 119):
             window._update_runtime()
         self.assertEqual(window.stamina_remaining_label.text(), "Remaining: 01:59")
         self.assertTrue(window.end_stamina_wait_button.isEnabled())

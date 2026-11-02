@@ -11,8 +11,8 @@ from PySide6.QtGui import QPalette
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QMessageBox
 
-from manager_backend import ControllerError
-from manager_gui import ManagerWindow
+from app.backend.controller import ControllerError
+from app.gui.window import ManagerWindow
 import test_manager as fixtures
 from test_manager_instances import InstanceBackend
 

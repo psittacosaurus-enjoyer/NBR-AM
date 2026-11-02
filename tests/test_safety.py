@@ -8,8 +8,8 @@ from unittest.mock import patch
 
 import cv2
 import numpy as np
-import farm
-from bluestacks import Instance
+from automation import controller as farm
+from automation.adb import Instance
 
 
 class FakeDevice:

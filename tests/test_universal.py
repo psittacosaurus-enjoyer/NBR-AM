@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import farm
+from automation import controller as farm
 from test_stages import FakeDevice
 from instance_fixtures import legacy_target
 

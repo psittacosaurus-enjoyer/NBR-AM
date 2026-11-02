@@ -95,6 +95,13 @@ def enrich_loot_items(root, items):
                             -float(preferences.get(a['id']) or 0), role_order.get(a['role'], 9), a['id']))
                         seen = set()
                         for asset in assets:
+                            asset = dict(asset)
+                            if 'record_asset_sources' in tables:
+                                from game_library.library import record_asset_urls
+                                urls = {url for member in members for url in
+                                        record_asset_urls(db, member, asset['id'], asset['role'])}
+                                if urls:
+                                    asset['source_image_urls'] = sorted(urls)
                             if not _eligible(record, asset):
                                 continue
                             for field in ('local_image_path', 'thumbnail_path'):
@@ -168,6 +175,9 @@ def recording_display(data):
     for source, label in ((health, 'Collector'), (farm, 'Recording')):
         if source.get('error'):
             details.append(f"{label}: {source['error']}")
+        telemetry = source.get('telemetry_error')
+        if isinstance(telemetry, dict) and telemetry.get('message'):
+            details.append(f"Status publication: {telemetry['message']}")
     return status, '\n'.join(dict.fromkeys(value for value in details if value))
 
 
@@ -177,7 +187,7 @@ def recording_needs_visibility(data):
     collector = data.get('collector_health') or {}
     return bool(any(type(data.get(key)) is int and data[key] > 0
                     for key in ('outstanding_jobs', 'capture_pending', 'attention_required'))
-                or farm.get('error') or collector.get('error')
+                or farm.get('error') or collector.get('error') or collector.get('telemetry_error')
                 or (farm.get('state') or farm.get('status')) in {
                     'completion_registration_pending', 'screenshot_capture_pending',
                     'operator_attention', 'retryable_failure', 'collector_initialization_retry'})

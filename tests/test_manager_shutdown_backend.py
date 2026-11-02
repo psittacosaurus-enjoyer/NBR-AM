@@ -10,8 +10,8 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import manager_backend
-from manager_backend import ControllerBackend, ControllerError, _terminate_verified_process
+from app.backend import controller as manager_backend
+from app.backend.controller import ControllerBackend, ControllerError, _terminate_verified_process
 
 
 class ShutdownTests(unittest.TestCase):

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import farm
+from automation import controller as farm
 from automation.ninja_road import NinjaRoadEngine
 from fixture_images import load_fixture
 

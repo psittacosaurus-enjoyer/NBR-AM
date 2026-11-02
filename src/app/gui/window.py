@@ -63,6 +63,7 @@ class ManagerWindow(QMainWindow):
         self._instance_prefer_saved = False
         self._manual_dialog = None
         self._command_error = ""
+        self._input_notice = ""
         self._poll_error = ""
         self._exit_error = ""
         self._shutdown_pending = False
@@ -236,6 +237,17 @@ class ManagerWindow(QMainWindow):
         self.stage_combo.hide()
         self.stage_combo.currentIndexChanged.connect(self._stage_changed)
         layout.addWidget(self.stage_combo)
+        self.ninja_mode_combo = QComboBox(central)
+        self.ninja_mode_combo.setAccessibleName("Ninja Road exit mode")
+        self.ninja_mode_combo.addItem("Stage 10 Exit", "stage10")
+        self.ninja_mode_combo.addItem("Stage 15 Exit", "stage15")
+        self.ninja_mode_combo.setToolTip(
+            "Stage 10 Exit preserves the existing Boss Swap and Early Exit options. "
+            "Stage 15 Exit uses stage-specific teams and retreats before Stage 16 combat. "
+            "Stop automation before changing modes.")
+        self.ninja_mode_combo.hide()
+        self.ninja_mode_combo.currentIndexChanged.connect(self._ninja_mode_changed)
+        layout.addWidget(self.ninja_mode_combo)
         self.boss_swap_check = QCheckBox("Boss Swap")
         self.boss_swap_check.setToolTip("Swap each active character for boss maps, then restore the formation after the boss.")
         self.boss_swap_check.hide()
@@ -265,6 +277,13 @@ class ManagerWindow(QMainWindow):
         controls.addWidget(self.stop_button)
         controls.addWidget(self.restart_button)
         layout.addLayout(controls)
+        self.resolve_input_button = QPushButton("Resolve input")
+        self.resolve_input_button.setObjectName("resolveInput")
+        self.resolve_input_button.setMinimumHeight(36)
+        self.resolve_input_button.setToolTip(
+            "After Start reports an existing saved input, verify and resolve that latch without starting farming.")
+        self.resolve_input_button.clicked.connect(self.resolve_saved_input)
+        layout.addWidget(self.resolve_input_button)
         self.exit_stop_button = QPushButton("Exit && Stop Program")
         self.exit_stop_button.setAccessibleName("Exit & Stop Program")
         self.exit_stop_button.setObjectName("exitStop")
@@ -959,6 +978,9 @@ class ManagerWindow(QMainWindow):
                 self._sync_stage()
             else:
                 self._append_log(str(result).strip() or f"{action.capitalize()} command completed; verifying state.")
+                if action == "resolve-saved-input":
+                    self._input_notice = str(result).strip() or (
+                        "Saved input resolved. Use Start to resume farming.")
             self._render_state()
             self.refresh()
         elif kind == "loot":
@@ -1004,6 +1026,7 @@ class ManagerWindow(QMainWindow):
             self._started_at = None
             self._runtime_origin = None
         if self._active:
+            self._input_notice = ""
             started = snapshot.get("started_at")
             if (isinstance(started, (int, float)) and not isinstance(started, bool)
                     and math.isfinite(started) and started > 0 and started != self._started_at):
@@ -1013,6 +1036,14 @@ class ManagerWindow(QMainWindow):
                 self._runtime_origin = time.monotonic() - max(0.0, time.time() - started)
             self._exit_error = ""
         self._sync_stage()
+        if self._pending_action != "ninja-mode":
+            mode = snapshot.get("ninja_exit_mode", "stage10")
+            run = (snapshot.get("farm") or {}).get("run")
+            if self._active and isinstance(run, dict) and not run.get("outcome"):
+                mode = run.get("exit_mode", "stage10")
+            self.ninja_mode_combo.blockSignals(True)
+            self.ninja_mode_combo.setCurrentIndex(max(0, self.ninja_mode_combo.findData(mode)))
+            self.ninja_mode_combo.blockSignals(False)
         if self._pending_action != "boss-swap":
             self.boss_swap_check.blockSignals(True)
             self.boss_swap_check.setChecked(snapshot.get("ninja_boss_swap") is True)
@@ -1240,8 +1271,9 @@ class ManagerWindow(QMainWindow):
             if self.stage_combo.currentData() == "ninja_road" else
             "Open a mission’s Start Mission screen, then start farming.")
         ninja = self.stage_combo.currentData() == "ninja_road"
+        self.ninja_mode_combo.setVisible(ninja)
         self.boss_swap_check.setVisible(ninja)
-        self.early_exit_check.setVisible(ninja)
+        self.early_exit_check.setVisible(ninja and self.ninja_mode_combo.currentData() == "stage10")
         self._update_ninja_retreats()
 
     def _update_ninja_retreats(self):
@@ -1305,6 +1337,8 @@ class ManagerWindow(QMainWindow):
                 "stamina-duration": "Saving the duration for subsequent stamina waits…",
                 "boss-swap": "Saving the Ninja Road Boss Swap setting…",
                 "early-exit": "Saving the Ninja Road Early Exit setting…",
+                "ninja-mode": "Saving the Ninja Road exit mode…",
+                "resolve-saved-input": "Verifying and resolving the saved input without starting farming…",
             }[self._pending_action]
         elif self._awaiting_verification:
             details = "Verifying controller…"
@@ -1317,7 +1351,7 @@ class ManagerWindow(QMainWindow):
         elif self._active:
             details = str(snapshot.get("farm", {}).get("blocked") or "Farming is running independently.")
         else:
-            details = "No active farming processes."
+            details = self._input_notice or "No active farming processes."
             if self._connection and not self._connection.get("available"):
                 details += " Start will let the controller retry the BlueStacks connection safely."
         self.detail_label.setText(details)
@@ -1341,12 +1375,29 @@ class ManagerWindow(QMainWindow):
                                          and (launch_pending or (self._active
                                               and not self._snapshot.get("stop_requested")))))
         self.stage_combo.setEnabled(bool(ready and self.stage_combo.count()))
+        self.ninja_mode_combo.setVisible(self.stage_combo.currentData() == "ninja_road")
+        self.ninja_mode_combo.setEnabled(bool(ready and self.stage_combo.currentData() == "ninja_road"))
         self.boss_swap_check.setVisible(self.stage_combo.currentData() == "ninja_road")
         self.boss_swap_check.setEnabled(bool(idle and self._snapshot_known and self.stage_combo.currentData() == "ninja_road"))
-        self.early_exit_check.setVisible(self.stage_combo.currentData() == "ninja_road")
-        self.early_exit_check.setEnabled(bool(idle and self._snapshot_known and self.stage_combo.currentData() == "ninja_road"))
+        self.early_exit_check.setVisible(self.stage_combo.currentData() == "ninja_road"
+                                       and self.ninja_mode_combo.currentData() == "stage10")
+        self.early_exit_check.setEnabled(bool(idle and self._snapshot_known
+            and self.stage_combo.currentData() == "ninja_road" and self.ninja_mode_combo.currentData() == "stage10"))
         self.restart_button.setEnabled(bool(idle and not self._closed and not self._stage_error
                                             and instance_idle and (self._active or instance_ready)))
+        resolve_supported = callable(getattr(self.backend, "resolve_saved_input", None))
+        resolve_error = "existing saved input" in self._command_error.casefold()
+        self.resolve_input_button.setEnabled(bool(
+            idle and not self._active and self._snapshot_known and not self._poll_error
+            and instance_idle and instance_ready
+            and resolve_supported and resolve_error and self.stage_combo.currentData() == "universal"))
+        if not resolve_supported:
+            self.resolve_input_button.setToolTip("This backend cannot resolve saved inputs.")
+        elif self.stage_combo.currentData() != "universal":
+            self.resolve_input_button.setToolTip("Saved input recovery is available only for Universal farming.")
+        else:
+            self.resolve_input_button.setToolTip(
+                "Available after Start reports an existing saved input. Verifies the current mission screen before resolving it.")
         self.stamina_duration_combo.setEnabled(bool(idle and self._snapshot_known))
         self.exit_stop_button.setEnabled(bool(not self._closed and not self._shutdown_pending
             and not self._pending_action and not self._stop_pending and not self._instance_command_busy
@@ -1396,10 +1447,24 @@ class ManagerWindow(QMainWindow):
         if self.end_stamina_wait_button.isEnabled():
             self._command("end-stamina-wait")
 
+    @Slot()
+    def resolve_saved_input(self):
+        if not self.resolve_input_button.isEnabled():
+            return
+        stage = self.stage_combo.currentData()
+        instance_key = (self._snapshot.get("instance") or {}).get("key")
+        self._command("resolve-saved-input", operation=lambda: self.backend.resolve_saved_input(
+            stage, expected_instance_key=instance_key))
+
     @Slot(bool)
     def _boss_swap_changed(self, checked):
         if self.boss_swap_check.isEnabled():
             self._command("boss-swap", checked)
+
+    @Slot(int)
+    def _ninja_mode_changed(self, index):
+        if index >= 0 and self.ninja_mode_combo.isEnabled():
+            self._command("ninja-mode", self.ninja_mode_combo.itemData(index))
 
     @Slot(bool)
     def _early_exit_changed(self, checked):
@@ -1460,12 +1525,13 @@ class ManagerWindow(QMainWindow):
 
         self._run("shutdown", shutdown)
 
-    def _command(self, action, stage=None):
+    def _command(self, action, stage=None, *, operation=None):
         if self._closed or self._shutdown_pending or self._stop_pending or (self._pending_action and action != "stop"):
             return
         try:
-            prepare = getattr(self.backend, "prepare_command", None)
-            operation = prepare(action, stage) if prepare else lambda: self.backend.command(action, stage)
+            if operation is None:
+                prepare = getattr(self.backend, "prepare_command", None)
+                operation = prepare(action, stage) if prepare else lambda: self.backend.command(action, stage)
         except Exception as exc:
             self._command_error = f"Could not prepare {action}: {exc}"
             self._append_log(self._command_error)
@@ -1477,6 +1543,7 @@ class ManagerWindow(QMainWindow):
             self._pending_action = action
         self._revision += 1
         self._command_error = ""
+        self._input_notice = ""
         self._exit_error = ""
         self._shutdown_error = ""
         selection = f"{stage} minutes" if action == "stamina-duration" else self.stage_combo.currentText()

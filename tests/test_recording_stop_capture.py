@@ -9,7 +9,7 @@ from unittest.mock import Mock, call, patch
 
 import numpy as np
 
-import farm
+from automation import controller as farm
 from instance_fixtures import legacy_target
 
 
@@ -217,6 +217,7 @@ class StoppedRecordingCaptureTests(unittest.TestCase):
                    lambda e: e.data['run']['recording'].update(stage='another-stage'),
                    lambda e: e.data['run']['recording'].update(state='screenshot_saved'),
                    lambda e: e.data['run']['recording'].update(state='missing_screenshot'),
+                   lambda e: e.data['run']['recording'].update(capture_revoked=True),
                    lambda e: setattr(e, 'target', replace(self.target, config_path='')),
                    lambda e: setattr(e.device, 'target', replace(self.target, endpoint='127.0.0.1:9999'))]
         for change in changes:
@@ -234,10 +235,10 @@ class StoppedRecordingCaptureTests(unittest.TestCase):
                 self.collector.evidence.assert_not_called()
                 self.assert_no_input()
 
-    def test_missing_results_block_points_to_explicit_resolution(self):
+    def test_missing_results_block_waits_for_automatic_verified_resolution(self):
         self.assertTrue(self.engine._loot_input_blocked('READY_TO_START', 'start_mission'))
-        self.assertIn('resolve-missing-evidence', self.engine.data['blocked'])
-        self.assertIn('rewards screen is no longer visible', self.engine.data['blocked'])
+        self.assertIn('automatic verified recovery', self.engine.data['blocked'])
+        self.assertIn('Rewards are no longer visible', self.engine.data['blocked'])
         self.assertEqual(self.engine.data['run'], self.original['run'])
         self.assert_no_input()
 

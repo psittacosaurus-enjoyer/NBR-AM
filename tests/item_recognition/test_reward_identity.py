@@ -4,7 +4,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src/item_recognition'))
-from reward_identity import canonical_groups
+from reward_identity import canonical_groups, _character_asset
 
 
 def record(rid, **values):
@@ -14,6 +14,25 @@ def record(rid, **values):
 
 
 class CanonicalIdentityTests(unittest.TestCase):
+    def test_character_eligibility_uses_record_scoped_urls_after_asset_merge(self):
+        portrait = dict(status='ok', local_image_path='assets/shared.png', role='icon',
+                        source_image_url='https://example.test/abilities/1.png',
+                        source_image_urls=['https://example.test/ninjas/1.png'])
+        self.assertTrue(_character_asset({'metadata': {}}, portrait))
+        portrait['source_image_url'] = 'https://example.test/ninjas/1.png'
+        portrait['source_image_urls'] = ['https://example.test/abilities/1.png']
+        self.assertFalse(_character_asset({'metadata': {}}, portrait))
+
+    def test_reviewed_source_card_uses_scoped_urls_after_asset_merge(self):
+        canonical, alias, reviewed = self.source_card_pair()
+        canonical['assets'][0].update(source_image_url='https://example.test/abilities/1.png',
+                source_image_urls=['https://example.test/missions/card-0949.webp'])
+        mapping, _ = canonical_groups([canonical, alias], [reviewed])
+        self.assertEqual(mapping['alias'], 'canonical')
+        canonical['assets'][0]['source_image_urls'].append('https://example.test/lb/card-0950.webp')
+        mapping, _ = canonical_groups([canonical, alias], [reviewed])
+        self.assertEqual(mapping['alias'], 'alias')
+
     def test_api_alias_membership_preserves_hidden_calibration_id(self):
         canonical = record('canonical', canonical_id='canonical', aliases=['historical'])
         mapping, groups = canonical_groups([canonical], preferred=['historical'])

@@ -9,7 +9,7 @@ from unittest.mock import patch
 from PySide6.QtCore import QTimer
 from PySide6.QtTest import QTest
 
-from manager_gui import ManagerWindow
+from app.gui.window import ManagerWindow
 import test_manager as manager_test
 
 
@@ -244,7 +244,7 @@ class LootGuiTests(unittest.TestCase):
         self.assertEqual(backend.commands, [])
 
     def test_gui_reads_persisted_database_and_automatically_updates_on_next_poll(self):
-        from loot_tracking import LootStore, read_dashboard
+        from app.backend.loot import LootStore, read_dashboard
         with tempfile.TemporaryDirectory() as directory:
             store = LootStore(directory)
             sid = store.ensure_session("offline-mock:1", "scrolls-a", 100)
@@ -288,8 +288,21 @@ class LootGuiTests(unittest.TestCase):
 
 
 class RecordingHealthBackendTests(unittest.TestCase):
+    def test_acknowledged_missing_evidence_keeps_audit_error_out_of_current_failure_status(self):
+        from app.backend.controller import ControllerBackend
+        with tempfile.TemporaryDirectory() as directory:
+            backend = ControllerBackend(directory)
+            snapshot = manager_test.running_snapshot()
+            snapshot['farm']['run'] = {'recording': {'state': 'missing_screenshot',
+                'missing_evidence_acknowledged': True, 'error': 'Original screenshot failed'}}
+            with patch('app.backend.loot.read_dashboard', return_value={'items': []}):
+                current = backend.loot_snapshot(snapshot)
+        self.assertEqual(current['farm_recording_health']['state'], 'missing_screenshot')
+        self.assertIsNone(current['farm_recording_health']['error'])
+        self.assertEqual(snapshot['farm']['run']['recording']['error'], 'Original screenshot failed')
+
     def test_current_process_health_never_leaks_into_historical_sessions(self):
-        from manager_backend import ControllerBackend
+        from app.backend.controller import ControllerBackend
         with tempfile.TemporaryDirectory() as directory:
             backend = ControllerBackend(directory)
             snapshot = manager_test.running_snapshot()
@@ -297,7 +310,7 @@ class RecordingHealthBackendTests(unittest.TestCase):
                                                     'error': 'Disk is temporarily unavailable'}
             snapshot['farm']['run'] = {'recording': {'state': 'operator_attention',
                                                      'error': 'Screenshot could not be persisted'}}
-            with patch('loot_tracking.read_dashboard', side_effect=lambda *args, **kwargs: {'items': []}):
+            with patch('app.backend.loot.read_dashboard', side_effect=lambda *args, **kwargs: {'items': []}):
                 current = backend.loot_snapshot(snapshot)
                 historical = backend.loot_snapshot(snapshot, session_id='previous-session')
                 stopped = backend.loot_snapshot({**snapshot, 'running': False})

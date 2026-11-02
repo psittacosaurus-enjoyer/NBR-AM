@@ -65,6 +65,7 @@ class Builder:
         return rid
 
     def relate(self,origin,target,kind):
+        origin, target = L.resolve_id(self.db, origin), L.resolve_id(self.db, target)
         if origin and target and origin!=target:
             self.db.execute('INSERT OR IGNORE INTO relationships VALUES(?,?,?)',(origin,target,kind))
 
@@ -72,7 +73,7 @@ class Builder:
         for url,role in images(obj):
             aid=self.assets.get(url)
             if aid:
-                self.db.execute('INSERT OR IGNORE INTO record_assets VALUES(?,?,?)',(rid,aid,role))
+                L.link_asset(self.db, rid, aid, role, url)
                 self.linked.add(aid)
 
     def provenance(self,source,path,obj):
@@ -82,14 +83,14 @@ class Builder:
     def import_assets(self,manifest):
         for a in manifest.get('resources',[]):
             if a.get('kind')!='image': continue
-            url=a['url']; aid=L.stable_id('asset',url); self.assets[url]=aid
+            url=a['url']; aid=L.stable_id('asset',url)
             path=a.get('path') if a.get('status')=='ok' else None
             if path and not (self.root/path).is_file():
                 self.errors.append(dict(source=url,error='Manifest image file missing',path=path)); path=None
             values=(aid,url,Path(urlsplit(url).path).name,path,a.get('thumbnail_path'),a.get('sha256'),a.get('width'),a.get('height'),a.get('perceptual_hash'),a.get('status'),a.get('collected_at') or L.now())
-            self.db.execute('''INSERT INTO assets VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(source_image_url) DO UPDATE SET
-              local_image_path=excluded.local_image_path,thumbnail_path=excluded.thumbnail_path,sha256=excluded.sha256,
-              width=excluded.width,height=excluded.height,perceptual_hash=excluded.perceptual_hash,status=excluded.status''',values)
+            fields=('id','source_image_url','original_filename','local_image_path','thumbnail_path','sha256',
+                    'width','height','perceptual_hash','status','collected_at')
+            self.assets[url] = L.upsert_asset(self.db, dict(zip(fields, values)))
 
     def ninjas(self,data,source):
         for i,n in enumerate(data.get('ninjas',[])):
@@ -294,19 +295,23 @@ class Builder:
         started=L.now()
         before={r[0]:r[1] for r in self.db.execute('SELECT id,content_hash FROM records')}
         before_dates={r[0]:r[1] for r in self.db.execute('SELECT id,updated_at FROM records')}
-        annotated_assets=self.db.execute('SELECT * FROM record_assets WHERE record_id IN (SELECT record_id FROM annotations)').fetchall()
         protected_sources=set()
         retained_source_assets=[]
         if L.has_table(self.db,'record_sources'):
             protected_sources={r[0] for r in self.db.execute("SELECT DISTINCT record_id FROM record_sources WHERE source_name!='GachaWiki'")}
         if L.has_table(self.db,'identity_aliases'):
             protected_sources.update(r[0] for r in self.db.execute('SELECT alias_id FROM identity_aliases UNION SELECT canonical_id FROM identity_aliases'))
-        retained_source_assets=[row for row in self.db.execute('SELECT * FROM record_assets') if row['record_id'] in protected_sources]
         retained_source_relationships=[row for row in self.db.execute('SELECT * FROM relationships') if row['from_id'] in protected_sources or row['to_id'] in protected_sources]
         with self.db:
             self.import_assets(manifest)
+            # A changed URL can split a previously shared asset. Preserve the
+            # resulting associations, rather than restoring stale pre-update IDs.
+            annotated_assets=self.db.execute('SELECT * FROM record_assets WHERE record_id IN (SELECT record_id FROM annotations)').fetchall()
+            source_context = [tuple(row) for row in self.db.execute('SELECT * FROM record_asset_sources')]
+            retained_source_assets=[row for row in self.db.execute('SELECT * FROM record_assets') if row['record_id'] in protected_sources]
             # Rebuild source relationships safely within transaction; annotations and originals untouched.
             self.db.execute('DELETE FROM relationships'); self.db.execute('DELETE FROM record_assets')
+            self.db.execute('DELETE FROM record_asset_sources')
             for filename,source,data in catalogs:
                 if filename=='ninjas.json':
                     try: self.ninjas(data,source)
@@ -358,6 +363,11 @@ class Builder:
                     self.db.execute('INSERT OR IGNORE INTO record_assets VALUES(?,?,?)',(record_id,asset_id,role))
             for record_id,asset_id,role in retained_source_assets:
                 self.db.execute('INSERT OR IGNORE INTO record_assets VALUES(?,?,?)',(record_id,asset_id,role))
+            for record_id,asset_id,role,url in source_context:
+                if self.db.execute('SELECT 1 FROM record_assets WHERE record_id=? AND asset_id=? AND role=?',
+                                   (record_id,asset_id,role)).fetchone():
+                    self.db.execute('INSERT OR IGNORE INTO record_asset_sources VALUES(?,?,?,?)',
+                                    (record_id,asset_id,role,url))
             for from_id,to_id,kind in retained_source_relationships:
                 if self.db.execute('SELECT count(*) FROM records WHERE id IN (?,?)',(from_id,to_id)).fetchone()[0]==2:
                     self.db.execute('INSERT OR IGNORE INTO relationships VALUES(?,?,?)',(from_id,to_id,kind))

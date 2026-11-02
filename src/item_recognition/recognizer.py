@@ -10,10 +10,10 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 try:
-    from .reward_identity import character_references, canonical_groups
+    from .reward_identity import character_references, canonical_groups, asset_source_urls
     from .reward_layout import unrevealed_label
 except ImportError:
-    from reward_identity import character_references, canonical_groups
+    from reward_identity import character_references, canonical_groups, asset_source_urls
     from reward_layout import unrevealed_label
 
 ROOT=Path(__file__).resolve().parent
@@ -82,7 +82,8 @@ class ItemRecognizer:
                 self.library_reference_count+=1
                 original=record.get('metadata',{}).get('original',{})
                 combat=all(k in original for k in ('hp','attack'))
-                enemy_art=any('/enemies/' in a['source_image_url'] or '/bosses/' in a['source_image_url'] or '/ninjas/' in a['source_image_url'] for a in record['assets'])
+                enemy_art=any(any(part in url for part in ('/enemies/', '/bosses/', '/ninjas/'))
+                              for a in record['assets'] for url in asset_source_urls(a))
                 if combat or enemy_art:
                     self.excluded_references.append({'item_id':record['id'],'item_name':record['display_name'],'reason':'Combat enemy/character evidence in source metadata; excluded conservatively without changing the library.'})
                     continue
@@ -143,20 +144,27 @@ class ItemRecognizer:
             groups=reviewed.get('canonical_groups'); supported=reviewed.get('supported_item_ids')
             if (not isinstance(groups,list) or not isinstance(supported,list)
                     or any(not isinstance(rid,str) for rid in supported)): return empty,None
+            # Redirects preserve reviewed membership after redundant rows are
+            # removed. Expand them only for validating the persisted evidence.
+            review_records=dict(self._records)
+            for record in self._records.values():
+                for alias in record.get('aliases', []):
+                    review_records.setdefault(alias,dict(record,id=alias))
             valid=[]
             for group in groups:
                 if not isinstance(group,dict): continue
                 canonical=group.get('canonical_item_id'); members=group.get('member_ids')
                 if (not isinstance(canonical,str) or not isinstance(members,list) or len(members)<2
-                        or any(not isinstance(mid,str) or mid not in self._records for mid in members)
+                        or any(not isinstance(mid,str) or mid not in review_records for mid in members)
                         or len(set(members))!=len(members)
-                        or canonical not in members or self._records[canonical]['record_type']!='item'
+                        or canonical not in members or canonical not in self._records
+                        or self._records[canonical]['record_type']!='item'
                         or group.get('allow_alternate_names') is not True
                         or not isinstance(group.get('source_card_id'),str) or not group['source_card_id'].isdigit()
                         or not group.get('evidence')): continue
                 # The existing identity policy verifies every member's source
                 # card and rejects conflicting element, rarity, type or game ID.
-                mapping,details=canonical_groups(list(self._records.values()),[group],self.supported)
+                mapping,details=canonical_groups(list(review_records.values()),[group],self.supported)
                 evidence=details.get(canonical,{}).get('evidence',[])
                 if (all(mapping.get(mid)==canonical for mid in members)
                         and any(e.get('kind')=='reviewed_calibration' and e.get('source_card_id')==group['source_card_id'] for e in evidence)):

@@ -16,22 +16,12 @@ import time
 import uuid
 
 from app.core.process_state import process_identity
+from app.core.atomic_io import atomic_json, replace_atomic, read_json_file
+from app.backend.retention import EvidenceRetention
 
 
 def _atomic_json(path, value):
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temp = path.with_suffix(f".{os.getpid()}.{threading.get_ident()}.tmp")
-    try:
-        with temp.open("w", encoding="utf-8") as stream:
-            json.dump(value, stream, ensure_ascii=False, allow_nan=False)
-            stream.flush()
-            os.fsync(stream.fileno())
-        os.replace(temp, path)
-        if json.loads(path.read_text('utf-8')) != value:
-            raise OSError('Durable recording metadata verification failed')
-    finally:
-        temp.unlink(missing_ok=True)
+    atomic_json(path, value)
 
 
 PENDING_STATES = frozenset({'awaiting_evidence', 'capture_pending', 'screenshot_saved',
@@ -298,6 +288,7 @@ class Collector:
         self.process_identity, self.process_started = process_identity, process_started
         self.tracking_started = time.time()
         self.directory = self.store.directory
+        self.retention = EvidenceRetention(self.root)
         self.spool = self.directory / "pending"
         self.spool.mkdir(exist_ok=True)
         self.max_pending = max(1, int(max_pending))
@@ -324,6 +315,8 @@ class Collector:
                 self.validation_directory = target
         self.validation_limit = min(10, max(0, int(validation_limit)))
         self._lock = threading.RLock()
+        self._health_lock = threading.RLock()
+        self._publication_lock = threading.RLock()
         self._stop = threading.Event()
         self._busy = False
         self._attempts = {}
@@ -331,6 +324,8 @@ class Collector:
         self._events = {}
         self._ready_count = 0
         self._health = dict(status='Tracking Active', error=None, next_retry_at=None)
+        self._operation_errors = {}
+        self._telemetry_error = None
         with self.store.connect() as db:
             self._sequence = db.execute('SELECT COALESCE(MAX(run_sequence),0) FROM completions WHERE session_id=?',
                                         (self.session_id,)).fetchone()[0]
@@ -405,17 +400,53 @@ class Collector:
         identity = f'{self.account}:{self.device_id}:{self.stage}:{run_id}' if self.device_id else f'{self.session_id}:{run_id}'
         return 'job_' + hashlib.sha256(identity.encode()).hexdigest()[:48]
 
-    def _error(self, exc, status='Retryable Failure', next_retry_at=None):
-        self._health = dict(status=status, error=str(exc), next_retry_at=next_retry_at)
+    def _telemetry_failure(self, exc):
+        with self._health_lock:
+            self._telemetry_error = dict(message=str(exc), operation='health_publication',
+                exception_type=type(exc).__name__, winerror=getattr(exc, 'winerror', None), time=time.time())
+
+    def _error(self, exc, status='Retryable Failure', next_retry_at=None, *,
+               operation=None, completion_id=None, path=None):
+        # Job changes and publication use one lock order. In particular a stale
+        # empty-backlog heartbeat cannot erase a newly failed capture.
+        with self._lock, self._publication_lock:
+            self._record_error(exc, status, next_retry_at, operation=operation,
+                               completion_id=completion_id, path=path)
+
+    def _record_error(self, exc, status, next_retry_at, *, operation, completion_id, path):
+        failure = dict(error=str(exc), message=str(exc), operation=operation or 'recording',
+                       exception_type=type(exc).__name__, winerror=getattr(exc, 'winerror', None),
+                       time=time.time(), session_id=self.session_id, category='persistence_failure')
+        if completion_id:
+            failure['completion_id'] = completion_id
+        if path is not None:
+            failure['path'] = str(path)
+        for key in ('used_bytes', 'limit_bytes', 'required_bytes'):
+            if hasattr(exc, key):
+                failure[key] = getattr(exc, key)
+        with self._health_lock:
+            self._health = dict(status=status, error=str(exc), next_retry_at=next_retry_at)
+            if completion_id and operation == 'capture':
+                self._operation_errors[completion_id] = failure
+            payload = {**self._health, 'operation_errors': dict(self._operation_errors),
+                       'time': time.time(), 'session_id': self.session_id,
+                       'account': self.account, 'device_id': self.device_id}
+            if self._operation_errors:
+                failure = max(self._operation_errors.values(), key=lambda value: value['time'])
+                payload.update(status='Screenshot Capture Pending', error=failure['message'])
         try:
-            _atomic_json(self.directory / f'health_{self.account}.json',
-                         {**self._health, 'time': time.time(), 'session_id': self.session_id,
-                          'account': self.account, 'device_id': self.device_id})
-            _atomic_json(self.directory / 'persistence_error.json',
-                         {'time': time.time(), 'error': str(exc), 'session_id': self.session_id,
-                          'category': 'persistence_failure'})
-        except Exception:
-            pass
+            with self._publication_lock:
+                # Persist the cause first; telemetry failure cannot replace it.
+                _atomic_json(self.directory / 'persistence_error.json', failure)
+                _atomic_json(self.directory / f'health_{self.account}.json', payload)
+        except Exception as publication_error:
+            self._telemetry_failure(publication_error)
+
+    def _clear_capture_error(self, completion_id):
+        with self._health_lock:
+            removed = self._operation_errors.pop(completion_id, None)
+            if removed and self._health.get('error') == removed['message']:
+                self._health = dict(status='Tracking Active', error=None, next_retry_at=None)
 
     def _cache(self, value):
         cid = value['completion_id']
@@ -508,20 +539,27 @@ class Collector:
     def evidence(self, run_id, frame, completion_id=None):
         """ACK only an atomic, fsynced, decoded PNG plus verified job metadata."""
         temp = None
+        cid = completion_id or self._completion_id(run_id)
+        screenshot = self.spool / (cid + '.png')
         try:
             with self._lock:
                 value = self._job(run_id, completion_id)
                 if not value:
                     receipt = self._receipt(run_id, completion_id)
                     if receipt:
-                        return bool(receipt.get('screenshot'))
-                    return self.store.evidence_recorded(completion_id or self._completion_id(run_id))
+                        saved = bool(receipt.get('screenshot'))
+                    else:
+                        saved = self.store.evidence_recorded(cid)
+                    if saved:
+                        self._clear_capture_error(cid)
+                    return saved
                 if value['state'] == 'missing_screenshot':
                     return False  # An explicitly closed recording cannot accept another run's rewards.
                 screenshot = self.spool / (value['completion_id'] + '.png')
                 if value.get('screenshot') and value.get('screenshot_sha256'):
                     try:
                         self._verify_image(screenshot, value['screenshot_sha256'])
+                        self._clear_capture_error(cid)
                         return True
                     except (OSError, ValueError):
                         pass  # The still-visible results frame can repair this job.
@@ -536,24 +574,100 @@ class Collector:
                     os.fsync(stream.fileno())
                 digest = self._verify_image(temp)
                 old_size = screenshot.stat().st_size if screenshot.exists() else 0
-                if self._storage_used() - old_size + temp.stat().st_size > self.max_storage_bytes:
-                    raise OSError(f'Loot evidence storage limit ({self.max_storage_bytes} bytes) reached; archive completed diagnostic screenshots')
-                os.replace(temp, screenshot)
+                # Reserve both the pending PNG and a possible diagnostic copy.
+                required = max(0, 2 * temp.stat().st_size - old_size)
+                with self.retention.admission(required, self.max_storage_bytes,
+                                              protected_completion_ids=(cid,)):
+                    replace_atomic(temp, screenshot)
                 self._verify_image(screenshot, digest)
                 saved = dict(value, screenshot=str(screenshot.resolve()), screenshot_sha256=digest,
                              state='recognition_pending', attempts=0, next_retry_at=0)
                 saved.pop('error', None)
                 self._save(saved)
+                self._clear_capture_error(cid)
                 return True
         except Exception as exc:
-            self._error(exc, 'Screenshot Capture Pending')
+            self._error(exc, 'Screenshot Capture Pending', operation='capture',
+                        completion_id=cid, path=screenshot)
             return False
         finally:
             if temp:
-                temp.unlink(missing_ok=True)
+                try:
+                    temp.unlink(missing_ok=True)
+                except OSError:
+                    pass  # Cleanup must not replace the capture failure or ACK.
+
+    def recover_evidence(self, run_id, completion_id=None):
+        """ACK only this transaction's retained or already finalized evidence.
+
+        No current game frame is accepted. A same-job PNG committed before its
+        metadata can be reattached, while a durable finalized receipt remains
+        authoritative after ordinary cleanup removes the pending image.
+        """
+        cid = completion_id or self._completion_id(run_id)
+        try:
+            with self._lock:
+                def matches(value):
+                    return bool(value and value.get('completion_id') == cid
+                        and str(value.get('run_id')) == str(run_id)
+                        and value.get('account') == self.account
+                        and value.get('device_id', '') == self.device_id
+                        and value.get('stage') == self.stage)
+
+                value = self._job(run_id, cid)
+                if value:
+                    if not matches(value) or value['state'] == 'missing_screenshot':
+                        return False
+                    candidate = self.spool / (cid + '.png')
+                    if not candidate.is_file():
+                        return False
+                    digest = self._verify_image(candidate, value.get('screenshot_sha256'))
+                    if not value.get('screenshot') or not value.get('screenshot_sha256'):
+                        recovered = dict(value, screenshot=str(candidate.resolve()),
+                                         screenshot_sha256=digest, state='recognition_pending',
+                                         attempts=0, next_retry_at=0)
+                        recovered.pop('error', None)
+                        self._save(recovered)
+                    self._clear_capture_error(cid)
+                    return True
+
+                receipt = self._receipt(run_id, cid)
+                if receipt:
+                    if (not matches(receipt) or receipt.get('recorded') is not True
+                            or receipt.get('state') == 'missing_screenshot'
+                            or not receipt.get('screenshot')
+                            or not isinstance(receipt.get('screenshot_sha256'), str)
+                            or not re.fullmatch(r'[0-9a-f]{64}', receipt['screenshot_sha256'])):
+                        return False
+                    candidate = Path(receipt['screenshot'])
+                    if candidate.exists():
+                        self._verify_image(candidate, receipt['screenshot_sha256'])
+                    self._clear_capture_error(cid)
+                    return True
+
+                # SQLite has no device column. Only the deterministic ID binds
+                # this fallback to the collector's exact device/account/stage.
+                if not self.device_id or cid != self._completion_id(run_id):
+                    return False
+                with self.store.connect() as db:
+                    row = db.execute('SELECT c.run_id,c.status,c.screenshot_path,s.account,s.stage '
+                        'FROM completions c JOIN sessions s ON s.session_id=c.session_id '
+                        'WHERE c.completion_id=?', (cid,)).fetchone()
+                if (not row or str(row['run_id']) != str(run_id)
+                        or row['account'] != self.account or row['stage'] != self.stage
+                        or row['status'] in PENDING_STATES | {'missing_screenshot', 'backlog_limit'}):
+                    return False
+                if row['screenshot_path'] and Path(row['screenshot_path']).exists():
+                    self._verify_image(Path(row['screenshot_path']))
+                self._clear_capture_error(cid)
+                return True
+        except Exception as exc:
+            self._error(exc, 'Screenshot Capture Pending', operation='capture',
+                        completion_id=cid)
+            return False
 
     def missing(self, run_id, reason='missing_screenshot', completion_id=None):
-        """ACK explicit operator closure; capture failures never call this."""
+        """ACK verified unavailable evidence; refuse every retained screenshot."""
         try:
             with self._lock:
                 value = self._job(run_id, completion_id)
@@ -571,6 +685,7 @@ class Collector:
                 if value['state'] != 'missing_screenshot':
                     self._save(dict(value, state='missing_screenshot', error=reason,
                                     resolution_reason=reason, resolved_at=time.time(), next_retry_at=0))
+                self._clear_capture_error(value['completion_id'])
                 return True
         except Exception as exc:
             self._error(exc)
@@ -585,12 +700,28 @@ class Collector:
 
     def health(self):
         states = {}
+        pending_ids = set()
+        unreadable_jobs = 0
         with self._lock:
             for path in self.spool.glob('*.json'):
                 value = self._read_spool(path)
                 if value and self._owns(value):
                     states[value['state']] = states.get(value['state'], 0) + 1
-        return {**self._health, 'outstanding_jobs': sum(states.values()), 'recording_states': states,
+                    pending_ids.add(value['completion_id'])
+                elif value is None:
+                    try:
+                        unreadable_jobs += int(path.exists())
+                    except OSError:
+                        unreadable_jobs += 1
+        with self._health_lock:
+            info = {**self._health, 'operation_errors': dict(self._operation_errors),
+                    'telemetry_error': self._telemetry_error}
+            capture_errors = [value for cid, value in self._operation_errors.items() if cid in pending_ids]
+            if capture_errors:
+                primary = max(capture_errors, key=lambda value: value['time'])
+                info.update(status='Screenshot Capture Pending', error=primary['message'])
+        return {**info, 'outstanding_jobs': sum(states.values()), 'recording_states': states,
+                'unreadable_jobs': unreadable_jobs,
                 'capture_pending': sum(states.get(s, 0) for s in ('awaiting_evidence', 'capture_pending')),
                 'attention_required': states.get('operator_attention', 0)}
 
@@ -681,7 +812,10 @@ class Collector:
             stamp = time.strftime('%Y%m%d_%H%M%S', time.gmtime(value['completed_at']))
             target = self.directory / 'diagnostics' / f"{stamp}_{value['account']}_{value['stage']}_{value['completion_id']}_{status}.png"
             target.parent.mkdir(exist_ok=True)
-            self._copy_evidence(source, target, value.get('screenshot_sha256'))
+            required = max(0, source.stat().st_size - (target.stat().st_size if target.exists() else 0))
+            with self.retention.admission(required, self.max_storage_bytes,
+                                          protected_completion_ids=(value['completion_id'],)):
+                self._copy_evidence(source, target, value.get('screenshot_sha256'))
             diagnostic = str(target.resolve())
         self.store.finish(value, status, result, diagnostic, warnings)
         # Validation collection is optional and cannot invalidate committed loot.
@@ -705,9 +839,12 @@ class Collector:
             with temp.open('r+b') as stream:
                 os.fsync(stream.fileno())
             Collector._verify_image(temp, digest)
-            os.replace(temp, target)
+            replace_atomic(temp, target)
         finally:
-            temp.unlink(missing_ok=True)
+            try:
+                temp.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     def _cleanup(self, value):
         # Delete only after SQLite commits; a crash before cleanup replays without
@@ -782,31 +919,41 @@ class Collector:
                         processed += 1
                         if processed >= self.max_pending:
                             break
-                self._write_health()
             except Exception as exc:
                 self._error(exc)
+            try:
+                self._write_health()
+            except Exception as exc:
+                self._telemetry_failure(exc)
             self._stop.wait(.1)
 
     def _write_health(self):
+        with self._lock, self._publication_lock:
+            self._write_health_locked()
+
+    def _write_health_locked(self):
         info = self.health()
         if info['attention_required']:
-            self._health['status'] = 'Operator Attention Required'
+            info['status'] = 'Operator Attention Required'
         elif info['capture_pending']:
-            self._health['status'] = 'Screenshot Capture Pending'
-        elif not info['outstanding_jobs']:
-            self._health = dict(status='Tracking Active', error=None, next_retry_at=None)
+            info['status'] = 'Screenshot Capture Pending'
+        elif not info['outstanding_jobs'] and not info['unreadable_jobs']:
+            with self._health_lock:
+                self._health = dict(status='Tracking Active', error=None, next_retry_at=None)
+                self._operation_errors.clear()
+            info.update(status='Tracking Active', error=None, next_retry_at=None, operation_errors={})
             failure = self.directory / 'persistence_error.json'
             try:
-                if failure.exists() and json.loads(failure.read_text('utf-8')).get('session_id') == self.session_id:
+                if failure.exists() and read_json_file(failure).get('session_id') == self.session_id:
                     failure.unlink(missing_ok=True)
             except (OSError, ValueError):
                 pass
-        _atomic_json(self.directory / f'health_{self.account}.json',
-                     {**self._health, 'time': time.time(), 'session_id': self.session_id,
-                      'account': self.account, 'device_id': self.device_id,
-                      'outstanding_jobs': info['outstanding_jobs'],
-                      'capture_pending': info['capture_pending'],
-                      'attention_required': info['attention_required'], 'recording_states': info['recording_states']})
+        with self._publication_lock:
+            _atomic_json(self.directory / f'health_{self.account}.json',
+                         {**info, 'time': time.time(), 'session_id': self.session_id,
+                          'account': self.account, 'device_id': self.device_id})
+        with self._health_lock:
+            self._telemetry_error = None
 
     def wait_idle(self, timeout=10):
         deadline = time.monotonic() + timeout
@@ -849,7 +996,7 @@ def _empty_dashboard(detail, limit, offset):
 
 def _passive_json(path):
     try:
-        value = json.loads(path.read_text('utf-8'))
+        value = read_json_file(path)
         return value if isinstance(value, dict) else {}
     except (OSError, ValueError, TypeError):
         return {}
@@ -972,7 +1119,8 @@ def read_dashboard(root, snapshot, session_id=None, limit=100, offset=0):
     if (health.get('account') != account or (session_id and health.get('session_id') != session_id)
             or (device_id and health.get('device_id', '') not in ('', device_id))):
         health = {}
-    data['collector_health'] = {key: health.get(key) for key in ('status', 'error', 'next_retry_at')}
+    data['collector_health'] = {key: health.get(key) for key in
+                              ('status', 'error', 'next_retry_at', 'telemetry_error', 'operation_errors')}
     if database_error:
         data['collector_health'].update(status='Retryable Failure', error=database_error)
     if data['attention_required']:
@@ -988,7 +1136,9 @@ def read_dashboard(root, snapshot, session_id=None, limit=100, offset=0):
             and time.time() - session['heartbeat'] > 30 and not combined):
         data.update(status='Tracking Unavailable', detail='Loot collector heartbeat is stale; saved history remains available.')
     failure = _passive_json(directory / 'persistence_error.json')
-    if failure.get('session_id') == (session or {}).get('session_id') and failure.get('error'):
+    if (failure.get('session_id') == (session or {}).get('session_id') and failure.get('error')
+            and failure.get('operation') != 'health_publication'
+            and (data['outstanding_jobs'] or not (session or {}).get('ended_at'))):
         data['collector_health']['error'] = failure['error']
         data.update(status='Retryable Failure', detail='Persistence failure: ' + str(failure['error']))
     return data
