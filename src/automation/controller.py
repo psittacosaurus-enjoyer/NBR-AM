@@ -25,6 +25,7 @@ from app.core.process_state import process_identity
 from app.core.atomic_io import atomic_json, read_json_file
 from automation.adb import Instance, discover, resolve_manual, validate_mapping, verify_identity, _server_port
 from automation.safety import require_pearl_free_action_id, require_pearl_safe_action
+from automation import crash_recovery
 
 # Screenshot matching needs no BLAS pool; concurrent CLI imports must stay small.
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
@@ -66,6 +67,11 @@ DISPATCH_DEFER_LIMIT = 8
 IDENTITY_RECHECK_SECONDS = 30
 FOREGROUND_RECHECK_SECONDS = 10
 LOSS_OCR_INTERVAL_SECONDS = 6
+# Results may show reward backs that flip a moment after Retry appears. Wait
+# briefly for a Lucky Drop medallion (it is sometimes the final reward) and at
+# most REWARD_REVEAL_LIMIT_SECONDS for anything else, then save what is shown.
+LUCKY_DROP_SETTLE_SECONDS = 8
+REWARD_REVEAL_LIMIT_SECONDS = 30
 _PROCESS_INSTANCE = None
 
 
@@ -256,7 +262,22 @@ def early_exit_enabled():
     return read_json(RUNTIME / "manager_settings.json").get("ninja_early_exit") is True
 
 
-NINJA_EXIT_MODES = ("stage10", "stage15")
+def one_team_enabled():
+    return read_json(RUNTIME / "manager_settings.json").get("ninja_one_team") is True
+
+
+def map13_team2_enabled():
+    """Stage 16 Exit option: Team 2 on Map 13, back to Team 1 on Map 14."""
+    return read_json(RUNTIME / "manager_settings.json").get("ninja_map13_team2") is True
+
+
+# Internal ids are kept for saved settings and resumed runs; labels name the map
+# the run retreats from. "stage15" is the full strategy; "stage15_clean" is the
+# plain run (Auto, Ninjutsu from Map 5, no Secret Techniques, default rotation).
+NINJA_EXIT_MODES = ("stage10", "stage15_clean", "stage15")
+STAGE15_MODES = ("stage15_clean", "stage15")
+NINJA_MODE_LABELS = {"stage10": "Stage 11 Exit", "stage15_clean": "Stage 16 Exit",
+                     "stage15": "Stage 16 Strategy"}
 
 
 def ninja_exit_mode():
@@ -266,7 +287,7 @@ def ninja_exit_mode():
 
 def set_ninja_exit_mode(mode):
     if mode not in NINJA_EXIT_MODES:
-        raise ValueError("Choose Stage 10 Exit or Stage 15 Exit")
+        raise ValueError("Choose Stage 11 Exit, Stage 16 Exit or Stage 16 Strategy")
     with lock("control"), lock("stamina-control"):
         if controller_active() or lock_busy("restart"):
             raise RuntimeError("Ninja Road mode is locked while automation is active or its exit is unverified")
@@ -274,7 +295,7 @@ def set_ninja_exit_mode(mode):
         settings["ninja_exit_mode"] = mode
         write_json(RUNTIME / "manager_settings.json", settings)
     event("ninja_exit_mode_setting", mode=mode)
-    print("Ninja Road mode: Stage " + ("15" if mode == "stage15" else "10") + " Exit")
+    print("Ninja Road mode: " + NINJA_MODE_LABELS[mode])
 
 
 def set_boss_swap(enabled):
@@ -297,6 +318,28 @@ def set_early_exit(enabled):
         write_json(RUNTIME / "manager_settings.json", settings)
     event("ninja_early_exit_setting", enabled=enabled)
     print("Early Exit " + ("enabled" if enabled else "disabled"))
+
+
+def set_one_team(enabled):
+    if type(enabled) is not bool:
+        raise ValueError("One Team Run must be enabled or disabled")
+    with lock("stamina-control"):
+        settings = read_json(RUNTIME / "manager_settings.json")
+        settings["ninja_one_team"] = enabled
+        write_json(RUNTIME / "manager_settings.json", settings)
+    event("ninja_one_team_setting", enabled=enabled)
+    print("One Team Run " + ("enabled" if enabled else "disabled"))
+
+
+def set_map13_team2(enabled):
+    if type(enabled) is not bool:
+        raise ValueError("Team 2 on Map 13 must be enabled or disabled")
+    with lock("stamina-control"):
+        settings = read_json(RUNTIME / "manager_settings.json")
+        settings["ninja_map13_team2"] = enabled
+        write_json(RUNTIME / "manager_settings.json", settings)
+    event("ninja_map13_team2_setting", enabled=enabled)
+    print("Team 2 on Map 13 " + ("enabled" if enabled else "disabled"))
 
 
 def stamina_status(progress):
@@ -373,6 +416,9 @@ NINJA_STATE_ACTIONS = {
     "NR_EARLY_EXIT": "nr_retreat", "NR_RETREAT_CONFIRM": "nr_retreat_confirm",
     "NR_CHARACTER_INFO": "nr_close_info",
     "NR_EARLY_EXIT_PREPARE": "nr_auto",
+    "NR_ONE_TEAM_EXIT": "nr_retreat", "NR_ONE_TEAM_EXIT_PREPARE": "nr_auto",
+    # Crash recovery: the game title after a restart, then the free quicksave resume.
+    "TITLE_START": "title_start", "NR_QUICKSAVE_PROMPT": "nr_resume_quicksave",
 }
 ALLOWED_ACTIONS.update(NINJA_STATE_ACTIONS.values())
 ALLOWED_ACTIONS.update({"nr_boss_swap", "nr_close_info"})
@@ -551,6 +597,9 @@ def verify_saved_input(instance=None, stage="universal"):
         if (path in supported or relevant_previous) and (progress.get("pending") or progress.get("connection_pending")
                 or (progress.get("boss_swap") or {}).get("pending")
                 or (progress.get("stage15_strategy") or {}).get("pending")):
+            if stage == "ninja_road":
+                raise RuntimeError("Resolve the existing saved input before starting. "
+                                   "At the Ninja Road Home screen, use Resolve input, then Start.")
             raise RuntimeError("Resolve the existing saved input before starting. "
                                "At a Universal Start Mission screen, use Resolve input, then Start.")
 
@@ -631,10 +680,40 @@ def _validate_superseded_ninja_input(progress, blockers):
     return kind
 
 
-def _save_input_recovery_evidence(instance, source_bytes, frames):
+def _validate_superseded_universal_input(progress, blockers):
+    """Validate one Universal tap latch that a verified Ninja Road Home supersedes.
+
+    Home is outside every Universal mission screen, so the tap's outcome can no
+    longer be acted on; only a plain single-tap latch from a known Universal
+    action is eligible, and never while its recording is unresolved.
+    """
+    if set(blockers) != {"pending"}:
+        raise RuntimeError("This saved Universal input requires same-stage recovery")
+    blocker = blockers["pending"]
+    if not isinstance(blocker, dict):
+        raise RuntimeError("Saved Universal input is invalid")
+    if (blocker.get("id") not in set(STATE_ACTIONS.values())
+            or blocker.get("source") not in STATE_ACTIONS
+            or STATE_ACTIONS[blocker["source"]] != blocker["id"]
+            or not isinstance(blocker.get("expected"), list) or not blocker["expected"]
+            or any(not isinstance(value, str) or not value for value in blocker["expected"])
+            or isinstance(blocker.get("time"), bool)
+            or not isinstance(blocker.get("time"), (int, float))
+            or not math.isfinite(blocker["time"]) or blocker["time"] <= 0
+            or blocker["time"] > time.time()):
+        raise RuntimeError("Saved Universal input is not eligible for recovery")
+    run = progress.get("run")
+    if isinstance(run, dict) and run.get("outcome") is None and run.get("id") == blocker.get("run_id"):
+        raise RuntimeError("An active Universal run cannot discard its saved input")
+    if not _recording_is_resolved(run):
+        raise RuntimeError("Resolve the existing recording before discarding its saved input")
+    return "pending"
+
+
+def _save_input_recovery_evidence(instance, source_bytes, frames, source_stage="ninja_road"):
     directory = instance_runtime(instance) / "recovery" / ("saved_input_" + uuid.uuid4().hex)
     directory.mkdir(parents=True, exist_ok=False)
-    state_path = directory / "ninja_road.before.json"
+    state_path = directory / f"{source_stage}.before.json"
     with state_path.open("xb") as stream:
         stream.write(source_bytes)
         stream.flush()
@@ -649,10 +728,15 @@ def _save_input_recovery_evidence(instance, source_bytes, frames):
 
 
 def resolve_saved_input(stage=None, *, reason, expected_instance_key=None):
-    """Explicitly close one superseded Ninja latch at verified Universal Start."""
-    if stage not in (None, "universal"):
-        raise RuntimeError("Saved-input recovery only supports switching from Ninja Road to Universal")
-    stage = "universal"
+    """Explicitly close one superseded cross-stage latch.
+
+    Ninja Road -> Universal is verified at Universal Start Mission; Universal ->
+    Ninja Road is verified at Ninja Road Home.
+    """
+    stage = stage or "universal"
+    if stage not in STAGE_IDS:
+        raise RuntimeError("Unknown farming stage for saved-input recovery")
+    source_stage = "ninja_road" if stage == "universal" else "universal"
     if not isinstance(reason, str) or not reason.strip():
         raise ValueError("Provide a reason for resolving the saved input")
     reason = reason.strip()
@@ -670,24 +754,30 @@ def resolve_saved_input(stage=None, *, reason, expected_instance_key=None):
                 not isinstance(expected_instance_key, str) or not expected_instance_key
                 or instance.key != expected_instance_key):
             raise RuntimeError("The selected instance changed; saved-input recovery refused")
-        source_path = load_stage("ninja_road", instance)["progress"]
+        source_path = load_stage(source_stage, instance)["progress"]
         destination_path = load_stage(stage, instance)["progress"]
+        label = "Ninja" if source_stage == "ninja_road" else "Universal"
         try:
             source_bytes = source_path.read_bytes()
             progress = json.loads(source_bytes.decode("utf-8"))
         except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-            raise RuntimeError("Saved Ninja state is unavailable or invalid") from exc
-        if not isinstance(progress, dict) or progress.get("stage") != "ninja_road":
-            raise RuntimeError("Saved Ninja state does not identify Ninja Road")
+            raise RuntimeError(f"Saved {label} state is unavailable or invalid") from exc
+        if not isinstance(progress, dict) or progress.get("stage", "universal") != source_stage:
+            raise RuntimeError(f"Saved {label} state does not identify {load_stage(source_stage)['name']}")
         pinned = instance_from_dict(progress.get("instance"))
         if ((pinned.key, pinned.android_id, pinned.endpoint)
                 != (instance.key, instance.android_id, instance.endpoint)):
-            raise RuntimeError("Saved Ninja input target does not match the selected instance")
+            raise RuntimeError(f"Saved {label} input target does not match the selected instance")
         destination = read_json(destination_path)
         if _saved_input_blockers(destination):
             raise RuntimeError("Resolve the destination stage input before cross-stage recovery")
         blockers = _saved_input_blockers(progress)
-        kind = _validate_superseded_ninja_input(progress, blockers)
+        if source_stage == "ninja_road":
+            kind = _validate_superseded_ninja_input(progress, blockers)
+            required, screen_text = "READY_TO_START", "Universal Start Mission"
+        else:
+            kind = _validate_superseded_universal_input(progress, blockers)
+            required, screen_text = "NR_HOME", "Ninja Road Home"
 
         device = Device(instance)
         device.connect()
@@ -698,21 +788,21 @@ def resolve_saved_input(stage=None, *, reason, expected_instance_key=None):
                 time.sleep(.25)
             device.verify()
             if device.foreground() != PACKAGE:
-                raise RuntimeError("Restore the game to a verified Universal Start Mission screen")
+                raise RuntimeError(f"Restore the game to a verified {screen_text} screen")
             frame = device.capture()
             name, spec, _ = detector.classify(frame)
-            if name != "READY_TO_START" or not spec or spec.get("verified_safe") is not True:
-                raise RuntimeError("Two fresh verified Universal Start Mission observations are required")
+            if name != required or not spec or spec.get("verified_safe") is not True:
+                raise RuntimeError(f"Two fresh verified {screen_text} observations are required")
             frames.append(frame)
             observations.append({"time": time.time(), "screen": name,
                                  "android_id": instance.android_id, "instance_key": instance.key,
                                  "endpoint": instance.endpoint, "foreground": PACKAGE})
         if source_path.read_bytes() != source_bytes:
-            raise RuntimeError("Saved Ninja input changed during recovery; no state was cleared")
+            raise RuntimeError(f"Saved {label} input changed during recovery; no state was cleared")
 
-        backup, images, digest = _save_input_recovery_evidence(instance, source_bytes, frames)
+        backup, images, digest = _save_input_recovery_evidence(instance, source_bytes, frames, source_stage)
         if source_path.read_bytes() != source_bytes:
-            raise RuntimeError("Saved Ninja input changed while recovery evidence was saved")
+            raise RuntimeError(f"Saved {label} input changed while recovery evidence was saved")
         resolved_at = time.time()
         updated = copy.deepcopy(progress)
         if kind == "pending":
@@ -729,7 +819,7 @@ def resolve_saved_input(stage=None, *, reason, expected_instance_key=None):
         audit = {
             "reason": reason,
             "resolved_at": resolved_at,
-            "source_stage": "ninja_road",
+            "source_stage": source_stage,
             "destination_stage": stage,
             "blocker": kind,
             "instance_key": instance.key,
@@ -742,11 +832,12 @@ def resolve_saved_input(stage=None, *, reason, expected_instance_key=None):
         }
         updated["saved_input_resolutions"] = [*history[-19:], audit]
         if source_path.read_bytes() != source_bytes:
-            raise RuntimeError("Saved Ninja input changed before recovery was committed")
+            raise RuntimeError(f"Saved {label} input changed before recovery was committed")
         write_json(source_path, updated)
-        event("saved_input_resolved", source_stage="ninja_road", destination_stage=stage,
+        event("saved_input_resolved", source_stage=source_stage, destination_stage=stage,
               blocker=kind, reason=reason, original_sha256=digest)
-    print("Saved Ninja input archived and resolved; Start can resume Universal farming")
+    print(f"Saved {label} input archived and resolved; Start can resume "
+          f"{load_stage(stage)['name'].split(' —')[0]} farming")
 
 
 def logger():
@@ -906,6 +997,14 @@ class ActionNotDispatched(RuntimeError):
 
 class ScreenChanged(RuntimeError):
     """The final pre-dispatch observation no longer matched; no input was sent."""
+
+
+DISPATCH_EVIDENCE_FIELDS = frozenset({"anchors", "notes"})
+
+
+def _dispatch_fields(spec):
+    """Everything in a classified spec except how it was recognized."""
+    return {key: value for key, value in (spec or {}).items() if key not in DISPATCH_EVIDENCE_FIELDS}
 
 
 def _decode_raw_screencap(data):
@@ -1466,8 +1565,11 @@ class Engine:
                         and current.get("verified_safe") is expected.get("verified_safe")
                         and self._action_guard(current.get("action") or {}) == self._action_guard(action))
             else:
-                # Stage engines derive actions from extra spec fields; keep exact.
-                same = observed == name and current == expected
+                # Stage engines derive actions from extra spec fields; keep them
+                # exact. Only recognition evidence (anchors) and catalog notes
+                # may differ, e.g. two glow phases of the same Ready button.
+                same = (observed == name and isinstance(current, dict)
+                        and _dispatch_fields(current) == _dispatch_fields(expected))
             if not same:
                 raise ScreenChanged("Screen changed before dispatch; no input sent")
             require_pearl_safe_action(
@@ -2042,10 +2144,21 @@ class Engine:
                 and getattr(self, "_loot_evidence_run", None) != run["id"]):
             # Old progress without a transaction cannot register an invented completion;
             # evidence() only accepts an existing durable job.
-            from item_recognition.reward_layout import has_unrevealed_rewards
+            from item_recognition.reward_layout import (LUCKY_DROP_LABEL, has_unrevealed_rewards,
+                                                        unrevealed_labels)
             if has_unrevealed_rewards(frame, ROOT / 'assets/item_recognition'):
-                self._loot_waiting_for_reveal = True
-                return
+                labels = unrevealed_labels(frame, ROOT / 'assets/item_recognition')
+                started = getattr(self, "_reveal_wait", None)
+                if not started or started[0] != run["id"]:
+                    started = self._reveal_wait = (run["id"], time.time())
+                waited = time.time() - started[1]
+                limit = (LUCKY_DROP_SETTLE_SECONDS if set(labels) == {LUCKY_DROP_LABEL}
+                         else REWARD_REVEAL_LIMIT_SECONDS)
+                if waited < limit:
+                    self._loot_waiting_for_reveal = True
+                    return
+                event("reward_reveal_settled", run_id=run["id"], labels=labels, seconds=round(waited, 1),
+                      stage=getattr(self, "stage", {}).get("id", "universal"))
             evidence_kwargs = {"completion_id": recording["completion_id"]} if recording else {}
             if _loot_call(collector, "evidence", run["id"], frame, **evidence_kwargs):
                 self._loot_evidence_run = run["id"]
@@ -2221,7 +2334,8 @@ class Engine:
             return transition_delay
         pending = self.data.get("pending")
         # Preserve the user's current session. A stalled input remains latched;
-        # recovery must never force-stop or reset the application.
+        # engine recovery never force-stops or resets the application (only the
+        # worker's crash tier restarts the emulator, and it sends no UI input).
         observed_run = self.data.get("run")
         polling_battle = name == "IN_BATTLE" or bool(
             name == "UNKNOWN" and observed_run and not observed_run.get("outcome")
@@ -2300,6 +2414,38 @@ def target_arguments(instance):
     return ["--target", json.dumps(instance_dict(instance), separators=(",", ":"))]
 
 
+# Screens that do not prove the game is healthy after a crash restart.
+UNSETTLED_SCREENS = {None, "UNKNOWN", "LOADING", "GAME_CLOSED", "OTHER_FOREGROUND"}
+
+
+def _crash_restart(instance, stage, reason, budget, engine=None):
+    """Top recovery tier: restart this account's BlueStacks instance (no UI input)."""
+    context = engine._recovery_context() if engine else {
+        "stage": stage, "account": instance_account(instance), "device_id": instance.android_id}
+    try:
+        return crash_recovery.restart_emulator(
+            instance, reason=reason, emit=event, stop_path=STOP, budget=budget,
+            activity=ACTIVITY, context=context)
+    except crash_recovery.CrashRecoveryUnsafe as exc:
+        STOP.write_text("Safety stop: selected account or device identity changed", encoding="utf-8")
+        event("worker_safety_stop", **context, error=str(exc), reason="wrong_account_or_device_risk")
+        return 1
+    except InterruptedError:
+        return 1
+
+
+def request_crash_test():
+    """Ask the running worker to restart its BlueStacks instance once, on purpose."""
+    if not controller_active():
+        raise RuntimeError("Start farming first; the running controller performs the crash test")
+    instance = effective_instance()
+    if not crash_recovery.supported(instance):
+        raise RuntimeError("Crash test needs a configured BlueStacks instance (not a manual endpoint)")
+    crash_recovery.request_crash_test(state_path("crash_test_request.json", instance))
+    event("crash_test_requested", account=instance_account(instance), instance_id=instance.instance_id)
+    print(f"Crash test requested: the controller will restart BlueStacks instance {instance.instance_id}.")
+
+
 def worker(stage="universal", supervisor_pid=None, instance=None):
     # Hold one account-wide input lock for the entire controller lifetime.
     with contextlib.ExitStack() as stack:
@@ -2323,8 +2469,22 @@ def worker(stage="universal", supervisor_pid=None, instance=None):
                        if stage == "universal" and engine is not None else None)
         backoff = 5
         failure_attempt = 0
+        crash_budget = crash_recovery.Budget(state_path("crash_recovery.json", instance))
+        crash_test_path = state_path("crash_test_request.json", instance)
+        unreachable_since = None
+        unreachable_errors = 0
         while not STOP.exists():
             try:
+                if crash_recovery.take_crash_test(crash_test_path):
+                    if engine is not None:
+                        engine.save()
+                    delay = _crash_restart(instance, stage, "crash_test", crash_budget, engine)
+                    engine = None  # Rebuilt with a fresh connection and identity check.
+                    unreachable_since, unreachable_errors = None, 0
+                    deadline = time.monotonic() + delay
+                    while not STOP.exists() and time.monotonic() < deadline:
+                        time.sleep(.25)
+                    continue
                 # Collector startup retries continue even while device recovery
                 # prevents the engine from producing an observation.
                 health = _loot_call(collector, "health")
@@ -2336,6 +2496,9 @@ def worker(stage="universal", supervisor_pid=None, instance=None):
                 delay = engine.tick()
                 backoff = 5
                 failure_attempt = 0
+                unreachable_since, unreachable_errors = None, 0
+                if engine.data.get("screen") not in UNSETTLED_SCREENS:
+                    crash_budget.note_healthy()
             except RecordingPersistenceError as exc:
                 # Preserve the observed completion/time while its state is retried.
                 _loot_tracking_error(exc)
@@ -2379,6 +2542,23 @@ def worker(stage="universal", supervisor_pid=None, instance=None):
                           reason="wrong_account_or_device_risk")
                 engine = None
                 backoff = min(backoff * 2, 60)
+                if not safety_error and crash_recovery.is_unreachable_error(message):
+                    unreachable_errors += 1
+                    if unreachable_since is None:
+                        unreachable_since = time.monotonic()
+                    restart_reason = None
+                    if time.monotonic() - unreachable_since >= crash_recovery.UNREACHABLE_RESTART_SECONDS:
+                        restart_reason = "adb_unreachable"
+                    elif (unreachable_errors >= crash_recovery.MISSING_PLAYER_ERRORS
+                          and crash_recovery.supported(instance)
+                          and crash_recovery.player_pids(instance) == []):
+                        restart_reason = "player_missing"
+                    if restart_reason:
+                        delay = _crash_restart(instance, stage, restart_reason, crash_budget)
+                        unreachable_since, unreachable_errors = None, 0
+                        backoff = 5
+                else:
+                    unreachable_since, unreachable_errors = None, 0
             deadline = time.monotonic() + delay
             while not STOP.exists() and time.monotonic() < deadline:
                 if engine and state_path("stamina_request.json", instance).exists():
@@ -2754,6 +2934,8 @@ def status(stage=None):
                       "stamina_wait_minutes": stamina_wait_minutes(),
                       "ninja_boss_swap": boss_swap_enabled(),
                       "ninja_early_exit": early_exit_enabled(),
+                      "ninja_one_team": one_team_enabled(),
+                      "ninja_map13_team2": map13_team2_enabled(),
                       "ninja_exit_mode": ninja_exit_mode(),
                       "stamina_wait_interruptible": farm.get("manager_controls_version") == 1,
                       "stamina_seconds_remaining": max(0, round(farm.get("stamina_until", 0) - time.time()))}, indent=2))
@@ -2761,7 +2943,7 @@ def status(stage=None):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["start", "stop", "status", "supervise", "worker", "observe", "step", "replay", "restart", "end-stamina-wait", "stamina-duration", "boss-swap", "early-exit", "ninja-mode", "select-instance", "resolve-missing-evidence", "resolve-saved-input"])
+    parser.add_argument("command", choices=["start", "stop", "status", "supervise", "worker", "observe", "step", "replay", "restart", "end-stamina-wait", "stamina-duration", "boss-swap", "early-exit", "one-team", "map13-team2", "ninja-mode", "select-instance", "resolve-missing-evidence", "resolve-saved-input", "crash-test"])
     parser.add_argument("--instance-key")
     parser.add_argument("--instance-name")
     parser.add_argument("--endpoint", default="")
@@ -2792,8 +2974,17 @@ def main():
         if args.enabled is None:
             raise ValueError("Choose --enabled on or off")
         set_early_exit(args.enabled == "on")
+    elif args.command == "one-team":
+        if args.enabled is None:
+            raise ValueError("Choose --enabled on or off")
+        set_one_team(args.enabled == "on")
+    elif args.command == "map13-team2":
+        if args.enabled is None:
+            raise ValueError("Choose --enabled on or off")
+        set_map13_team2(args.enabled == "on")
     elif args.command == "ninja-mode": set_ninja_exit_mode(args.mode)
     elif args.command == "status": status(stage)
+    elif args.command == "crash-test": request_crash_test()
     elif args.command == "resolve-missing-evidence":
         if args.offline or args.completion_id is not None:
             resolve_missing_evidence(stage, reason=args.reason, offline=args.offline, completion_id=args.completion_id)

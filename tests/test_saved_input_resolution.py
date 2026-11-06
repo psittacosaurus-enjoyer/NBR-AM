@@ -233,8 +233,8 @@ class SavedInputResolutionTests(unittest.TestCase):
         with patch.object(farm, "controller_active", return_value=True), \
              self.assertRaisesRegex(RuntimeError, "Stop the controller"):
             farm.resolve_saved_input("universal", reason="Still running")
-        with self.assertRaisesRegex(RuntimeError, "only supports switching"):
-            farm.resolve_saved_input("ninja_road", reason="Reverse direction")
+        with self.assertRaisesRegex(RuntimeError, "Unknown farming stage"):
+            farm.resolve_saved_input("rich_b", reason="Unknown stage")
         mismatched = copy.deepcopy(self.boss_state())
         mismatched["instance"]["android_id"] = "another-device"
         farm.write_json(self.source_path, mismatched)
@@ -303,6 +303,123 @@ class SavedInputResolutionTests(unittest.TestCase):
             self.run_recovery(device)
         self.assertEqual(device.captures, 0)
         self.assertEqual(self.source_path.read_bytes(), before)
+
+
+
+class UniversalToNinjaResolutionTests(unittest.TestCase):
+    """A stale Universal tap latch is closed only at verified Ninja Road Home."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.runtime = Path(self.temp.name)
+        self.instance = legacy_target()
+        for item in [
+            patch.object(farm, "RUNTIME", self.runtime),
+            patch.object(farm, "STOP", self.runtime / "STOP"),
+            patch.object(farm, "process_target", return_value=self.instance),
+            patch.object(farm, "controller_active", return_value=False),
+            patch.object(farm, "lock_busy", return_value=False),
+            patch.object(farm, "event"),
+            patch.object(farm.time, "sleep"),
+        ]:
+            item.start()
+            self.addCleanup(item.stop)
+        farm.STOP.write_text("Intentional user stop\n", encoding="utf-8")
+        self.source_path = farm.load_stage("universal", self.instance)["progress"]
+        self.destination_path = farm.load_stage("ninja_road", self.instance)["progress"]
+
+    def retry_state(self):
+        return {
+            "stage": "universal",
+            "instance": self.instance.to_dict(),
+            "counts": {"completed": 3},
+            "blocked": "Waiting for the screen transition to finish",
+            "pending": {
+                "id": "retry", "source": "READY_TO_RETRY",
+                "expected": ["READY_TO_START", "STAMINA_PROMPT", "HELPER_SELECTION"],
+                "time": 1, "run_id": "retry-run",
+                "retry_guard": {"id": "retry", "kind": "tap", "point": [450, 1524],
+                                "expected": ["READY_TO_START", "STAMINA_PROMPT", "HELPER_SELECTION"]},
+            },
+            "run": {"id": "earlier-run", "start": 1, "outcome": "completed",
+                    "recording": {"state": "screenshot_saved"}},
+        }
+
+    def detector(self, names=("NR_HOME", "NR_HOME")):
+        detector = Mock()
+        detector.classify.side_effect = [
+            (name, {"verified_safe": True} if name == "NR_HOME" else None, {}) for name in names]
+        return detector
+
+    def resolve(self, detector, device=None):
+        device = device or FakeDevice()
+        with patch.object(farm, "Device", return_value=device), \
+             patch.object(farm, "Detector", return_value=detector) as made:
+            farm.resolve_saved_input("ninja_road", reason="Verified departure to Ninja Road")
+        return device, made
+
+    def test_start_message_points_ninja_to_home(self):
+        farm.write_json(self.source_path, self.retry_state())
+        with patch.object(farm, "process_target", return_value=self.instance), \
+             self.assertRaisesRegex(RuntimeError, "Ninja Road Home screen"):
+            farm.verify_saved_input(self.instance, "ninja_road")
+
+    def test_resolves_retry_latch_at_two_verified_home_observations(self):
+        farm.write_json(self.source_path, self.retry_state())
+        original = self.source_path.read_bytes()
+        device, made = self.resolve(self.detector())
+        made.assert_called_once_with("ninja_road")
+        self.assertEqual(device.perform_calls, 0)
+        self.assertEqual(device.captures, 2)
+        saved = farm.read_json(self.source_path)
+        self.assertIsNone(saved["pending"])
+        self.assertIsNone(saved["blocked"])
+        self.assertEqual(saved["counts"], {"completed": 3})
+        audit = saved["saved_input_resolutions"][-1]
+        self.assertEqual((audit["source_stage"], audit["destination_stage"], audit["blocker"]),
+                         ("universal", "ninja_road", "pending"))
+        self.assertEqual(audit["original_sha256"], hashlib.sha256(original).hexdigest())
+        self.assertEqual(Path(audit["original_state"]).name, "universal.before.json")
+        self.assertEqual(Path(audit["original_state"]).read_bytes(), original)
+        farm.verify_saved_input(self.instance, "ninja_road")  # Start is no longer blocked
+
+    def test_refuses_without_two_home_observations(self):
+        for names in (("NR_HOME", "UNKNOWN"), ("NR_AVAILABLE", "NR_HOME"), ("READY_TO_START", "READY_TO_START")):
+            farm.write_json(self.source_path, self.retry_state())
+            before = self.source_path.read_bytes()
+            with self.assertRaisesRegex(RuntimeError, "Ninja Road Home"):
+                self.resolve(self.detector(names))
+            self.assertEqual(self.source_path.read_bytes(), before)
+
+    def test_refuses_background_game(self):
+        farm.write_json(self.source_path, self.retry_state())
+        before = self.source_path.read_bytes()
+        with self.assertRaisesRegex(RuntimeError, "Restore the game"):
+            self.resolve(self.detector(), FakeDevice(foreground="com.android.launcher"))
+        self.assertEqual(self.source_path.read_bytes(), before)
+
+    def test_refuses_ineligible_universal_latches(self):
+        cases = []
+        state = self.retry_state(); state["connection_pending"] = {"id": "retry_connection"}; cases.append(state)
+        state = self.retry_state(); state["pending"]["id"] = "spend_pearls"; cases.append(state)
+        state = self.retry_state(); state["pending"]["source"] = "READY_TO_START"; cases.append(state)
+        state = self.retry_state(); state["run"] = {"id": "retry-run", "start": 1, "outcome": None}; cases.append(state)
+        state = self.retry_state(); state["run"]["recording"] = {"state": "operator_attention"}; cases.append(state)
+        for state in cases:
+            farm.write_json(self.source_path, state)
+            before = self.source_path.read_bytes()
+            with patch.object(farm, "Device") as device, self.assertRaises(RuntimeError):
+                farm.resolve_saved_input("ninja_road", reason="Ineligible")
+            device.assert_not_called()
+            self.assertEqual(self.source_path.read_bytes(), before)
+
+    def test_refuses_when_ninja_destination_is_latched(self):
+        farm.write_json(self.source_path, self.retry_state())
+        farm.write_json(self.destination_path, {"stage": "ninja_road", "pending": {"id": "nr_start"}})
+        with patch.object(farm, "Device") as device, self.assertRaisesRegex(RuntimeError, "destination"):
+            farm.resolve_saved_input("ninja_road", reason="Destination busy")
+        device.assert_not_called()
 
 
 if __name__ == "__main__":

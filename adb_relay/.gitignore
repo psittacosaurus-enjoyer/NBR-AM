@@ -1,0 +1,7 @@
+requests/
+responses/
+status.json
+STOP
+relay.lock
+relay.log*
+relay.local.json

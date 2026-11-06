@@ -15,6 +15,13 @@ class NinjaRoadEngine(farm.Engine):
     TRANSITION_TIMEOUT = 90
     TRANSITION_RETRY_LIMIT = 2
     UNKNOWN_TIMEOUT = 180
+    # Responsiveness. Unrecognized frames inside the shared transition grace
+    # window (farm.TRANSITION_GRACE_SECONDS) are re-observed quickly without
+    # recovery records; the bounded recovery ladder starts only after it.
+    UNKNOWN_POLL_SECONDS = 0.5
+    PENDING_POLL_SECONDS = 0.5   # Waiting for a sent tap's verified transition.
+    COMBAT_POLL_SECONDS = 2.0    # Auto combat with nothing to do.
+    IDLE_POLL_SECONDS = 1.0      # A recognized screen whose action is blocked.
     UNKNOWN_RETRY_LIMIT = 5
     FOREGROUND_RETRY_LIMIT = 3
     CONNECTION_LIMIT = 3
@@ -116,7 +123,7 @@ class NinjaRoadEngine(farm.Engine):
                     temporary.replace(latest)
         except OSError:
             pass  # A viewer cannot interrupt farming or its saved input.
-        stage15 = self.exit_mode == "stage15"
+        stage15 = self.exit_mode in farm.STAGE15_MODES
         if name == "NR_TEAM_SELECT" and stage15:
             spec["ready_map_index"] = self.stage15_controller().vision.read_map(frame)
         elif name in self.CONNECTION_COMBAT and stage15:
@@ -144,6 +151,9 @@ class NinjaRoadEngine(farm.Engine):
                 if stage15:
                     spec["ready_map_index"] = 16
                     spec["exit_after_stage"] = 15
+        if (name == "NR_TEAM_DEFEATED" and spec and spec.get("verified_safe") is True
+                and farm.one_team_enabled()):
+            name, spec = self._one_team_exit(frame, spec, stage15)
         if name in self.READY_SCREENS and spec:
             if not stage15:
                 spec["ready_map_index"] = self.read_ready_map(frame)
@@ -185,6 +195,51 @@ class NinjaRoadEngine(farm.Engine):
         spec["available_teams"] = sorted(observed)
         scores["team_slots"] = slot_scores
         return frame, name, spec, scores
+
+    ONE_TEAM_EXIT_SCREENS = {"NR_ONE_TEAM_EXIT", "NR_ONE_TEAM_EXIT_PREPARE"}
+
+    def _wrap_recovery(self):
+        """Defeat recovery may return to an earlier living team (adjacent arrow).
+
+        Needed whenever a run can leave teams out of order: Stage 16 Strategy's
+        per-map plan, or Stage 16 Exit with the Team 2 on Map 13 option.
+        """
+        mode = self.exit_mode
+        return mode == "stage15" or (mode == "stage15_clean" and farm.map13_team2_enabled())
+
+    def _one_team_exit(self, frame, defeated, stage15):
+        """One Team Run: retreat from a verified defeated-team screen.
+
+        Reuses Early Exit's sequence (Auto off, Retreat, guarded confirmation)
+        instead of advancing to the next team. The defeated phase is kept so
+        defeat bookkeeping and rejected-Ready handling are unchanged.
+        """
+        from automation.ninja_boss_swap import BossSwap
+        if not hasattr(self, "boss_swap_controller"):
+            self.boss_swap_controller = BossSwap(self)
+        try:
+            reached = (self.stage15_controller().vision.read_map(frame) if stage15
+                       else self.read_ready_map(frame))
+        except Exception:
+            reached = None
+        spec = {"phase": "team_defeated", "team_defeated": True, "verified_safe": True,
+                "one_team_exit": True,
+                "exit_after_stage": reached - 1 if type(reached) is int and reached > 1 else None}
+        if defeated.get("rejects_pending"):
+            spec["rejects_pending"] = copy.deepcopy(defeated["rejects_pending"])
+        auto = self.boss_swap_controller.auto(frame)
+        if auto is False:
+            name = "NR_ONE_TEAM_EXIT"
+            spec.update(on_confirm={"early_exit_requested": True},
+                        action={"id": "nr_retreat", "kind": "tap", "point": [230, 1208],
+                                "expected": ["NR_RETREAT_CONFIRM"]})
+        else:
+            name = "NR_ONE_TEAM_EXIT_PREPARE"
+            if auto is True:
+                spec["action"] = {"id": "nr_auto", "kind": "tap", "point": [623, 56],
+                                  "expected": ["NR_ONE_TEAM_EXIT"]}
+        spec["name"] = name
+        return name, spec
 
     @staticmethod
     def _phase(name, spec):
@@ -311,7 +366,7 @@ class NinjaRoadEngine(farm.Engine):
                            **self._recovery_context())
                 raise
             if ("ready_map_index" in pending or
-                    (action["id"] == "nr_start" and pending.get("exit_mode") == "stage15")):
+                    (action["id"] == "nr_start" and pending.get("exit_mode") in farm.STAGE15_MODES)):
                 pending["returned"] = True
                 self.save()
             farm.event("ninja_transition_retry_sent", attempt=attempt,
@@ -342,10 +397,25 @@ class NinjaRoadEngine(farm.Engine):
                    **self._recovery_context())
         return delay
 
+    def _unknown_grace(self):
+        if self.data.get("pending"):
+            return farm.TRANSITION_GRACE_SECONDS["pending"]
+        run = self.data.get("run") or {}
+        if run.get("id") and run.get("outcome") is None:
+            return farm.TRANSITION_GRACE_SECONDS["battle"]
+        return farm.TRANSITION_GRACE_SECONDS["idle"]
+
     def _recover_unknown(self):
         now = time.time()
         episode = self.data.get("recognition_recovery")
         if not isinstance(episode, dict):
+            since = self.data.get("unknown_since", now)
+            if now - since < self._unknown_grace():
+                # Map walks, loading and animations: look again soon. No input,
+                # no recovery record; the ladder starts after the grace window.
+                self.data["blocked"] = "Waiting for the screen transition to finish"
+                self.save()
+                return self.UNKNOWN_POLL_SECONDS
             episode = {
                 "observations": 0,
                 "relaunches": 0,
@@ -440,7 +510,7 @@ class NinjaRoadEngine(farm.Engine):
         waiting_stamina = name == "NR_START" and self.data.get("stamina_until", 0) > time.time()
         if (not waiting_stamina and not self.data.get("pending")
                 and not self.data.get("connection_pending")):
-            if (self.exit_mode == "stage15" and name in self.READY_SCREENS
+            if (self.exit_mode in farm.STAGE15_MODES and name in self.READY_SCREENS
                     and type((spec or {}).get("ready_map_index")) is not int):
                 reason = "unambiguous_ready_map"
             elif name == "NR_START" and (spec or {}).get("require_team_slots"):
@@ -564,6 +634,7 @@ class NinjaRoadEngine(farm.Engine):
         self.data.pop("ninjutsu_enabled", None)
         self.data.pop("boss_swap", None)
         self.data.pop("early_exit_requested", None)
+        self.data.pop("one_team_exit", None)
         self.data.pop("stage15_strategy", None)
         self.data.pop("stage15_map", None)
         self.data.pop("stage15_formations", None)
@@ -584,6 +655,20 @@ class NinjaRoadEngine(farm.Engine):
 
     def _confirm(self, name, spec):
         pending = self.data.get("pending")
+        if (name == "TITLE_START" and (spec or {}).get("verified_safe") is True
+                and (pending or self.data.get("connection_pending"))
+                and (pending or {}).get("source") != "TITLE_START"):
+            # The title screen proves the game process restarted (crash or
+            # emulator restart). No earlier tap can still be in flight, and it
+            # is never replayed: the quicksave resume decides where play resumes.
+            farm.event("ninja_pending_ended_at_title", action=(pending or {}).get("id"),
+                       source=(pending or {}).get("source"),
+                       connection_pending=bool(self.data.get("connection_pending")))
+            self.data["pending"] = None
+            self.data.pop("connection_pending", None)
+            self.data.pop("connection_targets", None)
+            self._clear_transition_recovery()
+            pending = None
         if name == "NR_HOME" and pending and pending.get("source") not in {"NR_HOME", "NR_AVAILABLE"}:
             farm.event("ninja_pending_ended_at_home", action=pending["id"], source=pending["source"])
             self.data["pending"] = None
@@ -605,7 +690,7 @@ class NinjaRoadEngine(farm.Engine):
         if not pending:
             return
         if (pending.get("id") == "nr_start" and pending.get("source") == "NR_START"
-                and pending.get("exit_mode") == "stage15" and pending.get("returned") is True
+                and pending.get("exit_mode") in farm.STAGE15_MODES and pending.get("returned") is True
                 and pending.get("on_confirm", {}).get("begin_attempt") is True
                 and name in self.CONNECTION_COMBAT and (spec or {}).get("verified_safe") is True
                 and (spec or {}).get("combat_map_index") == 1):
@@ -675,13 +760,16 @@ class NinjaRoadEngine(farm.Engine):
             if changes.get("early_exit_requested"):
                 self.data["early_exit_requested"] = True
                 self.data["exit_after_stage"] = pending.get("exit_after_stage", 10)
+                if pending.get("source") in self.ONE_TEAM_EXIT_SCREENS:
+                    self.data["one_team_exit"] = True
             if changes.get("early_exit_completed"):
                 run = self.data.get("run")
                 if run and not run.get("outcome"):
                     run.update(outcome="early_exit", ended=time.time())
                     self.data["counts"]["early_exits"] = self.data["counts"].get("early_exits", 0) + 1
                     farm.event("ninja_early_exit_completed", run_id=run["id"],
-                               cleared_map=self.data.get("exit_after_stage", 10))
+                               cleared_map=self.data.get("exit_after_stage", 10),
+                               one_team=self.data.get("one_team_exit") is True)
             selected = changes.get("team_index")
             if type(selected) is int:
                 self.data["current_team"] = selected
@@ -794,7 +882,7 @@ class NinjaRoadEngine(farm.Engine):
     def _choose_action(self, name, spec):
         action = copy.deepcopy((spec or {}).get("action"))
         choices = (spec or {}).get("team_choices")
-        if (self.exit_mode == "stage15" and (spec or {}).get("enable_setting") == "ninjutsu"
+        if (self.exit_mode in farm.STAGE15_MODES and (spec or {}).get("enable_setting") == "ninjutsu"
                 and self.data.get("stage15_map", 0) < 5):
             return None, {}  # The legacy OFF-state action must not undo this mode's opening policy.
         if name == "NR_RETREAT_CONFIRM" and not self.data.get("early_exit_requested"):
@@ -827,13 +915,13 @@ class NinjaRoadEngine(farm.Engine):
         if spec.get("attempt_start"):
             changes["begin_attempt"] = True
         if (type(spec.get("team_index")) is int and not
-                (self.exit_mode == "stage15" and name == "NR_TEAM_SELECT"
+                (self.exit_mode in farm.STAGE15_MODES and name == "NR_TEAM_SELECT"
                  and spec["team_index"] == self.data.get("current_team"))):
             changes["team_index"] = spec["team_index"]
         if choices is not None:
             defeated = set(self.data.get("defeated_teams", []))
             current = self.data.get("current_team") or 0
-            recovery15 = self.exit_mode == "stage15" and self._phase(name, spec) == "team_defeated"
+            recovery15 = self._wrap_recovery() and self._phase(name, spec) == "team_defeated"
             available = [choice for choice in choices
                          if type(choice.get("index")) is int
                          and (recovery15 or choice["index"] > current) and choice["index"] not in defeated]
@@ -864,7 +952,7 @@ class NinjaRoadEngine(farm.Engine):
             defeated = set() if beginning else set(self.data.get("defeated_teams", []))
             current = 0 if beginning else self.data.get("current_team") or 0
             observed = self.data.get("available_teams", [])
-            recovery15 = self.exit_mode == "stage15" and self._phase(name, spec) == "team_defeated"
+            recovery15 = self._wrap_recovery() and self._phase(name, spec) == "team_defeated"
             if (type(team) is not int or team < 1 or team in defeated
                     or (team <= current and not recovery15) or (observed and team not in observed)
                     or (current and current not in defeated)):
@@ -894,7 +982,19 @@ class NinjaRoadEngine(farm.Engine):
         if self.detector.changed():
             self.detector = farm.Detector(self.stage["id"])
             farm.event("patterns_reloaded", stage=self.stage["id"])
-        foreground = self.device.foreground()
+        now = time.monotonic()
+        settled = self.data.get("screen") not in (None, "UNKNOWN", "GAME_CLOSED", "OTHER_FOREGROUND")
+        if (act and settled and now - getattr(self, "_foreground_checked_at", float("-inf"))
+                < farm.FOREGROUND_RECHECK_SECONDS):
+            # Observation reuse only: every input re-checks identity and
+            # foreground inside Device.perform immediately before dispatch.
+            foreground = farm.PACKAGE
+        else:
+            foreground = self.device.foreground()
+            if foreground == farm.PACKAGE:
+                self._foreground_checked_at = now
+            else:
+                self._foreground_checked_at = float("-inf")
         if foreground != farm.PACKAGE:
             self.data["screen"] = "GAME_CLOSED" if foreground == "com.uncube.launcher3" else "OTHER_FOREGROUND"
             self.data["blocked"] = "Game is not foreground; no input"
@@ -944,7 +1044,7 @@ class NinjaRoadEngine(farm.Engine):
         delay = self._recover_visual_prerequisite(name, spec)
         if delay is not None:
             return delay
-        if self.exit_mode == "stage15":
+        if self.exit_mode in farm.STAGE15_MODES:
             delay = self.stage15_controller().tick(frame, name, spec)
             if delay is not None:
                 return delay
@@ -956,13 +1056,13 @@ class NinjaRoadEngine(farm.Engine):
             if delay is not None:
                 return delay
         if self.data.get("pending"):
-            return 3
+            return self.PENDING_POLL_SECONDS
         action, changes = self._choose_action(name, spec)
         if not action:
             self.save()
             if name == "NR_START" and self.data.get("stamina_until", 0) > time.time():
                 return 30
-            return 3 if self._phase(name, spec) == "combat" else 5
+            return self.COMBAT_POLL_SECONDS if self._phase(name, spec) == "combat" else self.IDLE_POLL_SECONDS
         if not action.get("expected"):
             raise RuntimeError("Ninja Road input requires a visually verified expected transition")
         farm.require_pearl_safe_action(self.stage["id"], name, {**spec, "action": action})
@@ -990,6 +1090,17 @@ class NinjaRoadEngine(farm.Engine):
             self._perform_verified_action(action, name, spec)
         except farm.ActionNotDispatched as exc:
             self.data["pending"] = None
+            deferrals = getattr(self, "_dispatch_deferrals", 0) + 1
+            if isinstance(exc.__cause__, farm.ScreenChanged) and deferrals <= farm.DISPATCH_DEFER_LIMIT:
+                # The screen animated between recognition and dispatch and no
+                # input was sent: look again shortly instead of a worker error.
+                self._dispatch_deferrals = deferrals
+                self.data["blocked"] = "Screen still animating; re-checking before input"
+                self.save()
+                farm.event("action_deferred", stage=self.stage["id"], action=action["id"],
+                           screen=name, attempt=deferrals)
+                return farm.DISPATCH_DEFER_SECONDS
+            self._dispatch_deferrals = 0
             self.data["blocked"] = str(exc)
             self.save()
             farm.event("action_not_sent", stage=self.stage["id"], action=action["id"], error=str(exc))
@@ -997,8 +1108,9 @@ class NinjaRoadEngine(farm.Engine):
         except Exception as exc:
             farm.event("action_uncertain", stage=self.stage["id"], action=action["id"], error=str(exc))
             raise
-        if "ready_map_index" in pending or (action["id"] == "nr_start" and pending.get("exit_mode") == "stage15"):
+        if "ready_map_index" in pending or (action["id"] == "nr_start" and pending.get("exit_mode") in farm.STAGE15_MODES):
             pending["returned"] = True
             self.save()
+        self._dispatch_deferrals = 0
         farm.event("action_sent", stage=self.stage["id"], action=action["id"])
         return 1

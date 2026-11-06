@@ -37,7 +37,7 @@ class NinjaModeControllerTests(unittest.TestCase):
         self.assertEqual(farm.ninja_exit_mode(), "stage10")
         settings = {"ninja_boss_swap": True, "ninja_early_exit": True, "stamina_wait_minutes": 15}
         farm.write_json(self.runtime / "manager_settings.json", settings)
-        for mode in ("stage15", "stage10"):
+        for mode in ("stage15", "stage15_clean", "stage10"):
             farm.set_ninja_exit_mode(mode)
             self.assertEqual(farm.ninja_exit_mode(), mode)
             self.assertEqual(farm.read_json(self.runtime / "manager_settings.json"),
@@ -108,16 +108,19 @@ class NinjaModeGuiTests(unittest.TestCase):
         window, backend = self.ninja_window(state)
         combo = window.ninja_mode_combo
         self.assertEqual([combo.itemText(index) for index in range(combo.count())],
-                         ["Stage 10 Exit", "Stage 15 Exit"])
+                         ["Stage 11 Exit", "Stage 16 Exit", "Stage 16 Strategy"])
+        self.assertEqual([combo.itemData(index) for index in range(combo.count())],
+                         ["stage10", "stage15_clean", "stage15"])
         for appearance in ("original", "retro98"):
             window.set_appearance(appearance)
             self.assertTrue(combo.isVisible())
-            for mode in ("stage15", "stage10"):
+            for mode in ("stage15", "stage15_clean", "stage10"):
                 combo.setCurrentIndex(combo.findData(mode))
                 self.wait_until(lambda: window._pending_action is None and not window._awaiting_verification)
                 self.assertEqual(backend.commands[-1], ("ninja-mode", mode))
                 self.assertEqual(combo.currentData(), mode)
                 self.assertEqual(window.early_exit_check.isVisible(), mode == "stage10")
+                self.assertTrue(window.one_team_check.isVisible())  # Available in both modes
                 self.assertTrue(window.early_exit_check.isChecked())
                 self.assertTrue(window.boss_swap_check.isChecked())
         window.stage_combo.setCurrentIndex(0)

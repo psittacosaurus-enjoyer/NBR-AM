@@ -11,10 +11,10 @@ import numpy as np
 from PIL import Image, ImageDraw, UnidentifiedImageError
 try:
     from .reward_identity import character_references, canonical_groups, asset_source_urls
-    from .reward_layout import unrevealed_label
+    from .reward_layout import LUCKY_DROP_LABEL, unrevealed_label
 except ImportError:
     from reward_identity import character_references, canonical_groups, asset_source_urls
-    from reward_layout import unrevealed_label
+    from reward_layout import LUCKY_DROP_LABEL, unrevealed_label
 
 ROOT=Path(__file__).resolve().parent
 PROJECT=ROOT.parents[1]
@@ -322,7 +322,13 @@ class ItemRecognizer:
             tile=crop(rgb,box)
             # Package backs have card-like borders too; exclude them before identity matching.
             placeholder=unrevealed_label(tile,p,self.templates_dir)
-            if placeholder:
+            if placeholder == LUCKY_DROP_LABEL:
+                # Evidence is only saved after the farmer's bounded reveal wait,
+                # so a medallion still shown is the final reward: one drop.
+                found.append((box,'icon',{'identity_status':'matched','item_id':'lucky_drop','item_name':'Lucky Drop',
+                    'record_type':'lucky_drop','match_score':None,'candidates':[],
+                    'reason':'Lucky Drop medallion remained as the final acquired reward'}))
+            elif placeholder:
                 found.append((box,'unrevealed',{'identity_status':'unknown','item_id':None,'item_name':None,'match_score':None,'candidates':[], 'reason':'Unopened reward package: '+placeholder}))
             elif self._has_card_frame(tile):
                 found.append((box,'icon',self.match_icon(tile)))

@@ -292,7 +292,7 @@ class BossSwap:
         if not state and not enabled:
             return None
         team_key = [(self.data.get("run") or {}).get("id"), self.data.get("current_team")]
-        ended = name in {"NR_EARLY_EXIT_PREPARE", "NR_EARLY_EXIT", "NR_RETREAT_CONFIRM", "NR_TEAM_DEFEATED", "NR_ALL_DEFEATED", "MISSION_COMPLETE", "NR_RESULTS", "NR_RETURN", "NR_HOME", "NR_ENTRY", "NR_START"}
+        ended = name in {"NR_EARLY_EXIT_PREPARE", "NR_EARLY_EXIT", "NR_ONE_TEAM_EXIT_PREPARE", "NR_ONE_TEAM_EXIT", "NR_RETREAT_CONFIRM", "NR_TEAM_DEFEATED", "NR_ALL_DEFEATED", "MISSION_COMPLETE", "NR_RESULTS", "NR_RETURN", "NR_HOME", "NR_ENTRY", "NR_START"}
         if state and (ended or state["team_key"] != team_key):
             self.data.pop("boss_swap", None)
             self.save()

@@ -151,29 +151,29 @@ class RamenRewardTests(unittest.TestCase):
         expected[(57, 573, 134, 139)] = self.manifest['expected_top_row'][1]
         self.assert_rewards(ROOT / 'tests/fixtures/universal/unconfigured_results.png', expected)
 
-    def test_lucky_card_back_is_unrevealed_and_never_an_extra_item_icon(self):
+    def test_settled_lucky_medallion_counts_as_one_lucky_drop(self):
+        # The farmer only saves evidence after its bounded reveal wait, so a
+        # medallion still shown in saved evidence is the final reward.
         from app.backend.loot import LootStore
         from item_recognition.reward_layout import has_unrevealed_rewards
         import cv2
         pending = FIXTURES / 'bravery_lucky_unrevealed.png'
         revealed = FIXTURES / 'bravery_lucky_revealed.png'
         result = self.recognizer.analyze_screenshot(pending)
-        self.assertEqual(len(result['rewards']), 2)
-        self.assertEqual(len(result['unknown_rewards']), 1)
-        back = result['unknown_rewards'][0]
-        self.assertEqual(back['bounding_box'], [381, 411, 134, 139])
-        self.assertEqual(back['visual_state'], 'unrevealed')
-        self.assertIsNone(back['item_id'])
+        self.assertEqual(len(result['rewards']), 3)
+        lucky = next(r for r in result['rewards'] if r['bounding_box'] == [381, 411, 134, 139])
+        self.assertEqual((lucky['item_id'], lucky['item_name'], lucky['visual_state']),
+                         ('lucky_drop', 'Lucky Drop', 'icon'))
         self.assertTrue(has_unrevealed_rewards(cv2.imread(str(pending)), ROOT / 'assets/item_recognition'))
         self.assertFalse(has_unrevealed_rewards(cv2.imread(str(revealed)), ROOT / 'assets/item_recognition'))
         store = LootStore(self.root)
         session = store.ensure_session('fixture:lucky-back', 'universal')
         event = dict(session_id=session, completion_id='lucky-back', run_id='lucky-back',
                      run_sequence=1, completed_at=100)
-        store.finish(event, 'uncertain', result, None, [])
+        store.finish(event, 'recognized', result, None, [])
         data = store.dashboard(session)
-        self.assertEqual(data['total_drops'], 2)
-        self.assertEqual(data['unidentified_drops'], 0)
+        self.assertEqual(data['total_drops'], 3)
+        self.assertEqual(data['drop_counts'].get('lucky_drop'), 1)
 
     def test_unreviewed_ramen_size_remains_a_candidate(self):
         rid = self.manifest['uncalibrated_control']

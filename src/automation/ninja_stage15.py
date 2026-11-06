@@ -13,7 +13,7 @@ class Stage15Strategy:
              11: 3, 12: 3, 13: 1}
     SEQUENCES = {7, 9, 12, 13}
     COMBAT = {"NR_COMBAT", "NR_COMBAT_AUTO_OFF", "NR_COMBAT_NINJUTSU_OFF"}
-    END = {"NR_TEAM_DEFEATED", "NR_ALL_DEFEATED", "MISSION_COMPLETE", "NR_RESULTS",
+    END = {"NR_TEAM_DEFEATED", "NR_ONE_TEAM_EXIT", "NR_ONE_TEAM_EXIT_PREPARE", "NR_ALL_DEFEATED", "MISSION_COMPLETE", "NR_RESULTS",
            "NR_RETURN", "NR_HOME", "NR_ENTRY", "NR_START"}
     WAIT_LIMIT = 120
 
@@ -33,15 +33,46 @@ class Stage15Strategy:
         self.engine.save()
         return 2
 
+    UNVERIFIED_CLEAR_LIMIT = 3  # Per map: stale setting/Auto latches re-observed, then block.
+
+    def _setting_guard(self, setting, target):
+        """Fresh pre-tap proof that the setting control is on screen.
+
+        Ninjutsu/Secret buttons exist only in the Auto overlay; with Auto off the
+        same point is a character portrait. Re-capture after the device's own
+        identity/foreground checks and refuse unless the control is visible and
+        still shows the wrong value.
+        """
+        def guard():
+            fresh = self.engine.device.capture()
+            if self.boss.auto(fresh) is not True:
+                raise farm.ScreenChanged("Setting controls are hidden (Auto is not on); no input sent")
+            current = self.vision.setting(fresh, setting)
+            if current is None or current is target:
+                raise farm.ScreenChanged("Setting control changed before dispatch; no input sent")
+        return guard
+
     def dispatch(self, state, action, purpose, **metadata):
         state["pending"] = {"purpose": purpose, "time": time.time(), **metadata}
         self.engine.save()
+        device = self.engine.device
+        guarded = purpose == "setting"
+        previous_guard = getattr(device, "input_guard", None)
+        if guarded:
+            device.input_guard = self._setting_guard(metadata["setting"], metadata["target"])
         try:
-            self.engine.device.perform(action)
-        except farm.ActionNotDispatched:
+            device.perform(action)
+        except farm.ActionNotDispatched as exc:
             state["pending"] = None
             self.engine.save()
+            if isinstance(exc.__cause__, farm.ScreenChanged):
+                farm.event("ninja_strategy_input_deferred", purpose=purpose, action=action["id"],
+                           reason=str(exc.__cause__), **{k: v for k, v in metadata.items() if k in ("setting", "target")})
+                return .25  # Look again; nothing was sent.
             raise
+        finally:
+            if guarded:
+                device.input_guard = previous_guard
         state["pending"]["returned"] = True
         self.engine.save()
         return .15
@@ -52,7 +83,9 @@ class Stage15Strategy:
 
     def settings(self, state, frame, stage, ready=False):
         desired = {"ninjutsu": stage >= 5}
-        if stage > 5:  # Preserve the existing opening/Stage 5 secret-technique policy.
+        if not self.strategy:
+            desired["secret"] = False  # Clean run: Secret Techniques never on.
+        elif stage > 5:  # Preserve the existing opening/Stage 5 secret-technique policy.
             desired["secret"] = stage in {10, 15}
         for setting, target in desired.items():
             observed = self.vision.setting(frame, setting)
@@ -139,15 +172,52 @@ class Stage15Strategy:
             self.engine.save()
             return .1
         if time.time() - pending["time"] > 20:
+            clears = state.setdefault("unverified_clears", {})
+            key = str(stage)
+            if (purpose in {"setting", "auto"} and pending.get("returned")
+                    and clears.get(key, 0) < self.UNVERIFIED_CLEAR_LIMIT):
+                # A toggle whose result cannot be seen here (e.g. on Ready, which
+                # hides the controls) is not replayed: forget the latch and the
+                # assumed value, so the next action needs a fresh observation of
+                # the actual setting with its control visible.
+                clears[key] = clears.get(key, 0) + 1
+                state["pending"] = None
+                if purpose == "setting":
+                    state.setdefault("settings", {}).pop(pending["setting"], None)
+                    self.data[pending["setting"] + "_enabled"] = None
+                farm.event("ninja_strategy_unverified_cleared", purpose=purpose, map=stage,
+                           setting=pending.get("setting"), target=pending.get("target"),
+                           attempt=clears[key], screen=name)
+                self.engine.save()
+                return .25
             return self.block(purpose + " transition unverified; input remains latched")
         return .25
+
+    @property
+    def strategy(self):
+        """True for Stage 16 Strategy ("stage15"); False for the clean Stage 16 Exit ("stage15_clean")."""
+        return getattr(self.engine, "exit_mode", "stage15") == "stage15"
+
+    MAP13_TEAMS = {13: 2, 14: 1}  # Stage 16 Exit "Team 2 on Map 13" option.
+
+    def planned_team(self, stage, current):
+        # One Team Run keeps the team already in use. The clean run otherwise
+        # changes teams only by the default defeat rotation, plus the optional
+        # Map 13 swap (Team 2 on Map 13, Team 1 again on Map 14).
+        if farm.one_team_enabled():
+            return current
+        if not self.strategy:
+            if farm.map13_team2_enabled():
+                return self.MAP13_TEAMS.get(stage, current)
+            return current
+        return self.TEAMS.get(stage, current)
 
     def select_team(self, state, frame, name, stage):
         current = self.data.get("current_team")
         defeated = self.data.get("defeated_teams", [])
         if current in defeated:
             return None  # Established death recovery owns the next selection.
-        target = self.TEAMS.get(stage, current)
+        target = self.planned_team(stage, current)
         if target in defeated or target not in self.data.get("available_teams", []):
             target = current
         if current == target or target is None:
@@ -183,7 +253,7 @@ class Stage15Strategy:
     def defer_formation(self, state, name, stage):
         swap = self.data.get("boss_swap")
         current = self.data.get("current_team")
-        target = self.TEAMS.get(stage, current)
+        target = self.planned_team(stage, current)
         if (name != "NR_TEAM_SELECT" or not swap or swap.get("pending")
                 or target == current or target in self.data.get("defeated_teams", [])
                 or target not in self.data.get("available_teams", [])
@@ -324,7 +394,7 @@ class Stage15Strategy:
     def tick(self, frame, name, spec):
         if name in self.END:
             self.data.pop("stage15_strategy", None)
-            if name == "NR_TEAM_DEFEATED":
+            if name in {"NR_TEAM_DEFEATED", "NR_ONE_TEAM_EXIT", "NR_ONE_TEAM_EXIT_PREPARE"}:
                 self.data.get("stage15_formations", {}).pop(str(self.data.get("current_team")), None)
             else:
                 self.data.pop("stage15_formations", None)
@@ -403,7 +473,8 @@ class Stage15Strategy:
         if (self.data.get("boss_swap") or {}).get("pending"):
             return None  # Never race the shared driver's latched Auto/swipe input.
         self.defer_formation(state, name, stage)
-        if stage > 5 and stage not in {10, 15} and self.vision.setting(frame, "secret") is True:
+        if ((not self.strategy or (stage > 5 and stage not in {10, 15}))
+                and self.vision.setting(frame, "secret") is True):
             return self.dispatch(state, {"id": "nr_secret", "kind": "tap", "point": [460, 1415]},
                                  "setting", setting="secret", target=False)
         # Finish an inherited boss/role restoration before any new strategy.
@@ -420,7 +491,7 @@ class Stage15Strategy:
         if stage >= 16:
             self.engine.save()
             return None  # Existing guarded retreat runs before any Ready input.
-        if stage not in self.SEQUENCES:
+        if not self.strategy or stage not in self.SEQUENCES:
             self.engine.save()
             return None
         if state["phase"] == "setup":

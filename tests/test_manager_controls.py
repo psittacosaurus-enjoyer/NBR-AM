@@ -24,8 +24,9 @@ class ControlsBackend(fixtures.FakeBackend):
                 self.state["stamina_status"] = "UNKNOWN"  # Rechecking game.
             elif action == "restart":
                 self.state = fixtures.running_snapshot(stage or self.state["stage"])
-            elif action in {"boss-swap", "early-exit"}:
-                self.state["ninja_boss_swap" if action == "boss-swap" else "ninja_early_exit"] = stage
+            elif action in {"boss-swap", "early-exit", "one-team", "map13-team2"}:
+                self.state[{"boss-swap": "ninja_boss_swap", "early-exit": "ninja_early_exit",
+                            "one-team": "ninja_one_team", "map13-team2": "ninja_map13_team2"}[action]] = stage
         return result
 
 
@@ -44,7 +45,8 @@ class ManagerControlsTests(unittest.TestCase):
         for appearance in ("original", "retro98"):
             window.set_appearance(appearance)
             for control, action, key in ((window.boss_swap_check, "boss-swap", "ninja_boss_swap"),
-                                         (window.early_exit_check, "early-exit", "ninja_early_exit")):
+                                         (window.early_exit_check, "early-exit", "ninja_early_exit"),
+                                         (window.one_team_check, "one-team", "ninja_one_team")):
                 self.assertTrue(control.isVisible())
                 for value in (True, False):
                     control.click()
@@ -55,6 +57,29 @@ class ManagerControlsTests(unittest.TestCase):
         window.stage_combo.setCurrentIndex(0)
         self.assertFalse(window.boss_swap_check.isVisible())
         self.assertFalse(window.early_exit_check.isVisible())
+        self.assertFalse(window.one_team_check.isVisible())
+        self.assertFalse(window.map13_team2_check.isVisible())
+
+    def test_map13_team2_shown_only_for_stage16_exit_and_persists(self):
+        state = fixtures.stopped_snapshot("ninja_road")
+        state["ninja_exit_mode"] = "stage15_clean"
+        window, backend = self.window(ControlsBackend(state))
+        window.stage_combo.addItem("Ninja Road", "ninja_road")
+        window.stage_combo.setCurrentIndex(window.stage_combo.findData("ninja_road"))
+        window.apply_snapshot(backend.snapshot())
+        for appearance in ("original", "retro98"):
+            window.set_appearance(appearance)
+            self.assertTrue(window.map13_team2_check.isVisible())
+            for value in (True, False):
+                window.map13_team2_check.click()
+                self.wait_until(lambda: window._pending_action is None and not window._awaiting_verification)
+                self.assertEqual(backend.commands[-1], ("map13-team2", value))
+                self.assertIs(backend.state["ninja_map13_team2"], value)
+        for mode in ("stage10", "stage15"):
+            backend.state["ninja_exit_mode"] = mode
+            window.apply_snapshot(backend.snapshot())
+            window._update_controls()
+            self.assertFalse(window.map13_team2_check.isVisible(), mode)
 
     def waiting_window(self):
         state = fixtures.running_snapshot()
@@ -147,7 +172,7 @@ class BackendControlsTests(unittest.TestCase):
         backend = manager_backend.ControllerBackend()
         result = subprocess.CompletedProcess([], 0, "Saved", "")
         with patch.object(manager_backend.subprocess, "run", return_value=result) as run:
-            for action in ("boss-swap", "early-exit"):
+            for action in ("boss-swap", "early-exit", "one-team", "map13-team2"):
                 for value in (True, False):
                     backend.command(action, value)
                     self.assertEqual(run.call_args.args[0][-3:], [action, "--enabled", "on" if value else "off"])

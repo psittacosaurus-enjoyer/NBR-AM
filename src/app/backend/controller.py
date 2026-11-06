@@ -187,7 +187,7 @@ class ControllerBackend:
                 offline=False, completion_id=None, reason=None):
         args = [str(self.python), str(self.root / "src" / "farm.py"), action]
         if stage is not None:
-            if action in {"boss-swap", "early-exit"}:
+            if action in {"boss-swap", "early-exit", "one-team", "map13-team2"}:
                 args.extend(["--enabled", "on" if stage else "off"])
             elif action == "ninja-mode":
                 args.extend(["--mode", stage])
@@ -224,13 +224,13 @@ class ControllerBackend:
         return lambda: self.command(action, stage, requested_generation=generation)
 
     def command(self, action, stage=None, *, requested_generation=None):
-        if action not in {"start", "stop", "restart", "end-stamina-wait", "stamina-duration", "boss-swap", "early-exit", "ninja-mode"}:
+        if action not in {"start", "stop", "restart", "end-stamina-wait", "stamina-duration", "boss-swap", "early-exit", "one-team", "map13-team2", "ninja-mode"}:
             raise ValueError("Unsupported manager command")
         if action == "ninja-mode":
             if stage not in farm.NINJA_EXIT_MODES:
-                raise ValueError("Choose Stage 10 Exit or Stage 15 Exit")
+                raise ValueError("Choose Stage 11 Exit, Stage 16 Exit or Stage 16 Strategy")
             return self._invoke(action, stage)
-        if action in {"boss-swap", "early-exit"}:
+        if action in {"boss-swap", "early-exit", "one-team", "map13-team2"}:
             if type(stage) is not bool:
                 raise ValueError("Ninja Road option must be enabled or disabled")
             return self._invoke(action, stage)
@@ -259,8 +259,8 @@ class ControllerBackend:
 
     def resolve_saved_input(self, stage, *, expected_instance_key=None):
         """Resolve one guarded cross-stage input latch without starting farming."""
-        if stage != "universal":
-            raise ControllerError("Saved input recovery is available only for Universal farming.")
+        if stage not in ("universal", "ninja_road"):
+            raise ControllerError("Saved input recovery is available only for Universal or Ninja Road farming.")
         before = self.snapshot()
         target = before.get("instance")
         key = target.get("key") if isinstance(target, dict) else None
@@ -273,8 +273,11 @@ class ControllerBackend:
             raise ControllerError("Stop the controller before resolving the saved input.")
         result = self._invoke(
             "resolve-saved-input", stage, timeout=75, instance_key=key,
-            reason="User selected Resolve input in Automation Manager after Start reported an existing "
-                   "saved input; resume Universal only from the currently verified mission preparation screen.")
+            reason=("User selected Resolve input in Automation Manager after Start reported an existing "
+                    "saved input; resume Universal only from the currently verified mission preparation screen."
+                    if stage == "universal" else
+                    "User selected Resolve input in Automation Manager after Start reported an existing "
+                    "saved input; resume Ninja Road only from the currently verified Ninja Road Home screen."))
         after = self.snapshot()
         refreshed = after.get("instance")
         refreshed_key = refreshed.get("key") if isinstance(refreshed, dict) else None

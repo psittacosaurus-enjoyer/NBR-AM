@@ -95,7 +95,7 @@ class ManagerPresentation:
     NAMES = (
         "target_name_label", "connection_label", "instance_label", "status_label", "runtime_label",
         "retreated_ninja_roads_label",
-        "stage_combo", "ninja_mode_combo", "boss_swap_check", "early_exit_check", "start_button", "stop_button", "exit_stop_button",
+        "stage_combo", "ninja_mode_combo", "boss_swap_check", "early_exit_check", "one_team_check", "map13_team2_check", "start_button", "stop_button", "exit_stop_button",
         "restart_button", "resolve_input_button", "stamina_status_label", "stamina_remaining_label",
         "stamina_duration_combo", "end_stamina_wait_button", "detail_label", "error_label",
         "loot_status_label", "loot_grid", "loot_summary_label", "loot_detail_label",
@@ -299,6 +299,8 @@ class ManagerPresentation:
         self._place("ninja_mode_combo", area)
         self._place("boss_swap_check", area)
         self._place("early_exit_check", area)
+        self._place("one_team_check", area)
+        self._place("map13_team2_check", area)
         row = QHBoxLayout()
         row.setSpacing(10)
         for name in ("start_button", "stop_button", "restart_button"):

@@ -511,6 +511,13 @@ class NinjaRoadTests(unittest.TestCase):
         clock = [1000.0]
         self.screen("UNKNOWN")
         with patch("automation.ninja_road.time.time", side_effect=lambda: clock[0]):
+            # Inside the transition grace window: quick quiet re-observation only.
+            for _ in range(3):
+                self.assertEqual(self.engine.tick(), self.engine.UNKNOWN_POLL_SECONDS)
+                clock[0] += self.engine.UNKNOWN_POLL_SECONDS
+            self.assertNotIn("recognition_recovery", self.engine.data)
+            self.assertNotIn("ninja_recognition_failed", [call.args[0] for call in farm.event.call_args_list])
+            clock[0] += farm.TRANSITION_GRACE_SECONDS["idle"]
             for delay in (5, 10, 20, 40):
                 self.assertEqual(self.engine.tick(), delay)
                 self.assertEqual(self.engine.device.launches, 0)
@@ -532,6 +539,10 @@ class NinjaRoadTests(unittest.TestCase):
         frame = np.zeros((160, 90, 3), dtype=np.uint8)
         known = {"name": "NR_START", "verified_safe": True}
         with patch("automation.ninja_road.time.time", side_effect=lambda: clock[0]):
+            observations = [(frame, "NR_START", known, {}), (frame, "UNKNOWN", None, {})]
+            with patch.object(self.engine, "observe", side_effect=observations):
+                self.assertEqual(self.engine.tick(), self.engine.UNKNOWN_POLL_SECONDS)
+            clock[0] += farm.TRANSITION_GRACE_SECONDS["idle"]
             for delay in (5, 10, 20, 40):
                 observations = [(frame, "NR_START", known, {}),
                                 (frame, "UNKNOWN", None, {})]

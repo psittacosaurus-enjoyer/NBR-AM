@@ -107,8 +107,8 @@ class BackendTests(unittest.TestCase):
         target = dict(key="fixture-key", android_id="fixture-device", endpoint="127.0.0.1:5555")
         stopped = {**stopped_snapshot(), "instance": target, "instance_account": "acc1"}
         with patch.object(self.backend, "_invoke") as invoke:
-            with self.assertRaisesRegex(ControllerError, "only for Universal"):
-                self.backend.resolve_saved_input("ninja_road", expected_instance_key="fixture-key")
+            with self.assertRaisesRegex(ControllerError, "only for Universal or Ninja Road"):
+                self.backend.resolve_saved_input("rich_b", expected_instance_key="fixture-key")
             with patch.object(self.backend, "snapshot", return_value=copy.deepcopy(stopped)):
                 with self.assertRaisesRegex(ControllerError, "selected instance changed"):
                     self.backend.resolve_saved_input("universal", expected_instance_key="other-key")
@@ -568,6 +568,10 @@ class GuiTests(unittest.TestCase):
             self.assertEqual(window.resolve_input_button.text(), "Resolve input")
 
         window.stage_combo.setItemData(0, "ninja_road")
+        window._stage_changed()
+        window._update_controls()
+        self.assertTrue(window.resolve_input_button.isEnabled())  # Universal -> Ninja Road recovery
+        window.stage_combo.setItemData(0, "rich_b")
         window._stage_changed()
         window._update_controls()
         self.assertFalse(window.resolve_input_button.isEnabled())

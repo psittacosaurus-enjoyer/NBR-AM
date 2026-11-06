@@ -69,7 +69,7 @@ def observation(data, now):
 
 
 def terminal_result(run_id, outcome, ended, mode, cleared_map, baseline):
-    expected_map = {"stage10": 10, "stage15": 15}.get(baseline["exit_mode"])
+    expected_map = {"stage10": 10, "stage15": 15, "stage15_clean": 15}.get(baseline["exit_mode"])
     success = outcome == "completed" or (
         outcome == "early_exit" and cleared_map == expected_map)
     if mode and mode != baseline["exit_mode"]:

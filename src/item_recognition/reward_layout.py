@@ -25,13 +25,26 @@ def unrevealed_label(tile, profile, directory):
     return None
 
 
-def has_unrevealed_rewards(frame, directory):
-    """Inspect only known package backs in an already-verified results frame."""
+# The blue Lucky Drop medallion usually flips into the real item within a
+# moment, but on some missions it stays as the final reward. The farmer waits
+# a bounded time for the flip; a medallion still shown after that is a drop.
+LUCKY_DROP_LABEL = 'Unrevealed Lucky Drop'
+
+
+def unrevealed_labels(frame, directory):
+    """Labels of known package backs visible in an already-verified results frame."""
     profile = json.loads((Path(directory) / 'profiles.json').read_text('utf-8'))
     if frame.shape[:2] != (profile['height'], profile['width']):
-        return False
+        return []
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    labels = []
     for x, y, width, height in profile['grid_boxes']:
-        if unrevealed_label(rgb[y:y+height, x:x+width], profile, directory):
-            return True
-    return False
+        label = unrevealed_label(rgb[y:y+height, x:x+width], profile, directory)
+        if label:
+            labels.append(label)
+    return labels
+
+
+def has_unrevealed_rewards(frame, directory):
+    """Inspect only known package backs in an already-verified results frame."""
+    return bool(unrevealed_labels(frame, directory))

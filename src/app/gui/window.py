@@ -239,11 +239,15 @@ class ManagerWindow(QMainWindow):
         layout.addWidget(self.stage_combo)
         self.ninja_mode_combo = QComboBox(central)
         self.ninja_mode_combo.setAccessibleName("Ninja Road exit mode")
-        self.ninja_mode_combo.addItem("Stage 10 Exit", "stage10")
-        self.ninja_mode_combo.addItem("Stage 15 Exit", "stage15")
+        for label, mode in (("Stage 11 Exit", "stage10"), ("Stage 16 Exit", "stage15_clean"),
+                            ("Stage 16 Strategy", "stage15")):
+            self.ninja_mode_combo.addItem(label, mode)
         self.ninja_mode_combo.setToolTip(
-            "Stage 10 Exit preserves the existing Boss Swap and Early Exit options. "
-            "Stage 15 Exit uses stage-specific teams and retreats before Stage 16 combat. "
+            "Stage 11 Exit: with Early Exit on, retreats at Map 11; keeps Boss Swap and Early Exit options.\n"
+            "Stage 16 Exit: Auto on, Ninjutsu from Map 5, no Secret Techniques, normal team rotation; "
+            "retreats at Map 16.\n"
+            "Stage 16 Strategy: per-map teams, skill/backline sequences and Secret Techniques on Maps 10 and 15; "
+            "retreats at Map 16.\n"
             "Stop automation before changing modes.")
         self.ninja_mode_combo.hide()
         self.ninja_mode_combo.currentIndexChanged.connect(self._ninja_mode_changed)
@@ -258,6 +262,20 @@ class ManagerWindow(QMainWindow):
         self.early_exit_check.hide()
         self.early_exit_check.toggled.connect(self._early_exit_changed)
         layout.addWidget(self.early_exit_check)
+        self.one_team_check = QCheckBox("One Team Run")
+        self.one_team_check.setToolTip(
+            "Use only the first team. When it is defeated, retreat instead of switching teams. "
+            "All other Ninja Road behavior is unchanged.")
+        self.one_team_check.hide()
+        self.one_team_check.toggled.connect(self._one_team_changed)
+        layout.addWidget(self.one_team_check)
+        self.map13_team2_check = QCheckBox("Team 2 on Map 13")
+        self.map13_team2_check.setToolTip(
+            "Stage 16 Exit only: switch to Team 2 for Map 13, then back to Team 1 for Map 14. "
+            "Skipped if that team is defeated or not available.")
+        self.map13_team2_check.hide()
+        self.map13_team2_check.toggled.connect(self._map13_team2_changed)
+        layout.addWidget(self.map13_team2_check)
         controls = QHBoxLayout()
         controls.setSpacing(12)
         self.start_button = QPushButton("Start")
@@ -1052,6 +1070,14 @@ class ManagerWindow(QMainWindow):
             self.early_exit_check.blockSignals(True)
             self.early_exit_check.setChecked(snapshot.get("ninja_early_exit") is True)
             self.early_exit_check.blockSignals(False)
+        if self._pending_action != "one-team":
+            self.one_team_check.blockSignals(True)
+            self.one_team_check.setChecked(snapshot.get("ninja_one_team") is True)
+            self.one_team_check.blockSignals(False)
+        if self._pending_action != "map13-team2":
+            self.map13_team2_check.blockSignals(True)
+            self.map13_team2_check.setChecked(snapshot.get("ninja_map13_team2") is True)
+            self.map13_team2_check.blockSignals(False)
         duration = snapshot.get("stamina_wait_minutes", 5)
         if self._pending_action != "stamina-duration":
             index = self.stamina_duration_combo.findData(duration)
@@ -1273,6 +1299,8 @@ class ManagerWindow(QMainWindow):
         ninja = self.stage_combo.currentData() == "ninja_road"
         self.ninja_mode_combo.setVisible(ninja)
         self.boss_swap_check.setVisible(ninja)
+        self.one_team_check.setVisible(ninja)
+        self.map13_team2_check.setVisible(ninja and self.ninja_mode_combo.currentData() == "stage15_clean")
         self.early_exit_check.setVisible(ninja and self.ninja_mode_combo.currentData() == "stage10")
         self._update_ninja_retreats()
 
@@ -1337,6 +1365,8 @@ class ManagerWindow(QMainWindow):
                 "stamina-duration": "Saving the duration for subsequent stamina waits…",
                 "boss-swap": "Saving the Ninja Road Boss Swap setting…",
                 "early-exit": "Saving the Ninja Road Early Exit setting…",
+                "one-team": "Saving the Ninja Road One Team Run setting…",
+                "map13-team2": "Saving the Ninja Road Team 2 on Map 13 setting…",
                 "ninja-mode": "Saving the Ninja Road exit mode…",
                 "resolve-saved-input": "Verifying and resolving the saved input without starting farming…",
             }[self._pending_action]
@@ -1379,6 +1409,12 @@ class ManagerWindow(QMainWindow):
         self.ninja_mode_combo.setEnabled(bool(ready and self.stage_combo.currentData() == "ninja_road"))
         self.boss_swap_check.setVisible(self.stage_combo.currentData() == "ninja_road")
         self.boss_swap_check.setEnabled(bool(idle and self._snapshot_known and self.stage_combo.currentData() == "ninja_road"))
+        self.one_team_check.setVisible(self.stage_combo.currentData() == "ninja_road")
+        self.one_team_check.setEnabled(bool(idle and self._snapshot_known and self.stage_combo.currentData() == "ninja_road"))
+        clean16 = (self.stage_combo.currentData() == "ninja_road"
+                   and self.ninja_mode_combo.currentData() == "stage15_clean")
+        self.map13_team2_check.setVisible(clean16)
+        self.map13_team2_check.setEnabled(bool(idle and self._snapshot_known and clean16))
         self.early_exit_check.setVisible(self.stage_combo.currentData() == "ninja_road"
                                        and self.ninja_mode_combo.currentData() == "stage10")
         self.early_exit_check.setEnabled(bool(idle and self._snapshot_known
@@ -1390,11 +1426,15 @@ class ManagerWindow(QMainWindow):
         self.resolve_input_button.setEnabled(bool(
             idle and not self._active and self._snapshot_known and not self._poll_error
             and instance_idle and instance_ready
-            and resolve_supported and resolve_error and self.stage_combo.currentData() == "universal"))
+            and resolve_supported and resolve_error
+            and self.stage_combo.currentData() in ("universal", "ninja_road")))
         if not resolve_supported:
             self.resolve_input_button.setToolTip("This backend cannot resolve saved inputs.")
+        elif self.stage_combo.currentData() == "ninja_road":
+            self.resolve_input_button.setToolTip(
+                "Available after Start reports an existing saved input. Verifies the Ninja Road Home screen before resolving it.")
         elif self.stage_combo.currentData() != "universal":
-            self.resolve_input_button.setToolTip("Saved input recovery is available only for Universal farming.")
+            self.resolve_input_button.setToolTip("Saved input recovery is available only for Universal or Ninja Road farming.")
         else:
             self.resolve_input_button.setToolTip(
                 "Available after Start reports an existing saved input. Verifies the current mission screen before resolving it.")
@@ -1470,6 +1510,16 @@ class ManagerWindow(QMainWindow):
     def _early_exit_changed(self, checked):
         if self.early_exit_check.isEnabled():
             self._command("early-exit", checked)
+
+    @Slot(bool)
+    def _one_team_changed(self, checked):
+        if self.one_team_check.isEnabled():
+            self._command("one-team", checked)
+
+    @Slot(bool)
+    def _map13_team2_changed(self, checked):
+        if self.map13_team2_check.isEnabled():
+            self._command("map13-team2", checked)
 
     @Slot(int)
     def _stamina_duration_changed(self, index):

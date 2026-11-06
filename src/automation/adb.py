@@ -301,6 +301,15 @@ def _running_instances():
     process's installation and --instance argument instead of guessing from an
     open TCP port. Inaccessible process metadata means the state is unknown.
     """
+    players = _player_processes()
+    return None if players is None else {(directory, instance_id) for directory, instance_id, _ in players}
+
+
+def _player_processes():
+    """Every HD-Player process as (installation dir, --instance, PID); None if unknown.
+
+    Read-only. Crash recovery uses the PID to close exactly one instance.
+    """
     if os.name != "nt":
         return None
 
@@ -333,7 +342,7 @@ def _running_instances():
         snapshot = kernel.CreateToolhelp32Snapshot(2, 0)
         if snapshot == ctypes.c_void_p(-1).value:
             return None
-        running = set()
+        players = []
         unknown = False
         try:
             entry = ProcessEntry()
@@ -369,8 +378,8 @@ def _running_instances():
                                         command = ctypes.wstring_at(value.Buffer, value.Length // 2)
                                         instance_id = _player_instance(command)
                                         if instance_id:
-                                            running.add((os.path.normcase(str(Path(image.value).parent.resolve())),
-                                                         instance_id))
+                                            players.append((os.path.normcase(str(Path(image.value).parent.resolve())),
+                                                            instance_id, int(entry.th32ProcessID)))
                                         else:
                                             unknown = True
                         finally:
@@ -378,7 +387,7 @@ def _running_instances():
                 found = kernel.Process32NextW(snapshot, ctypes.byref(entry))
         finally:
             kernel.CloseHandle(snapshot)
-        return None if unknown else running
+        return None if unknown else players
     except (AttributeError, OSError, ValueError):
         return None
 

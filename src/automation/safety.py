@@ -131,6 +131,92 @@ def require_pearl_safe_stamina_prompt(stage_id: object, state: object) -> None:
         raise PearlSafetyError("Stamina cancel point is not the exact No-button center")
 
 
+TITLE_SCREEN = "TITLE_START"
+TITLE_ACTION = "title_start"
+TITLE_TAP_POINT = (450, 1008)
+TITLE_REQUIRED_TEMPLATES = (
+    "assets/patterns/boot/title_delete_cache.png",
+    "assets/patterns/boot/title_data_transfer.png",
+)
+QUICKSAVE_SCREEN = "NR_QUICKSAVE_PROMPT"
+QUICKSAVE_ACTION = "nr_resume_quicksave"
+QUICKSAVE_TEXT_TEMPLATE = "assets/patterns/boot/nr_quicksave_text.png"
+QUICKSAVE_YES_TEMPLATE = "assets/patterns/boot/nr_quicksave_yes.png"
+QUICKSAVE_YES_REGION = (492, 884, 692, 954)
+EXACT_CORRELATION = 0.96
+EXACT_DIFFERENCE = 12
+
+
+def _fixed_anchor_templates(state: Mapping) -> dict:
+    anchors = state.get("anchors")
+    if not isinstance(anchors, list):
+        raise PearlSafetyError("State anchors are missing")
+    found = {}
+    for anchor in anchors:
+        if not isinstance(anchor, Mapping):
+            raise PearlSafetyError("State anchor is malformed")
+        if "search_region" in anchor or "alternatives" in anchor or "binarize" in anchor:
+            continue
+        if (anchor.get("correlation") == EXACT_CORRELATION
+                and anchor.get("difference") == EXACT_DIFFERENCE):
+            found[anchor.get("template")] = anchor
+    return found
+
+
+def require_pearl_safe_title_tap(state: object) -> None:
+    """The title tap must hit only the fixed Tap To Start text.
+
+    The title screen also carries Delete Cache, Data Transfer and Discord
+    buttons; both top buttons must be recognized at their exact positions so a
+    different layout can never route this fixed point onto a button.
+    """
+    if not isinstance(state, Mapping) or state.get("name") != TITLE_SCREEN:
+        raise PearlSafetyError("Expected a classified TITLE_START state")
+    if state.get("verified_safe") is not True:
+        raise PearlSafetyError("Title tap is not verified safe")
+    action = state.get("action")
+    if not isinstance(action, Mapping) or action.get("id") != TITLE_ACTION or action.get("kind") != "tap":
+        raise PearlSafetyError("Title screen does not use the approved title tap")
+    if "point_anchor" in action or "point_offset" in action or "input_mode" in action:
+        raise PearlSafetyError("Title tap must use its fixed point")
+    if _exact_int_sequence(action.get("point"), 2, "Action point") != TITLE_TAP_POINT:
+        raise PearlSafetyError("Title tap point changed")
+    anchors = _fixed_anchor_templates(state)
+    if any(template not in anchors for template in TITLE_REQUIRED_TEMPLATES):
+        raise PearlSafetyError("Title tap requires the exact title button anchors")
+
+
+def require_pearl_safe_quicksave_resume(state: object) -> None:
+    """Only the Yes button of the exact Ninja Road quicksave question."""
+    if not isinstance(state, Mapping) or state.get("name") != QUICKSAVE_SCREEN:
+        raise PearlSafetyError("Expected a classified NR_QUICKSAVE_PROMPT state")
+    if state.get("verified_safe") is not True:
+        raise PearlSafetyError("Quicksave resume is not verified safe")
+    action = state.get("action")
+    if not isinstance(action, Mapping) or action.get("id") != QUICKSAVE_ACTION or action.get("kind") != "tap":
+        raise PearlSafetyError("Quicksave prompt does not use the approved resume tap")
+    if "point_offset" in action or "input_mode" in action:
+        raise PearlSafetyError("Quicksave resume cannot use a point offset or input mode")
+    anchors = state.get("anchors")
+    point_anchor = action.get("point_anchor")
+    if not isinstance(anchors, list) or type(point_anchor) is not int or not 0 <= point_anchor < len(anchors):
+        raise PearlSafetyError("Quicksave resume has an invalid point anchor")
+    yes = anchors[point_anchor]
+    if not isinstance(yes, Mapping) or yes.get("template") != QUICKSAVE_YES_TEMPLATE:
+        raise PearlSafetyError("Quicksave resume is not anchored to the known Yes button")
+    if "search_region" in yes or "alternatives" in yes:
+        raise PearlSafetyError("Quicksave Yes anchor must be fixed and exact")
+    if _exact_int_sequence(yes.get("region"), 4, "Anchor region") != QUICKSAVE_YES_REGION:
+        raise PearlSafetyError("Quicksave Yes anchor region changed")
+    if yes.get("correlation") != EXACT_CORRELATION or yes.get("difference") != EXACT_DIFFERENCE:
+        raise PearlSafetyError("Quicksave Yes recognition guards changed")
+    if QUICKSAVE_TEXT_TEMPLATE not in _fixed_anchor_templates(state):
+        raise PearlSafetyError("Quicksave resume requires the exact quicksave question text")
+    point = _exact_int_sequence(action.get("point"), 2, "Action point")
+    if point != anchor_center(yes):
+        raise PearlSafetyError("Quicksave resume point is not the exact Yes-button center")
+
+
 def require_pearl_safe_action(stage_id: object, screen: object, state: object) -> None:
     """Reject premium-looking actions and strictly validate stamina cancellation."""
     if not isinstance(state, Mapping):
@@ -143,4 +229,10 @@ def require_pearl_safe_action(stage_id: object, screen: object, state: object) -
         raise PearlSafetyError("Classified screen and action state do not match")
     if screen == STAMINA_PROMPT:
         require_pearl_safe_stamina_prompt(stage_id, state)
+    if screen == TITLE_SCREEN or action.get("id") == TITLE_ACTION:
+        require_pearl_safe_title_tap(state)
+    if screen == QUICKSAVE_SCREEN or action.get("id") == QUICKSAVE_ACTION:
+        if stage_id != "ninja_road":
+            raise PearlSafetyError("Quicksave resume is only verified for Ninja Road")
+        require_pearl_safe_quicksave_resume(state)
 

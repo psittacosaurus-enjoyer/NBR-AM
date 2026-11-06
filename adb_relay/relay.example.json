@@ -1,0 +1,6 @@
+{
+  "adb_path": "C:\\Program Files\\BlueStacks_nxt\\HD-Adb.exe",
+  "serial": "127.0.0.1:5555",
+  "android_id": "replace-with-the-instance-android-id",
+  "poll_seconds": 0.2
+}

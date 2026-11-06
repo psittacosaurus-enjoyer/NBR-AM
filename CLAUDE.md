@@ -4,7 +4,7 @@ Unattended farming for *Naruto Blazing Revival* on one identity-verified BlueSta
 
 ## Hard invariants (never weaken)
 - **Never spend Pearls.** Every action is allowlisted (`ALLOWED_ACTIONS`), catalog-declared `verified_safe`, checked by `automation/safety.py` (`require_pearl_safe_action`, `require_pearl_free_action_id`), and re-verified by a fresh observation at dispatch. Loss/revival screens → safety stop, never a click.
-- **Never guess input.** UNKNOWN / LOADING / disagreeing frames never receive input. Recovery = re-observe, retry the *same* verified action, or relaunch the same verified activity (`am start`), nothing else.
+- **Never guess input.** UNKNOWN / LOADING / disagreeing frames never receive input. Recovery = re-observe, retry the *same* verified action, or relaunch the same verified activity (`am start`), nothing else. The one tier above that is `crash_recovery.py`: the worker may restart the identity-pinned BlueStacks instance (close that instance's single HD-Player PID — never by image name — relaunch it, re-verify Android ID + mapping, `am start`). It sends no UI input, is budgeted, and an identity change across it is a safety stop. After a restart the game shows its title; Ninja Road's catalog then taps only the fixed "Tap To Start" point (`TITLE_START`) and the Yes of the exact free quicksave question (`NR_QUICKSAVE_PROMPT`), both pinned by guards in `safety.py`. Universal has no title/menu navigation.
 - **Right device only.** `Device.verify()` (Android ID + BlueStacks mapping) runs before every input; identity mismatch writes `runtime/STOP`.
 - **Persist before input.** `data["pending"]` is saved before dispatch so a crash can't replay a click.
 - Don't reset `runtime/` files to bypass latches, stops or identity checks.
@@ -16,6 +16,7 @@ Unattended farming for *Naruto Blazing Revival* on one identity-verified BlueSta
 | `src/automation/ninja_road.py` (+`ninja_boss_swap.py`, `ninja_stage15.py`, `ninja_strategy_vision.py`) | Ninja Road engine (subclass with its own `tick`/recovery). |
 | `src/automation/adb.py` | BlueStacks discovery, instance mapping, identity verification, ADB server. |
 | `src/automation/safety.py` | Pearl-safety guards. |
+| `src/automation/crash_recovery.py` | Emulator crash tier: unreachable-ADB / missing-player detection helpers, single-PID BlueStacks restart, boot wait, persisted restart budget (`crash_recovery.json`), `farm.py crash-test`. |
 | `src/app/backend/controller.py` | Manager ↔ controller process adapter (start/stop/status). |
 | `src/app/backend/loot.py`, `retention.py` | Durable loot recording (SQLite + receipts), diagnostic retention. |
 | `src/app/gui/` | PySide6 Manager (presentation only; reads controller state). |

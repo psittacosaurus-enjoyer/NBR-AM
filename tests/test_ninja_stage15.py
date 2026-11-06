@@ -799,5 +799,101 @@ class Stage15StrategyTests(unittest.TestCase):
         self.engine.device.perform.assert_not_called()
 
 
+class CleanStage16ExitTests(unittest.TestCase):
+    """Stage 16 Exit ("stage15_clean"): Stage 16 retreat without the strategy."""
+
+    def setUp(self):
+        ExitModeTests.setUp(self)
+        self.engine.data["run"]["exit_mode"] = "stage15_clean"
+
+    def test_clean_mode_retreats_at_map16_and_ignores_map11_early_exit(self):
+        self.engine.read_ready_map.return_value = 16
+        _, name, spec, _ = self.engine.observe()
+        self.assertEqual((name, spec["action"]["id"]), ("NR_EARLY_EXIT", "nr_retreat"))
+        self.engine.read_ready_map.return_value = 11
+        with patch.object(farm, "early_exit_enabled", return_value=True):
+            _, name, _, _ = self.engine.observe()
+        self.assertEqual(name, "NR_TEAM_SELECT")
+
+    def test_clean_mode_defeat_rotates_to_next_living_team_without_one_team(self):
+        spec = {"name": "NR_TEAM_DEFEATED", "verified_safe": True, "phase": "team_defeated", "team_defeated": True,
+                "team_choices": [{"index": 2, "action": {"id": "nr_team", "kind": "tap", "point": [878, 1286],
+                                                        "expected": ["NR_TEAM_SELECT"]}},
+                                 {"index": 3, "action": {"id": "nr_team", "kind": "tap", "point": [878, 1286],
+                                                        "expected": ["NR_TEAM_SELECT"]}}],
+                "action": {"id": "nr_team", "kind": "tap", "point": [878, 1286], "expected": ["NR_TEAM_SELECT"]}}
+        self.engine.data.update(current_team=1, defeated_teams=[1], available_teams=[1, 2, 3])
+        with patch.object(farm, "one_team_enabled", return_value=False):
+            action, changes = self.engine._choose_action("NR_TEAM_DEFEATED", spec)
+        self.assertEqual((action["id"], changes["team_index"]), ("nr_team", 2))
+        self.engine.data.update(current_team=2, defeated_teams=[1, 2])
+        with patch.object(farm, "one_team_enabled", return_value=False):
+            action, changes = self.engine._choose_action("NR_TEAM_DEFEATED", spec)
+        self.assertEqual(changes["team_index"], 3)
+        self.engine.data.update(current_team=3, defeated_teams=[1, 2, 3])
+        with patch.object(farm, "one_team_enabled", return_value=False):
+            action, _ = self.engine._choose_action("NR_TEAM_DEFEATED", spec)
+        self.assertIsNone(action)  # All defeated: the game's all-defeated screen ends the run.
+
+    def test_clean_mode_label_and_setting(self):
+        self.assertEqual(farm.NINJA_MODE_LABELS,
+                         {"stage10": "Stage 11 Exit", "stage15_clean": "Stage 16 Exit",
+                          "stage15": "Stage 16 Strategy"})
+        self.assertIn("stage15_clean", farm.STAGE15_MODES)
+
+
+class CleanStrategyPolicyTests(unittest.TestCase):
+    """The shared Stage 15 controller with the strategy parts switched off."""
+
+    def strategy(self, mode, observed):
+        from automation.ninja_stage15 import Stage15Strategy
+        engine = SimpleNamespace(exit_mode=mode, save=Mock(), device=Mock(),
+                                 READY_SCREENS=NinjaRoadEngine.READY_SCREENS,
+                                 data={"run": {"id": "attempt"}, "current_team": 1,
+                                       "defeated_teams": [], "available_teams": [1, 2, 3]})
+        strategy = object.__new__(Stage15Strategy)
+        strategy.engine = engine
+        strategy.vision = Mock()
+        strategy.vision.setting.side_effect = lambda frame, setting: observed.get(setting)
+        strategy.vision.read_map.return_value = None
+        strategy.boss = Mock()
+        strategy.boss.auto.return_value = True
+        return strategy, engine
+
+    def test_clean_settings_ninjutsu_from_map5_and_secret_always_off(self):
+        for mode, stage, observed, expected in (
+                ("stage15_clean", 3, {"ninjutsu": False, "secret": True}, ("secret", False)),
+                ("stage15_clean", 10, {"ninjutsu": True, "secret": True}, ("secret", False)),
+                ("stage15_clean", 15, {"ninjutsu": True, "secret": True}, ("secret", False)),
+                ("stage15_clean", 4, {"ninjutsu": True, "secret": False}, ("ninjutsu", False)),
+                ("stage15_clean", 5, {"ninjutsu": False, "secret": False}, ("ninjutsu", True)),
+                ("stage15_clean", 9, {"ninjutsu": True, "secret": False}, None),
+                ("stage15", 3, {"ninjutsu": False, "secret": True}, None),     # strategy leaves 1-5
+                ("stage15", 10, {"ninjutsu": True, "secret": False}, ("secret", True))):
+            with self.subTest(mode=mode, stage=stage):
+                strategy, engine = self.strategy(mode, observed)
+                state = {"settings": {}, "pending": None}
+                strategy.settings(state, None, stage)
+                if expected is None:
+                    engine.device.perform.assert_not_called()
+                else:
+                    self.assertEqual((state["pending"]["setting"], state["pending"]["target"]), expected)
+
+    def test_clean_mode_never_plans_teams_or_starts_sequences(self):
+        for mode, planned in (("stage15_clean", 1), ("stage15", 2)):
+            strategy, _ = self.strategy(mode, {})
+            with patch.object(farm, "one_team_enabled", return_value=False):
+                self.assertEqual(strategy.planned_team(7, 1), planned)
+        for mode, swapped in (("stage15_clean", False), ("stage15", True)):
+            with self.subTest(mode=mode):
+                strategy, engine = self.strategy(mode, {"ninjutsu": True, "secret": False})
+                strategy.boss.config = {"map_region": [0, 0, 1, 1]}
+                with patch.object(farm, "one_team_enabled", return_value=False), \
+                     patch.object(farm, "boss_swap_enabled", return_value=False):
+                    strategy.tick(None, "NR_COMBAT", {"combat_map_index": 9})
+                self.assertEqual("boss_swap" in engine.data, swapped)
+                self.assertNotIn("nr_strategy_team", [call.args[0]["id"] for call in engine.device.perform.call_args_list])
+
+
 if __name__ == "__main__":
     unittest.main()

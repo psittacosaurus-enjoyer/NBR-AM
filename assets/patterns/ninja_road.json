@@ -1261,6 +1261,120 @@
           "NR_TEAM_SELECT"
         ]
       }
+    },
+    {
+      "name": "TITLE_START",
+      "anchors": [
+        {
+          "region": [
+            40,
+            40,
+            230,
+            78
+          ],
+          "template": "assets/patterns/boot/title_delete_cache.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            290,
+            40,
+            480,
+            78
+          ],
+          "template": "assets/patterns/boot/title_data_transfer.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            150,
+            130,
+            450,
+            180
+          ],
+          "template": "assets/patterns/boot/title_discord.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "title",
+      "notes": "Game title after a crash/restart. Static button anchors only (Tap To Start pulses). Tap only the lower-center text, far from Delete Cache / Data Transfer / Discord / Encyclopedia.",
+      "action": {
+        "id": "title_start",
+        "kind": "tap",
+        "point": [
+          450,
+          1008
+        ],
+        "expected": [
+          "NR_QUICKSAVE_PROMPT",
+          "NR_HOME",
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_COMBAT_NINJUTSU_OFF",
+          "NR_TEAM_SELECT"
+        ]
+      }
+    },
+    {
+      "name": "NR_QUICKSAVE_PROMPT",
+      "anchors": [
+        {
+          "region": [
+            128,
+            674,
+            772,
+            712
+          ],
+          "template": "assets/patterns/boot/nr_quicksave_text.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            200,
+            884,
+            400,
+            954
+          ],
+          "template": "assets/patterns/boot/nr_quicksave_no.png",
+          "correlation": 0.96,
+          "difference": 12
+        },
+        {
+          "region": [
+            492,
+            884,
+            692,
+            954
+          ],
+          "template": "assets/patterns/boot/nr_quicksave_yes.png",
+          "correlation": 0.96,
+          "difference": 12
+        }
+      ],
+      "verified_safe": true,
+      "phase": "quicksave",
+      "notes": "'Ninja Road quicksave data found. Would you like to continue from the quicksave?' Yes resumes the interrupted run for free. Exact text anchor required.",
+      "action": {
+        "id": "nr_resume_quicksave",
+        "kind": "tap",
+        "point_anchor": 2,
+        "point": [
+          592,
+          919
+        ],
+        "expected": [
+          "NR_COMBAT",
+          "NR_COMBAT_AUTO_OFF",
+          "NR_COMBAT_NINJUTSU_OFF",
+          "NR_TEAM_SELECT",
+          "NR_TEAM_DEFEATED"
+        ]
+      }
     }
   ]
 }
